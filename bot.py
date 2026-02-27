@@ -31,7 +31,7 @@ CHAT_ID      = os.getenv("CHAT_ID", "")
 JOB_INTERVAL = int(os.getenv("JOB_INTERVAL", 60))
 
 
-# ── Helper: invia messaggio Telegram ──────────────────────────────────────────
+# ── Helper: invia messaggio Telegram ─────────────────────────────────────────
 async def send_alert(bot: Bot, text: str):
     chat_id = os.getenv("CHAT_ID", CHAT_ID)
     if not chat_id:
@@ -75,6 +75,9 @@ async def funding_job(context):
         pct_24h         = ticker.get("price24hPcnt", "0")
         last_price      = ticker.get("lastPrice", "0")
 
+        # ── Aggiorna storico rolling (per soglie dinamiche) ────────────────
+        al.update_rate_history(symbol, rate_pct)
+
         # 1. Alert funding rate
         alert_text = al.process_funding(symbol, rate_pct, interval_h)
         if alert_text:
@@ -88,10 +91,10 @@ async def funding_job(context):
                 await send_alert(bot, next_text)
                 bot_data["alerts_sent"] = bot_data.get("alerts_sent", 0) + 1
 
-        # 3. Alert PUMP/DUMP prezzo (calcola variazione 1H)
+        # 3. Alert PUMP/DUMP prezzo
         try:
-            lp   = float(last_price)
-            pp1h = float(prev_price_1h)
+            lp         = float(last_price)
+            pp1h       = float(prev_price_1h)
             var_1h_raw = str((lp - pp1h) / pp1h) if pp1h > 0 else "0"
         except (ValueError, ZeroDivisionError):
             var_1h_raw = "0"
@@ -111,23 +114,31 @@ async def liquidation_callback(msg: str):
         await send_alert(_bot_ref, msg)
 
 
-# ── post_init: caricamento dati al boot ───────────────────────────────────────
+# ── post_init: caricamento dati al boot ──────────────────────────────────────
 async def post_init(app):
     global _bot_ref
     _bot_ref = app.bot
 
-    app.bot_data["uptime_start"] = datetime.now(timezone.utc)
-    app.bot_data["alerts_sent"]  = 0
-    app.bot_data["monitoring"]   = False
+    app.bot_data["uptime_start"]  = datetime.now(timezone.utc)
+    app.bot_data["alerts_sent"]   = 0
+    app.bot_data["monitoring"]    = False
     app.bot_data["symbols_count"] = 0
 
-    # 1. Carica cap funding per tutti i simboli (one-time al boot)
-    logger.info("Caricamento instruments info (cap funding)...")
+    use_dynamic = os.getenv("USE_DYNAMIC_THRESHOLDS", "false").lower() == "true"
+    window_h    = int(os.getenv("DYNAMIC_WINDOW_HOURS", 24))
+    logger.info(
+        "Soglie: %s | Finestra rolling: %dH",
+        "IBRIDE (fisse + dinamiche)" if use_dynamic else "FISSE",
+        window_h,
+    )
+
+    # 1. Carica cap funding (one-time al boot)
+    logger.info("Caricamento instruments info...")
     caps = await bc.get_instruments_info()
     al.set_symbol_caps(caps)
 
-    # 2. Recupera simboli attivi per il WebSocket liquidazioni
-    logger.info("Recupero simboli attivi per WebSocket...")
+    # 2. Recupera simboli per WebSocket liquidazioni
+    logger.info("Recupero simboli attivi...")
     tickers = await bc.get_funding_tickers()
     symbols = [t["symbol"] for t in tickers]
 
@@ -143,7 +154,7 @@ def main():
     if not BOT_TOKEN:
         raise ValueError(
             "TELEGRAM_TOKEN non impostato.\n"
-            "Aggiungi il token nel file .env e riavvia."
+            "Aggiungi il token nel file .env e riavvia il bot."
         )
 
     app = (
@@ -153,18 +164,20 @@ def main():
         .build()
     )
 
-    # Registra tutti i command handler
     commands.register(app)
 
-    # Job di monitoraggio ogni JOB_INTERVAL secondi
     app.job_queue.run_repeating(
         funding_job,
         interval=JOB_INTERVAL,
-        first=10,          # prima esecuzione dopo 10s (tempo per il boot)
+        first=10,
         name="funding_monitor",
     )
 
-    logger.info("🚀 Funding King Bot avviato — interval=%ds", JOB_INTERVAL)
+    logger.info(
+        "🚀 Funding King Bot avviato — interval=%ds | soglie=%s",
+        JOB_INTERVAL,
+        "ibride" if os.getenv("USE_DYNAMIC_THRESHOLDS","false").lower()=="true" else "fisse",
+    )
     app.run_polling(allowed_updates=["message", "callback_query"])
 
 
