@@ -390,7 +390,10 @@ def process_funding(symbol: str, rate_pct: float, interval_h) -> str | None:
         rientro_thr = get_effective_threshold(symbol, "rientro")
         if prev_level != "none" and abs_rate <= rientro_thr:
             state["level"] = "none"
-            return format_alert(symbol, rate_pct, interval_h, "rientro", prev_level)
+            # Rientro: invia SOLO se il simbolo aveva già ricevuto un alert HIGH/EXTREME/HARD
+            if is_funded(symbol):
+                return format_alert(symbol, rate_pct, interval_h, "rientro", prev_level)
+            return None
         return None
 
     # 4. Anti-spam: stesso livello → silenzio
