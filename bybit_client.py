@@ -202,20 +202,20 @@ async def get_wallet_balance() -> Optional[dict]:
         coins = [
             {
                 "coin":          c["coin"],
-                "walletBalance": float(c.get("walletBalance", 0)),
-                "usdValue":      float(c.get("usdValue", 0)),
-                "unrealisedPnl": float(c.get("unrealisedPnl", 0)),
+                "walletBalance": _sf(c.get("walletBalance")),
+                "usdValue":      _sf(c.get("usdValue")),
+                "unrealisedPnl": _sf(c.get("unrealisedPnl")),
             }
             for c in acc.get("coin", [])
-            if float(c.get("walletBalance", 0)) != 0
+            if _sf(c.get("walletBalance")) != 0
         ]
         return {
-            "totalEquity":           float(acc.get("totalEquity", 0)),
-            "totalWalletBalance":    float(acc.get("totalWalletBalance", 0)),
-            "totalAvailableBalance": float(acc.get("totalAvailableBalance", 0)),
-            "totalPerpUPL":          float(acc.get("totalPerpUPL", 0)),
-            "totalMarginBalance":    float(acc.get("totalMarginBalance", 0)),
-            "totalInitialMargin":    float(acc.get("totalInitialMargin", 0)),
+            "totalEquity":           _sf(acc.get("totalEquity")),
+            "totalWalletBalance":    _sf(acc.get("totalWalletBalance")),
+            "totalAvailableBalance": _sf(acc.get("totalAvailableBalance")),
+            "totalPerpUPL":          _sf(acc.get("totalPerpUPL")),
+            "totalMarginBalance":    _sf(acc.get("totalMarginBalance")),
+            "totalInitialMargin":    _sf(acc.get("totalInitialMargin")),
             "coins": coins,
         }
     except Exception as e:
@@ -224,10 +224,19 @@ async def get_wallet_balance() -> Optional[dict]:
 
 
 # ── Posizioni aperte ──────────────────────────────────────────────────────────
+def _sf(val, default: float = 0.0) -> float:
+    """Safe float: converte stringhe vuote e None a default senza eccezione."""
+    try:
+        return float(val) if val not in (None, "", "—") else default
+    except (TypeError, ValueError):
+        return default
+
+
 async def get_positions() -> list[dict]:
     """
     Restituisce tutte le posizioni aperte.
     Copre: linear (USDT + USDC) e inverse (coin-margined).
+    Usa _sf() per resistere a campi stringa-vuota restituiti da Bybit.
     """
     positions = []
     queries = [
@@ -248,26 +257,26 @@ async def get_positions() -> list[dict]:
                 )
                 continue
             for p in res["result"]["list"]:
-                size = float(p.get("size", 0))
+                size = _sf(p.get("size"))
                 if size == 0:
                     continue
-                position_im    = float(p.get("positionIM", 0))
-                unrealised_pnl = float(p.get("unrealisedPnl", 0))
+                position_im    = _sf(p.get("positionIM"))
+                unrealised_pnl = _sf(p.get("unrealisedPnl"))
                 pnl_pct = (unrealised_pnl / position_im * 100) if position_im else 0
                 positions.append({
-                    "symbol":         p["symbol"],
-                    "side":           p["side"],
+                    "symbol":         p.get("symbol", "?"),
+                    "side":           p.get("side", "None"),
                     "size":           size,
-                    "avgPrice":       float(p.get("avgPrice", 0)),
-                    "markPrice":      float(p.get("markPrice", 0)),
+                    "avgPrice":       _sf(p.get("avgPrice")),
+                    "markPrice":      _sf(p.get("markPrice")),
                     "leverage":       p.get("leverage", "—"),
                     "unrealisedPnl":  unrealised_pnl,
                     "pnlPct":         pnl_pct,
                     "positionIM":     position_im,
-                    "liqPrice":       float(p.get("liqPrice", 0)),
-                    "takeProfit":     float(p.get("takeProfit", 0)),
-                    "stopLoss":       float(p.get("stopLoss", 0)),
-                    "curRealisedPnl": float(p.get("curRealisedPnl", 0)),
+                    "liqPrice":       _sf(p.get("liqPrice")),
+                    "takeProfit":     _sf(p.get("takeProfit")),
+                    "stopLoss":       _sf(p.get("stopLoss")),
+                    "curRealisedPnl": _sf(p.get("curRealisedPnl")),
                     "positionStatus": p.get("positionStatus", "Normal"),
                     "category":       cat,
                 })
@@ -288,7 +297,7 @@ async def test_positions_api() -> dict:
         try:
             res = await _run(get_session().get_positions, **kwargs)
             items = res.get("result", {}).get("list", [])
-            nz = [p for p in items if float(p.get("size", 0)) != 0]
+            nz = [p for p in items if _sf(p.get("size")) != 0]
             results[label] = {
                 "retCode": res.get("retCode"),
                 "retMsg":  res.get("retMsg", ""),
@@ -324,7 +333,7 @@ async def test_connection() -> dict:
         lat = int((time.monotonic() - t0) * 1000)
         if res.get("retCode") == 0:
             acc    = res["result"]["list"][0] if res["result"]["list"] else {}
-            equity = float(acc.get("totalEquity", 0))
+            equity = _sf(acc.get("totalEquity"))
             results["auth"] = {"ok": True, "latency_ms": lat, "equity": equity}
         else:
             results["auth"] = {"ok": False, "error": res.get("retMsg"), "latency_ms": lat}
