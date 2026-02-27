@@ -1,234 +1,264 @@
-import time
-import hmac
-import hashlib
+"""
+bybit_client.py — Funding King Bot
+Client Bybit basato su pybit (HMAC automatico, retry, rate-limit).
+"""
+
+import asyncio
 import logging
-import aiohttp
-from urllib.parse import urlencode
+import os
+import time
+from typing import Optional
+
+from pybit.unified_trading import HTTP
+
+logger = logging.getLogger(__name__)
+
+# ── Simboli esclusi dal meccanismo automatico intervallo ──────────────────────
+EXCLUDED_AUTO_INTERVAL = {
+    "BTCUSDT", "BTCUSDC", "BTCUSD",
+    "ETHUSDT", "ETHUSDC", "ETHUSD",
+    "ETHBTCUSDT", "ETHWUSDT",
+}
+
+# ── Sessione globale ───────────────────────────────────────────────────────────
+_session: Optional[HTTP] = None
 
 
-class BybitClient:
-    BASE_URL = "https://api.bybit.com"
+def _make_session(testnet: bool = False) -> HTTP:
+    api_key    = os.getenv("BYBIT_API_KEY", "")
+    api_secret = os.getenv("BYBIT_API_SECRET", "")
+    if api_key and api_secret:
+        return HTTP(testnet=testnet, api_key=api_key, api_secret=api_secret)
+    return HTTP(testnet=testnet)
 
-    def __init__(self, api_key: str | None, api_secret: str | None):
-        self.api_key = api_key
-        self.api_secret = api_secret
-        self.has_keys = bool(api_key and api_secret)
 
-    def _sign(self, timestamp: str, recv_window: str, query_string: str) -> str:
-        """Firma HMAC SHA256 corretta per Bybit v5 GET requests."""
-        sign_payload = timestamp + self.api_key + recv_window + query_string
-        return hmac.new(
-            self.api_secret.encode(),
-            sign_payload.encode(),
-            hashlib.sha256,
-        ).hexdigest()
+def get_session(force_new: bool = False) -> HTTP:
+    global _session
+    if _session is None or force_new:
+        _session = _make_session()
+    return _session
 
-    async def _request(
-        self,
-        method: str,
-        path: str,
-        params: dict | None = None,
-        auth: bool = False,
-    ):
-        url = self.BASE_URL + path
-        params = params or {}
-        headers = {"Content-Type": "application/json"}
 
-        if auth:
-            if not self.has_keys:
-                logging.warning("Richiesta privata Bybit senza API key configurate.")
-                return None
+def reload_session():
+    """Ricrea la sessione dopo cambio credenziali."""
+    global _session
+    _session = _make_session()
+    logger.info("Sessione Bybit ricreata.")
 
-            timestamp = str(int(time.time() * 1000))
-            recv_window = "5000"
 
-            if method == "GET":
-                query_string = urlencode(params)
-            else:
-                query_string = ""
+async def _run(fn, *args, **kwargs):
+    """Esegue una chiamata pybit sincrona in un thread separato."""
+    return await asyncio.to_thread(fn, *args, **kwargs)
 
-            signature = self._sign(timestamp, recv_window, query_string)
-            headers.update({
-                "X-BAPI-API-KEY": self.api_key,
-                "X-BAPI-TIMESTAMP": timestamp,
-                "X-BAPI-RECV-WINDOW": recv_window,
-                "X-BAPI-SIGN": signature,
-            })
 
+# ── Instruments info (cap funding per simbolo) ────────────────────────────────
+async def get_instruments_info() -> dict[str, dict]:
+    """
+    Carica i parametri statici di tutti i simboli linear perpetual.
+    Restituisce:
+      { "BTCUSDT": { "fundingInterval": 480,
+                     "upperFundingRate": 0.00375,
+                     "lowerFundingRate": -0.00375 }, ... }
+    Usa cursor per paginare (Bybit restituisce max 500 per volta).
+    """
+    result = {}
+    cursor = ""
+    while True:
         try:
-            async with aiohttp.ClientSession() as session:
-                if method == "GET":
-                    async with session.get(
-                        url, headers=headers, params=params, timeout=aiohttp.ClientTimeout(total=8)
-                    ) as resp:
-                        return await resp.json()
-                else:
-                    async with session.post(
-                        url, headers=headers, json=params, timeout=aiohttp.ClientTimeout(total=8)
-                    ) as resp:
-                        return await resp.json()
-        except aiohttp.ClientConnectorError:
-            logging.error(f"Bybit non raggiungibile: {path}")
-            return None
+            kwargs = {"category": "linear", "limit": 500}
+            if cursor:
+                kwargs["cursor"] = cursor
+            res = await _run(get_session().get_instruments_info, **kwargs)
+            if res.get("retCode") != 0:
+                logger.error("get_instruments_info error: %s", res.get("retMsg"))
+                break
+            data = res["result"]
+            for item in data.get("list", []):
+                sym = item.get("symbol", "")
+                if not sym.endswith("USDT"):
+                    continue
+                try:
+                    result[sym] = {
+                        "fundingInterval":   int(item.get("fundingInterval", 480)),  # minuti
+                        "upperFundingRate":  float(item.get("upperFundingRate", 0.00375)),
+                        "lowerFundingRate":  float(item.get("lowerFundingRate", -0.00375)),
+                    }
+                except (ValueError, TypeError):
+                    pass
+            cursor = data.get("nextPageCursor", "")
+            if not cursor:
+                break
         except Exception as e:
-            logging.error(f"Errore richiesta Bybit {method} {path}: {e}")
-            return None
+            logger.error("get_instruments_info: %s", e)
+            break
+    logger.info("Instruments info caricati: %d simboli", len(result))
+    return result
 
-    # ─── API PUBBLICA ───────────────────────────────────────────────
 
-    async def get_funding_rates(self) -> list:
-        """Ritorna tutti i ticker linear USDT con fundingRate e fundingIntervalHour."""
-        res = await self._request("GET", "/v5/market/tickers", {"category": "linear"})
-        if not res or res.get("retCode") != 0:
-            logging.error(f"Errore get_funding_rates: {res}")
+# ── Funding rates (tickers) ───────────────────────────────────────────────────
+async def get_funding_tickers() -> list[dict]:
+    """
+    Restituisce tutti i ticker lineari USDT con funding rate != 0.
+    Campi utili: symbol, fundingRate, nextFundingTime, fundingIntervalHour,
+                 lastPrice, price24hPcnt, prevPrice1h
+    """
+    try:
+        res = await _run(get_session().get_tickers, category="linear")
+        if res.get("retCode") != 0:
+            logger.error("get_tickers error: %s", res.get("retMsg"))
             return []
-        tickers = res["result"]["list"]
-        # Filtra solo USDT perpetual con funding rate valido
-        result = []
-        for t in tickers:
-            symbol = t.get("symbol", "")
-            rate_raw = t.get("fundingRate")
-            interval = t.get("fundingIntervalHour", "8")
-            if not symbol.endswith("USDT"):
-                continue
-            if rate_raw is None:
-                continue
-            try:
-                rate = float(rate_raw) * 100
-            except Exception:
-                continue
-            result.append({
-                "symbol": symbol,
-                "rate": rate,
-                "interval": str(interval),
-            })
-        return result
+        return [
+            t for t in res["result"]["list"]
+            if t.get("symbol", "").endswith("USDT")
+            and float(t.get("fundingRate", 0)) != 0
+        ]
+    except Exception as e:
+        logger.error("get_funding_tickers: %s", e)
+        return []
 
-    # ─── API PRIVATE ────────────────────────────────────────────────
 
-    async def get_wallet_balance(self) -> dict | None:
-        """Ritorna saldo wallet Unified con campi chiave."""
-        res = await self._request(
-            "GET",
-            "/v5/account/wallet-balance",
-            params={"accountType": "UNIFIED"},
-            auth=True,
+# ── Storico funding ───────────────────────────────────────────────────────────
+async def get_funding_history(symbol: str, limit: int = 8) -> list[dict]:
+    """Storico funding rate per un simbolo (ultimi `limit` cicli)."""
+    try:
+        res = await _run(
+            get_session().get_funding_rate_history,
+            category="linear",
+            symbol=symbol,
+            limit=limit,
         )
-        if not res or res.get("retCode") != 0:
-            logging.error(f"Errore get_wallet_balance: {res}")
+        if res.get("retCode") != 0:
+            logger.error("get_funding_history error: %s", res.get("retMsg"))
+            return []
+        return res["result"]["list"]
+    except Exception as e:
+        logger.error("get_funding_history %s: %s", symbol, e)
+        return []
+
+
+# ── Saldo account ─────────────────────────────────────────────────────────────
+async def get_wallet_balance() -> Optional[dict]:
+    """Restituisce il saldo del conto Unified."""
+    try:
+        res = await _run(get_session().get_wallet_balance, accountType="UNIFIED")
+        if res.get("retCode") != 0:
+            logger.error("get_wallet_balance error: %s", res.get("retMsg"))
             return None
-
-        account = res["result"]["list"][0]
-        coins = {}
-        for coin in account.get("coin", []):
-            name = coin.get("coin", "")
-            balance = float(coin.get("walletBalance") or 0)
-            if balance > 0:
-                coins[name] = balance
-
+        accounts = res["result"]["list"]
+        if not accounts:
+            return None
+        acc = accounts[0]
+        coins = [
+            {
+                "coin":          c["coin"],
+                "walletBalance": float(c.get("walletBalance", 0)),
+                "usdValue":      float(c.get("usdValue", 0)),
+                "unrealisedPnl": float(c.get("unrealisedPnl", 0)),
+            }
+            for c in acc.get("coin", [])
+            if float(c.get("walletBalance", 0)) != 0
+        ]
         return {
-            "totalEquity": float(account.get("totalEquity") or 0),
-            "totalWalletBalance": float(account.get("totalWalletBalance") or 0),
-            "totalAvailableBalance": float(account.get("totalAvailableBalance") or 0),
-            "totalMarginBalance": float(account.get("totalMarginBalance") or 0),
-            "totalInitialMargin": float(account.get("totalInitialMargin") or 0),
-            "totalPerpUPL": float(account.get("totalPerpUPL") or 0),
+            "totalEquity":           float(acc.get("totalEquity", 0)),
+            "totalWalletBalance":    float(acc.get("totalWalletBalance", 0)),
+            "totalAvailableBalance": float(acc.get("totalAvailableBalance", 0)),
+            "totalPerpUPL":          float(acc.get("totalPerpUPL", 0)),
+            "totalMarginBalance":    float(acc.get("totalMarginBalance", 0)),
+            "totalInitialMargin":    float(acc.get("totalInitialMargin", 0)),
             "coins": coins,
         }
+    except Exception as e:
+        logger.error("get_wallet_balance: %s", e)
+        return None
 
-    async def get_positions(self) -> list:
-        """Ritorna tutte le posizioni aperte USDT linear."""
-        res = await self._request(
-            "GET",
-            "/v5/position/list",
-            params={"category": "linear", "settleCoin": "USDT", "limit": 200},
-            auth=True,
+
+# ── Posizioni aperte ──────────────────────────────────────────────────────────
+async def get_positions() -> list[dict]:
+    """Restituisce tutte le posizioni aperte (linear USDT perpetual)."""
+    try:
+        res = await _run(
+            get_session().get_positions,
+            category="linear",
+            settleCoin="USDT",
         )
-        if not res or res.get("retCode") != 0:
-            logging.error(f"Errore get_positions: {res}")
+        if res.get("retCode") != 0:
+            logger.error("get_positions error: %s", res.get("retMsg"))
             return []
-
         positions = []
         for p in res["result"]["list"]:
-            size = float(p.get("size") or 0)
+            size = float(p.get("size", 0))
             if size == 0:
                 continue
-
-            position_im = float(p.get("positionIM") or 0)
-            unrealised_pnl = float(p.get("unrealisedPnl") or 0)
-            pnl_pct = (unrealised_pnl / position_im * 100) if position_im > 0 else 0.0
-
-            tp = p.get("takeProfit", "0")
-            sl = p.get("stopLoss", "0")
-
+            position_im   = float(p.get("positionIM", 0))
+            unrealised_pnl = float(p.get("unrealisedPnl", 0))
+            pnl_pct = (unrealised_pnl / position_im * 100) if position_im else 0
             positions.append({
-                "symbol": p.get("symbol", ""),
-                "side": p.get("side", ""),          # "Buy" o "Sell"
-                "size": size,
-                "avgPrice": float(p.get("avgPrice") or 0),
-                "markPrice": float(p.get("markPrice") or 0),
-                "leverage": p.get("leverage", "1"),
-                "unrealisedPnl": unrealised_pnl,
-                "pnlPct": pnl_pct,
-                "positionIM": position_im,
-                "liqPrice": p.get("liqPrice", ""),
-                "takeProfit": tp if tp != "0" else "",
-                "stopLoss": sl if sl != "0" else "",
+                "symbol":         p["symbol"],
+                "side":           p["side"],
+                "size":           size,
+                "avgPrice":       float(p.get("avgPrice", 0)),
+                "markPrice":      float(p.get("markPrice", 0)),
+                "leverage":       p.get("leverage", "—"),
+                "unrealisedPnl":  unrealised_pnl,
+                "pnlPct":         pnl_pct,
+                "positionIM":     position_im,
+                "liqPrice":       float(p.get("liqPrice", 0)),
+                "takeProfit":     float(p.get("takeProfit", 0)),
+                "stopLoss":       float(p.get("stopLoss", 0)),
+                "curRealisedPnl": float(p.get("curRealisedPnl", 0)),
                 "positionStatus": p.get("positionStatus", "Normal"),
             })
         return positions
+    except Exception as e:
+        logger.error("get_positions: %s", e)
+        return []
 
-    async def ping_public(self) -> dict:
-        """Test connessione API pubblica. Ritorna latenza e conteggio simboli."""
-        import time as t
-        start = t.time()
-        res = await self._request("GET", "/v5/market/tickers", {"category": "linear"})
-        latency = int((t.time() - start) * 1000)
-        if res and res.get("retCode") == 0:
-            count = len(res["result"]["list"])
-            example = None
-            for item in res["result"]["list"]:
-                if item.get("symbol") == "BTCUSDT":
-                    rate = float(item.get("fundingRate", 0)) * 100
-                    interval = item.get("fundingIntervalHour", "8")
-                    example = f"BTCUSDT → {rate:+.4f}%  ({interval}H)"
-                    break
-            return {"ok": True, "latency": latency, "count": count, "example": example}
-        return {"ok": False, "latency": latency, "error": str(res)}
 
-    async def ping_auth(self) -> dict:
-        """Test connessione API autenticata."""
-        import time as t
-        start = t.time()
-        res = await self._request(
-            "GET",
-            "/v5/account/wallet-balance",
-            params={"accountType": "UNIFIED"},
-            auth=True,
-        )
-        latency = int((t.time() - start) * 1000)
-        if res and res.get("retCode") == 0:
-            coins = res["result"]["list"][0].get("coin", [])
-            usdt = next((c for c in coins if c.get("coin") == "USDT"), None)
-            usdt_balance = float(usdt.get("walletBalance") or 0) if usdt else 0.0
-            return {"ok": True, "latency": latency, "retCode": 0, "usdt": usdt_balance}
-        error_msg = res.get("retMsg", "Errore sconosciuto") if res else "Timeout / non raggiungibile"
-        ret_code = res.get("retCode") if res else None
-        return {"ok": False, "latency": latency, "error": error_msg, "retCode": ret_code}
+# ── Test connessione ──────────────────────────────────────────────────────────
+async def test_connection() -> dict:
+    """Esegue 3 test di connessione e restituisce i risultati."""
+    results = {}
 
-    async def ping_positions(self) -> dict:
-        """Test connessione API posizioni."""
-        import time as t
-        start = t.time()
-        res = await self._request(
-            "GET",
-            "/v5/position/list",
-            params={"category": "linear", "settleCoin": "USDT", "limit": 1},
-            auth=True,
-        )
-        latency = int((t.time() - start) * 1000)
-        if res and res.get("retCode") == 0:
-            count = len([p for p in res["result"]["list"] if float(p.get("size") or 0) > 0])
-            return {"ok": True, "latency": latency, "count": count}
-        error_msg = res.get("retMsg", "Errore") if res else "Timeout"
-        return {"ok": False, "latency": latency, "error": error_msg}
+    # Test 1 — Public API
+    t0 = time.monotonic()
+    try:
+        res = await _run(get_session().get_tickers, category="linear")
+        lat = int((time.monotonic() - t0) * 1000)
+        if res.get("retCode") == 0:
+            results["public"] = {"ok": True, "latency_ms": lat, "symbols": len(res["result"]["list"])}
+        else:
+            results["public"] = {"ok": False, "error": res.get("retMsg"), "latency_ms": lat}
+    except Exception as e:
+        results["public"] = {"ok": False, "error": str(e), "latency_ms": -1}
+
+    # Test 2 — Authenticated (wallet)
+    t0 = time.monotonic()
+    try:
+        res = await _run(get_session().get_wallet_balance, accountType="UNIFIED")
+        lat = int((time.monotonic() - t0) * 1000)
+        if res.get("retCode") == 0:
+            acc    = res["result"]["list"][0] if res["result"]["list"] else {}
+            equity = float(acc.get("totalEquity", 0))
+            results["auth"] = {"ok": True, "latency_ms": lat, "equity": equity}
+        else:
+            results["auth"] = {"ok": False, "error": res.get("retMsg"), "latency_ms": lat}
+    except Exception as e:
+        results["auth"] = {"ok": False, "error": str(e), "latency_ms": -1}
+
+    # Test 3 — Positions
+    if results.get("auth", {}).get("ok"):
+        t0 = time.monotonic()
+        try:
+            res = await _run(get_session().get_positions, category="linear", settleCoin="USDT")
+            lat = int((time.monotonic() - t0) * 1000)
+            if res.get("retCode") == 0:
+                count = sum(1 for p in res["result"]["list"] if float(p.get("size", 0)) > 0)
+                results["positions"] = {"ok": True, "latency_ms": lat, "open": count}
+            else:
+                results["positions"] = {"ok": False, "error": res.get("retMsg"), "latency_ms": lat}
+        except Exception as e:
+            results["positions"] = {"ok": False, "error": str(e), "latency_ms": -1}
+    else:
+        results["positions"] = {"ok": False, "error": "Skipped (auth failed)", "latency_ms": -1}
+
+    return results
