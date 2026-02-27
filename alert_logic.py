@@ -399,6 +399,16 @@ def process_funding(symbol: str, rate_pct: float, interval_h) -> str | None:
 
     # 5. Livello nuovo o upgrade → alert
     state["level"] = new_level
+
+    # close_tip: invia solo se il simbolo è già "funded" (ha avuto HIGH+)
+    # o se esplicitamente monitored via watchlist (check esterno in bot.py)
+    if new_level == "close_tip" and not is_funded(symbol):
+        return None  # sopprimi close_tip per simboli non ancora allertati
+
+    # Segna il simbolo come funded per HIGH / EXTREME / HARD
+    if new_level in ("high", "extreme", "hard"):
+        mark_funded(symbol)
+
     return format_alert(symbol, rate_pct, interval_h, new_level, prev_level)
 
 
@@ -440,6 +450,24 @@ def process_next_funding(
 _pump_state: dict[str, float] = {}
 PUMP_THRESHOLD_1H = float(os.getenv("PUMP_THRESHOLD_1H",  5.0))
 DUMP_THRESHOLD_1H = float(os.getenv("DUMP_THRESHOLD_1H", -5.0))
+
+# ──────────────────────────────────────────────────────────────────────────────
+# FUNDED SYMBOLS — set di simboli che hanno ricevuto alert HIGH/EXTREME/HARD
+# Usato per filtrare PUMP/DUMP e CLOSE_TIP solo su coppie rilevanti
+# ──────────────────────────────────────────────────────────────────────────────
+_funded_symbols: set[str] = set()
+
+def mark_funded(symbol: str) -> None:
+    """Registra che il simbolo ha ricevuto almeno un alert HIGH/EXTREME/HARD."""
+    _funded_symbols.add(symbol)
+
+def is_funded(symbol: str) -> bool:
+    """True se il simbolo ha ricevuto un alert HIGH/EXTREME/HARD in questa sessione."""
+    return symbol in _funded_symbols
+
+def get_funded_symbols() -> set[str]:
+    """Restituisce copia del set di simboli funded."""
+    return set(_funded_symbols)
 
 
 def process_pump_dump(
