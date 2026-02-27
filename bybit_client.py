@@ -7,6 +7,7 @@ import asyncio
 import logging
 import os
 import time
+from datetime import datetime, timezone
 from typing import Optional
 
 from pybit.unified_trading import HTTP
@@ -117,7 +118,7 @@ async def get_funding_tickers() -> list[dict]:
         return []
 
 
-# ── Storico funding ───────────────────────────────────────────────────────────
+# ── Storico funding (ultimi N cicli) ─────────────────────────────────────────
 async def get_funding_history(symbol: str, limit: int = 8) -> list[dict]:
     """Storico funding rate per un simbolo (ultimi `limit` cicli)."""
     try:
@@ -134,6 +135,56 @@ async def get_funding_history(symbol: str, limit: int = 8) -> list[dict]:
     except Exception as e:
         logger.error("get_funding_history %s: %s", symbol, e)
         return []
+
+
+# ── Storico funding 7 giorni ──────────────────────────────────────────────────
+async def get_funding_history_7d(symbol: str) -> list[dict]:
+    """
+    Restituisce tutti i cicli di funding degli ultimi 7 giorni per il simbolo.
+    Usa startTime/endTime per coprire esattamente la finestra temporale.
+    Gestisce automaticamente la paginazione (max 200 per chiamata).
+
+    Ogni entry: { symbol, fundingRate (str), fundingRateTimestamp (str ms) }
+    Ordine: dal più recente al meno recente.
+    """
+    now_ms   = int(time.time() * 1000)
+    start_ms = now_ms - 7 * 24 * 3600 * 1000   # 7 giorni fa
+
+    all_entries: list[dict] = []
+    cursor = ""
+
+    while True:
+        try:
+            kwargs = {
+                "category":  "linear",
+                "symbol":    symbol,
+                "startTime": str(start_ms),
+                "endTime":   str(now_ms),
+                "limit":     200,
+            }
+            if cursor:
+                kwargs["cursor"] = cursor
+
+            res = await _run(
+                get_session().get_funding_rate_history,
+                **kwargs,
+            )
+            if res.get("retCode") != 0:
+                logger.error("get_funding_history_7d error: %s", res.get("retMsg"))
+                break
+
+            entries = res["result"].get("list", [])
+            all_entries.extend(entries)
+
+            cursor = res["result"].get("nextPageCursor", "")
+            if not cursor or not entries:
+                break
+
+        except Exception as e:
+            logger.error("get_funding_history_7d %s: %s", symbol, e)
+            break
+
+    return all_entries
 
 
 # ── Saldo account ─────────────────────────────────────────────────────────────
