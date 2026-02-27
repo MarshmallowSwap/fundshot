@@ -284,6 +284,17 @@ async def test_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if pos.get("ok") else
         f"❌ FAIL — {pos.get('error', '?')}"
     )
+    # Aggiungi dettaglio per-categoria se ci sono errori
+    detail = pos.get("detail", {})
+    detail_lines = []
+    for lbl, d in detail.items():
+        if isinstance(d, dict):
+            code = d.get("retCode", "?")
+            msg  = d.get("retMsg", d.get("error", ""))
+            nz   = d.get("nonzero", 0)
+            icon = "✅" if code == 0 else "⚠️"
+            detail_lines.append(f"   {icon} [{lbl}] code={code} pos={nz} {msg[:40] if msg else ''}")
+    pos_detail_str = "\n" + "\n".join(detail_lines) if detail_lines else ""
 
     all_ok = p.get("ok") and a.get("ok") and pos.get("ok")
     summary = "✅ Tutti i test superati" if all_ok else "⚠️ Alcuni test falliti"
@@ -292,7 +303,7 @@ async def test_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"🔧 *TEST CONNESSIONE BYBIT*\n\n"
         f"1️⃣ API Pubblica\n   {pub_line}\n\n"
         f"2️⃣ API Autenticata\n   {auth_line}\n\n"
-        f"3️⃣ Posizioni\n   {pos_line}\n\n"
+        f"3️⃣ Posizioni\n   {pos_line}{pos_detail_str}\n\n"
         f"⏱ Tempo totale: {total_ms} ms\n"
         f"{summary}"
     )
@@ -578,7 +589,28 @@ async def posizioni(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     positions = await bc.get_positions()
     if not positions:
-        await update.message.reply_text("📭 Nessuna posizione aperta.")
+        # Esegui diagnostica veloce per capire il motivo
+        diag = await bc.test_positions_api()
+        diag_lines = ["📭 *Nessuna posizione aperta trovata.*"]
+        diag_lines.append("")
+        diag_lines.append("🔍 *Diagnostica API:*")
+        all_ok = True
+        for lbl, d in diag.items():
+            if isinstance(d, dict):
+                code = d.get("retCode", "?")
+                msg  = d.get("retMsg", d.get("error", ""))
+                nz   = d.get("nonzero", 0)
+                icon = "✅" if code == 0 else "⚠️"
+                if code != 0:
+                    all_ok = False
+                diag_lines.append(f"  {icon} `{lbl}` — code={code}, pos={nz}")
+                if code != 0 and msg:
+                    diag_lines.append(f"     _{msg[:60]}_")
+        if all_ok:
+            diag_lines.append("")
+            diag_lines.append("ℹ️ L'API risponde correttamente — le posizioni sono realmente vuote su questo account.")
+            diag_lines.append("💡 Se hai posizioni aperte, verifica che le API Key appartengano all'account corretto.")
+        await update.message.reply_text("\n".join(diag_lines), parse_mode="Markdown")
         return
 
     lines = ["📋 *POSIZIONI APERTE — Bybit*\n"]
