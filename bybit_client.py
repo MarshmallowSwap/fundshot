@@ -225,18 +225,27 @@ async def get_wallet_balance() -> Optional[dict]:
 
 # ── Posizioni aperte ──────────────────────────────────────────────────────────
 async def get_positions() -> list[dict]:
-    """Restituisce tutte le posizioni aperte (linear perpetual, USDT e USDC)."""
+    """
+    Restituisce tutte le posizioni aperte.
+    Copre: linear (USDT + USDC) e inverse (coin-margined).
+    """
     positions = []
-    for settle in ("USDT", "USDC"):
+    queries = [
+        {"category": "linear", "settleCoin": "USDT", "limit": 200},
+        {"category": "linear", "settleCoin": "USDC", "limit": 200},
+        {"category": "inverse", "limit": 200},
+    ]
+    for kwargs in queries:
+        cat = kwargs["category"]
         try:
-            res = await _run(
-                get_session().get_positions,
-                category="linear",
-                settleCoin=settle,
-                limit=200,
-            )
-            if res.get("retCode") != 0:
-                logger.error("get_positions [%s] error: %s", settle, res.get("retMsg"))
+            res = await _run(get_session().get_positions, **kwargs)
+            code = res.get("retCode")
+            if code != 0:
+                logger.warning(
+                    "get_positions [%s/%s] retCode=%s msg=%s",
+                    cat, kwargs.get("settleCoin", "—"),
+                    code, res.get("retMsg"),
+                )
                 continue
             for p in res["result"]["list"]:
                 size = float(p.get("size", 0))
@@ -260,10 +269,35 @@ async def get_positions() -> list[dict]:
                     "stopLoss":       float(p.get("stopLoss", 0)),
                     "curRealisedPnl": float(p.get("curRealisedPnl", 0)),
                     "positionStatus": p.get("positionStatus", "Normal"),
+                    "category":       cat,
                 })
         except Exception as e:
-            logger.error("get_positions [%s]: %s", settle, e)
+            logger.error("get_positions [%s/%s]: %s", cat, kwargs.get("settleCoin", "—"), e)
     return positions
+
+
+async def test_positions_api() -> dict:
+    """Diagnostica: ritorna retCode/retMsg per ogni query posizioni."""
+    results = {}
+    queries = [
+        ("linear+USDT", {"category": "linear", "settleCoin": "USDT", "limit": 10}),
+        ("linear+USDC", {"category": "linear", "settleCoin": "USDC", "limit": 10}),
+        ("inverse",     {"category": "inverse", "limit": 10}),
+    ]
+    for label, kwargs in queries:
+        try:
+            res = await _run(get_session().get_positions, **kwargs)
+            items = res.get("result", {}).get("list", [])
+            nz = [p for p in items if float(p.get("size", 0)) != 0]
+            results[label] = {
+                "retCode": res.get("retCode"),
+                "retMsg":  res.get("retMsg", ""),
+                "total":   len(items),
+                "nonzero": len(nz),
+            }
+        except Exception as e:
+            results[label] = {"error": str(e)}
+    return results
 
 
 # ── Test connessione ──────────────────────────────────────────────────────────
@@ -297,17 +331,22 @@ async def test_connection() -> dict:
     except Exception as e:
         results["auth"] = {"ok": False, "error": str(e), "latency_ms": -1}
 
-    # Test 3 — Positions
+    # Test 3 — Positions (tutte le categorie)
     if results.get("auth", {}).get("ok"):
         t0 = time.monotonic()
         try:
-            res = await _run(get_session().get_positions, category="linear", settleCoin="USDT")
-            lat = int((time.monotonic() - t0) * 1000)
-            if res.get("retCode") == 0:
-                count = sum(1 for p in res["result"]["list"] if float(p.get("size", 0)) > 0)
-                results["positions"] = {"ok": True, "latency_ms": lat, "open": count}
-            else:
-                results["positions"] = {"ok": False, "error": res.get("retMsg"), "latency_ms": lat}
+            diag = await test_positions_api()
+            lat  = int((time.monotonic() - t0) * 1000)
+            total_nz = sum(d.get("nonzero", 0) for d in diag.values() if isinstance(d, dict))
+            errors = [f"{lbl}: {d.get('retMsg',d.get('error','?'))}" for lbl,d in diag.items()
+                      if isinstance(d,dict) and d.get("retCode",0) != 0]
+            results["positions"] = {
+                "ok":         not bool(errors) or total_nz > 0,
+                "latency_ms": lat,
+                "open":       total_nz,
+                "detail":     diag,
+                "errors":     errors,
+            }
         except Exception as e:
             results["positions"] = {"ok": False, "error": str(e), "latency_ms": -1}
     else:
