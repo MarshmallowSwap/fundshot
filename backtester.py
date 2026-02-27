@@ -20,6 +20,9 @@ import logging
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
+
+TZ_IT = ZoneInfo("Europe/Rome")
 from typing import Optional
 
 import bybit_client as bc
@@ -90,13 +93,13 @@ class Trade:
 
     @property
     def entry_dt(self) -> str:
-        return datetime.fromtimestamp(self.entry_ts / 1000, tz=timezone.utc).strftime("%d/%m %H:%M")
+        return datetime.fromtimestamp(self.entry_ts / 1000, tz=TZ_IT).strftime("%d/%m %H:%M")
 
     @property
     def exit_dt(self) -> str:
         if not self.exit_ts:
             return "aperto"
-        return datetime.fromtimestamp(self.exit_ts / 1000, tz=timezone.utc).strftime("%d/%m %H:%M")
+        return datetime.fromtimestamp(self.exit_ts / 1000, tz=TZ_IT).strftime("%d/%m %H:%M")
 
 
 @dataclass
@@ -181,13 +184,13 @@ class BacktestResult:
     def start_dt(self) -> str:
         if not self.start_ts:
             return "—"
-        return datetime.fromtimestamp(self.start_ts / 1000, tz=timezone.utc).strftime("%d/%m/%Y")
+        return datetime.fromtimestamp(self.start_ts / 1000, tz=TZ_IT).strftime("%d/%m/%Y")
 
     @property
     def end_dt(self) -> str:
         if not self.end_ts:
             return "—"
-        return datetime.fromtimestamp(self.end_ts / 1000, tz=timezone.utc).strftime("%d/%m/%Y")
+        return datetime.fromtimestamp(self.end_ts / 1000, tz=TZ_IT).strftime("%d/%m/%Y")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
