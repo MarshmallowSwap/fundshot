@@ -21,6 +21,7 @@ from telegram.ext import (
 import bybit_client as bc
 import alert_logic as al
 import watchlist_manager as wm
+import backtester as bt
 
 logger = logging.getLogger(__name__)
 
@@ -168,7 +169,8 @@ async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "/funding\\_bottom — Top 10 funding negativi (LONG)\n"
         "/top10 — Classifica 10 SHORT + 10 LONG in tempo reale\n"
         "/storico `<SIMBOLO>` — Ultimi 8 cicli\n"
-        "/storico7g `<SIMBOLO>` — Storico 7 giorni con grafici\n\n"
+        "/storico7g `<SIMBOLO>` — Storico 7 giorni con grafici\n"
+        "/backtest `<SYM|top10|watchlist>` — Simula P&L 30 giorni\n\n"
         "━━━━━━━━━━━━━━━━━━━━━\n"
         "💼 *ACCOUNT*\n"
         "/saldo — Saldo wallet Bybit\n"
@@ -1099,6 +1101,144 @@ async def top10(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# BACKTEST
+# ══════════════════════════════════════════════════════════════════════════════
+
+async def backtest_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    /backtest <SYMBOL>         — Report completo su un simbolo (30gg)
+    /backtest top10            — Classifica top 10 simboli più volatili
+    /backtest watchlist        — Analizza tutti i simboli nella watchlist
+
+    Esempi:
+      /backtest SOLUSDT
+      /backtest top10
+      /backtest watchlist
+    """
+    args = context.args or []
+
+    if not args:
+        await update.message.reply_text(
+            "📊 *BACKTEST — Uso corretto:*\n"
+            "━━━━━━━━━━━━━━━━━━━━━\n"
+            "`/backtest SOLUSDT`       — Singolo simbolo\n"
+            "`/backtest top10`         — Top 10 più volatili\n"
+            "`/backtest watchlist`     — Tua watchlist\n\n"
+            "_Simula profitti/perdite basati sugli alert del bot negli ultimi 30 giorni._\n"
+            "_Include fee taker (0.055%) + slippage (0.02%) per lato._",
+            parse_mode="Markdown",
+        )
+        return
+
+    subcmd = args[0].upper()
+
+    # ── /backtest top10 ───────────────────────────────────────────────────
+    if subcmd == "TOP10":
+        wait_msg = await update.message.reply_text(
+            "⏳ *Backtest top 10 simboli…*\n"
+            "_Recupero dati 30gg da Bybit (può richiedere 30-60 secondi)_",
+            parse_mode="Markdown",
+        )
+        try:
+            # Prendi i 10 simboli con funding rate assoluto più alto
+            tickers = await bc.get_funding_tickers()
+            if not tickers:
+                await wait_msg.edit_text("❌ Impossibile recuperare i ticker da Bybit.")
+                return
+
+            top_symbols = sorted(
+                tickers,
+                key=lambda t: abs(float(t.get("fundingRate", 0))),
+                reverse=True,
+            )[:10]
+            symbols = [t["symbol"] for t in top_symbols]
+
+            results = await bt.run_multi_backtest(symbols)
+            report  = bt.format_multi_backtest_report(results, title="TOP 10 SIMBOLI")
+
+            await wait_msg.delete()
+            # Splitta se troppo lungo
+            if len(report) <= 4096:
+                await update.message.reply_text(report, parse_mode="Markdown")
+            else:
+                for chunk in [report[i:i+4096] for i in range(0, len(report), 4096)]:
+                    await update.message.reply_text(chunk, parse_mode="Markdown")
+
+        except Exception as exc:
+            logger.error("backtest top10: %s", exc)
+            await wait_msg.edit_text(f"❌ Errore durante il backtest: {exc}")
+        return
+
+    # ── /backtest watchlist ───────────────────────────────────────────────
+    if subcmd == "WATCHLIST":
+        symbols = list(wm.get_watchlist())
+        if not symbols:
+            await update.message.reply_text(
+                "⚠️ La tua watchlist è vuota.\n"
+                "Aggiungi simboli con `/watch BTCUSDT SOLUSDT`",
+                parse_mode="Markdown",
+            )
+            return
+
+        wait_msg = await update.message.reply_text(
+            f"⏳ *Backtest watchlist ({len(symbols)} simboli)…*\n"
+            f"_Recupero dati 30gg da Bybit…_",
+            parse_mode="Markdown",
+        )
+        try:
+            results = await bt.run_multi_backtest(symbols)
+            report  = bt.format_multi_backtest_report(results, title="WATCHLIST")
+
+            await wait_msg.delete()
+            if len(report) <= 4096:
+                await update.message.reply_text(report, parse_mode="Markdown")
+            else:
+                for chunk in [report[i:i+4096] for i in range(0, len(report), 4096)]:
+                    await update.message.reply_text(chunk, parse_mode="Markdown")
+
+        except Exception as exc:
+            logger.error("backtest watchlist: %s", exc)
+            await wait_msg.edit_text(f"❌ Errore durante il backtest: {exc}")
+        return
+
+    # ── /backtest SYMBOL ──────────────────────────────────────────────────
+    symbol = subcmd
+    # Normalizza (aggiunge USDT se non presente)
+    if not symbol.endswith("USDT") and not symbol.endswith("USDC"):
+        symbol = symbol + "USDT"
+
+    wait_msg = await update.message.reply_text(
+        f"⏳ *Backtest {symbol}…*\n"
+        f"_Recupero {bt.DAYS_BACK} giorni di funding rate da Bybit…_",
+        parse_mode="Markdown",
+    )
+
+    try:
+        entries = await bt.fetch_30d(symbol)
+        if not entries:
+            await wait_msg.edit_text(
+                f"❌ Nessun dato trovato per `{symbol}`.\n"
+                f"Verifica che il simbolo esista su Bybit.",
+                parse_mode="Markdown",
+            )
+            return
+
+        result = bt.run_backtest(symbol, entries)
+        report = bt.format_backtest_report(result)
+
+        await wait_msg.delete()
+        if len(report) <= 4096:
+            await update.message.reply_text(report, parse_mode="Markdown")
+        else:
+            for chunk in [report[i:i+4096] for i in range(0, len(report), 4096)]:
+                await update.message.reply_text(chunk, parse_mode="Markdown")
+
+    except Exception as exc:
+        logger.error("backtest %s: %s", symbol, exc)
+        await wait_msg.edit_text(f"❌ Errore durante il backtest di {symbol}: {exc}")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # Registrazione handlers
 # ══════════════════════════════════════════════════════════════════════════════
 
@@ -1134,3 +1274,4 @@ def register(app):
     app.add_handler(CommandHandler("unmute", unmute_cmd))
     app.add_handler(CommandHandler("watchlist", watchlist_cmd))
     app.add_handler(CommandHandler("alerts", alerts_cmd))
+    app.add_handler(CommandHandler("backtest", backtest_cmd))
