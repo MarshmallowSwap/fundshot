@@ -172,6 +172,7 @@ async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "📊 *FUNDING RATE*\n"
         "/funding\\_top — Top 10 funding positivi (SHORT)\n"
         "/funding\\_bottom — Top 10 funding negativi (LONG)\n"
+        "/top10 — Classifica 10 SHORT + 10 LONG in tempo reale\n"
         "/storico `<SIMBOLO>` — Ultimi 8 cicli\n"
         "/storico7g `<SIMBOLO>` — Storico 7 giorni con grafici\n\n"
         "━━━━━━━━━━━━━━━━━━━━━\n"
@@ -702,6 +703,157 @@ def _set_env(key: str, value: str):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# /top10 — Classifica unificata in tempo reale
+# ══════════════════════════════════════════════════════════════════════════════
+
+# Numero di simboli per lato (SHORT / LONG)
+_TOP_N = 10
+
+# Barra proporzionale (max 12 █)
+_BAR_MAX = 12
+
+
+def _rate_bar(rate_pct: float, max_abs: float) -> str:
+    """Genera una barra █ proporzionale al rate rispetto al massimo della lista."""
+    if max_abs == 0:
+        return "▏"
+    length = max(1, int(abs(rate_pct) / max_abs * _BAR_MAX))
+    return "█" * length
+
+
+def _level_badge(abs_rate: float) -> str:
+    """Restituisce il badge di livello in base alle soglie fisse."""
+    if abs_rate >= 2.00:
+        return "🔴HARD"
+    if abs_rate >= 1.50:
+        return "🔥EXT"
+    if abs_rate >= 1.00:
+        return "🚨HIGH"
+    if abs_rate >= 0.23:
+        return "ℹ️CHI"
+    return "✅OK"
+
+
+def _settlement_label(next_ts_ms: int) -> str:
+    """Restituisce il tempo mancante al prossimo settlement in formato leggibile."""
+    if not next_ts_ms:
+        return "—"
+    import time
+    minutes_left = (next_ts_ms - int(time.time() * 1000)) / 60000
+    if minutes_left < 0:
+        return "ora"
+    if minutes_left < 60:
+        return f"{int(minutes_left)}m"
+    h = int(minutes_left // 60)
+    m = int(minutes_left % 60)
+    return f"{h}h{m:02d}m"
+
+
+async def top10(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    /top10 — Classifica dei 10 simboli con funding rate più estremi
+    per lato SHORT (positivi) e LONG (negativi), in tempo reale.
+    """
+    msg = await update.message.reply_text("⏳ Recupero dati in tempo reale...")
+
+    tickers = await bc.get_funding_tickers()
+    if not tickers:
+        await msg.edit_text("❌ Impossibile recuperare i dati da Bybit. Riprova.")
+        return
+
+    # Parsing e ordinamento
+    parsed = []
+    for t in tickers:
+        try:
+            rate_pct     = float(t.get("fundingRate", 0)) * 100
+            interval_h   = int(t.get("fundingIntervalHour", 8))
+            next_ts      = int(t.get("nextFundingTime", 0))
+            last_price   = float(t.get("lastPrice", 0))
+            pct_24h      = float(t.get("price24hPcnt", 0)) * 100
+            parsed.append({
+                "symbol":     t["symbol"],
+                "rate":       rate_pct,
+                "interval_h": interval_h,
+                "next_ts":    next_ts,
+                "last_price": last_price,
+                "pct_24h":    pct_24h,
+            })
+        except (ValueError, KeyError):
+            continue
+
+    # Top 10 SHORT (rate più positivi)
+    shorts = sorted(parsed, key=lambda x: x["rate"], reverse=True)[:_TOP_N]
+    # Top 10 LONG  (rate più negativi)
+    longs  = sorted(parsed, key=lambda x: x["rate"])[:_TOP_N]
+
+    max_short = abs(shorts[0]["rate"]) if shorts else 1
+    max_long  = abs(longs[0]["rate"])  if longs  else 1
+
+    now_dt = datetime.now(timezone.utc).strftime("%H:%M UTC")
+
+    # ── Sezione SHORT ─────────────────────────────────────────────────────────
+    short_lines = [
+        f"⚡ *TOP {_TOP_N} SHORT* (funding positivo)",
+        f"_Aggiornato: {now_dt}_",
+        "`#   Simbolo        Rate      Lvl   Next  24H`",
+        "`─────────────────────────────────────────────`",
+    ]
+    for i, t in enumerate(shorts, 1):
+        bar      = _rate_bar(t["rate"], max_short)
+        badge    = _level_badge(t["rate"])
+        settle   = _settlement_label(t["next_ts"])
+        p24h     = f"{t['pct_24h']:+.1f}%"
+        interval = f"{t['interval_h']}H"
+        short_lines.append(
+            f"`{i:>2}.` *{t['symbol']:<12}* `{t['rate']:+.4f}%`\n"
+            f"     `{bar:<12}` {badge} · {interval} · {settle} · {p24h}"
+        )
+
+    # ── Sezione LONG ──────────────────────────────────────────────────────────
+    long_lines = [
+        "",
+        f"⚡ *TOP {_TOP_N} LONG* (funding negativo)",
+        "`#   Simbolo        Rate      Lvl   Next  24H`",
+        "`─────────────────────────────────────────────`",
+    ]
+    for i, t in enumerate(longs, 1):
+        bar      = _rate_bar(t["rate"], max_long)
+        badge    = _level_badge(abs(t["rate"]))
+        settle   = _settlement_label(t["next_ts"])
+        p24h     = f"{t['pct_24h']:+.1f}%"
+        interval = f"{t['interval_h']}H"
+        long_lines.append(
+            f"`{i:>2}.` *{t['symbol']:<12}* `{t['rate']:+.4f}%`\n"
+            f"     `{bar:<12}` {badge} · {interval} · {settle} · {p24h}"
+        )
+
+    # ── Footer statistiche ────────────────────────────────────────────────────
+    total_sym   = len(parsed)
+    extreme_sym = sum(1 for t in parsed if abs(t["rate"]) >= 1.0)
+    hard_sym    = sum(1 for t in parsed if abs(t["rate"]) >= 2.0)
+    avg_abs     = sum(abs(t["rate"]) for t in parsed) / total_sym if total_sym else 0
+
+    footer = [
+        "",
+        "─────────────────────────────",
+        f"📊 *Mercato* — {total_sym} simboli monitorati",
+        f"   🚨 ≥1%: {extreme_sym}   🔴 ≥2%: {hard_sym}   Media: {avg_abs:.4f}%",
+    ]
+
+    # ── Invio ────────────────────────────────────────────────────────────────
+    full_msg = "\n".join(short_lines + long_lines + footer)
+
+    # Telegram: max 4096 char — se supera split in 2
+    if len(full_msg) > 4000:
+        part1 = "\n".join(short_lines + footer)
+        part2 = "\n".join(long_lines[1:] + footer)  # [1:] salta riga vuota iniziale
+        await msg.edit_text(part1, parse_mode="Markdown")
+        await update.message.reply_text(part2, parse_mode="Markdown")
+    else:
+        await msg.edit_text(full_msg, parse_mode="Markdown")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # Registrazione handlers
 # ══════════════════════════════════════════════════════════════════════════════
 
@@ -724,6 +876,7 @@ def register(app):
     app.add_handler(CommandHandler("help", help_cmd))
     app.add_handler(CommandHandler("status", status_cmd))
     app.add_handler(CommandHandler("test", test_cmd))
+    app.add_handler(CommandHandler("top10", top10))
     app.add_handler(CommandHandler("funding_top", funding_top))
     app.add_handler(CommandHandler("funding_bottom", funding_bottom))
     app.add_handler(CommandHandler("storico", storico))
