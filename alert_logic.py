@@ -8,6 +8,9 @@ import time
 import logging
 from collections import deque
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
+
+TZ_IT = ZoneInfo("Europe/Rome")
 
 logger = logging.getLogger(__name__)
 
@@ -289,8 +292,8 @@ def format_next_funding_alert(
         f"Ciclo: {current_interval}  (invariato)"
     )
 
-    settlement_dt  = datetime.fromtimestamp(next_funding_ts_ms / 1000, tz=timezone.utc)
-    settlement_str = settlement_dt.strftime("%H:%M UTC")
+    settlement_dt  = datetime.fromtimestamp(next_funding_ts_ms / 1000, tz=TZ_IT)
+    settlement_str = settlement_dt.strftime("%H:%M %Z")
 
     return (
         f"⏰ FUNDING TRA {minutes_left} MIN — {symbol}\n"
