@@ -162,6 +162,19 @@ def is_watched(symbol: str) -> bool:
     return s in _data["watchlist"]
 
 
+def is_explicitly_watched(symbol: str) -> bool:
+    """
+    Restituisce True SOLO se il simbolo è nella watchlist esplicita (non-vuota).
+    A differenza di is_watched, NON restituisce True in modalità 'monitora tutto'.
+    Usato per decidere se inviare alert secondari (close_tip, pump/dump)
+    a simboli che non hanno ancora ricevuto un alert di funding.
+    """
+    s = symbol.upper()
+    if s in _data["muted"]:
+        return False
+    return bool(_data["watchlist"]) and s in _data["watchlist"]
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # Soglie custom per simbolo
 # ══════════════════════════════════════════════════════════════════════════════
