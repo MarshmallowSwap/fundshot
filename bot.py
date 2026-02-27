@@ -7,6 +7,9 @@ import asyncio
 import logging
 import os
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
+
+TZ_IT = ZoneInfo("Europe/Rome")
 
 from dotenv import load_dotenv
 from telegram import Bot
@@ -57,7 +60,7 @@ async def funding_job(context):
 
     bot_data["symbols_count"] = len(tickers)
     bot_data["monitoring"]    = True
-    bot_data["last_cycle"]    = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M:%S UTC")
+    bot_data["last_cycle"]    = datetime.now(TZ_IT).strftime("%d/%m/%Y %H:%M:%S %Z")
 
     if not tickers:
         logger.warning("Nessun ticker ricevuto.")
@@ -109,7 +112,7 @@ async def post_init(app):
     global _bot_ref
     _bot_ref = app.bot
 
-    app.bot_data["uptime_start"]  = datetime.now(timezone.utc)
+    app.bot_data["uptime_start"]  = datetime.now(TZ_IT)
     app.bot_data["alerts_sent"]   = 0
     app.bot_data["monitoring"]    = False
     app.bot_data["symbols_count"] = 0
