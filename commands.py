@@ -7,6 +7,9 @@ import os
 import logging
 import re
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
+
+TZ_IT = ZoneInfo("Europe/Rome")
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
@@ -215,7 +218,7 @@ async def status_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     uptime_str = "—"
     if uptime:
-        delta = datetime.now(timezone.utc) - uptime
+        delta = datetime.now(TZ_IT) - uptime
         h, rem = divmod(int(delta.total_seconds()), 3600)
         m = rem // 60
         uptime_str = f"{h}h {m}m"
@@ -378,9 +381,9 @@ async def storico(update: Update, context: ContextTypes.DEFAULT_TYPE):
     for entry in history:
         rate = float(entry.get("fundingRate", 0)) * 100
         ts = int(entry.get("fundingRateTimestamp", 0)) // 1000
-        dt = datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%d/%m %H:%M")
+        dt = datetime.fromtimestamp(ts, tz=TZ_IT).strftime("%d/%m %H:%M")
         emoji = "🟢" if rate >= 0 else "🔴"
-        lines.append(f"{emoji} {dt} UTC → *{rate:+.4f}%*")
+        lines.append(f"{emoji} {dt} → *{rate:+.4f}%*")
 
     await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
 
@@ -455,8 +458,8 @@ async def storico7g(update: Update, context: ContextTypes.DEFAULT_TYPE):
     min_rate  = min(rates)
     max_idx   = rates.index(max_rate)
     min_idx   = rates.index(min_rate)
-    max_dt    = datetime.fromtimestamp(timestamps[max_idx], tz=timezone.utc).strftime("%d/%m %H:%M")
-    min_dt    = datetime.fromtimestamp(timestamps[min_idx], tz=timezone.utc).strftime("%d/%m %H:%M")
+    max_dt    = datetime.fromtimestamp(timestamps[max_idx], tz=TZ_IT).strftime("%d/%m %H:%M")
+    min_dt    = datetime.fromtimestamp(timestamps[min_idx], tz=TZ_IT).strftime("%d/%m %H:%M")
     last_rate = rates[-1]  # più recente
     trend     = _trend_emoji(rates)
 
@@ -478,7 +481,7 @@ async def storico7g(update: Update, context: ContextTypes.DEFAULT_TYPE):
     from collections import defaultdict
     daily: dict[str, list[float]] = defaultdict(list)
     for rate, ts in zip(rates, timestamps):
-        day = datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%d/%m")
+        day = datetime.fromtimestamp(ts, tz=TZ_IT).strftime("%d/%m")
         daily[day].append(rate)
 
     daily_lines = []
@@ -522,8 +525,8 @@ async def storico7g(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "📊 *Statistiche globali:*",
         f"  Media (signed):  `{avg_rate:+.4f}%`",
         f"  Media (assoluta):`{avg_abs:+.4f}%`",
-        f"  Max:  `{max_rate:+.4f}%`  ({max_dt} UTC)",
-        f"  Min:  `{min_rate:+.4f}%`  ({min_dt} UTC)",
+        f"  Max:  `{max_rate:+.4f}%`  ({max_dt})",
+        f"  Min:  `{min_rate:+.4f}%`  ({min_dt})",
         f"  Attuale (ultimo): `{last_rate:+.4f}%`",
         "",
         f"  🟢 Positivi: {pos_count}  🔴 Negativi: {neg_count}  ⚪ Neutri: {neu_count}",
@@ -1068,7 +1071,7 @@ async def top10(update: Update, context: ContextTypes.DEFAULT_TYPE):
     max_short = abs(shorts[0]["rate"]) if shorts else 1
     max_long  = abs(longs[0]["rate"])  if longs  else 1
 
-    now_dt = datetime.now(timezone.utc).strftime("%H:%M UTC")
+    now_dt = datetime.now(TZ_IT).strftime("%H:%M %Z")
 
     # ── Sezione SHORT ─────────────────────────────────────────────────────────
     short_lines = [
