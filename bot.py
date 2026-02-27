@@ -16,6 +16,7 @@ import bybit_client as bc
 import alert_logic as al
 import commands
 import ws_liquidations as wsl
+import watchlist_manager as wm
 
 # ── Configurazione ─────────────────────────────────────────────────────────────
 load_dotenv()
@@ -132,7 +133,11 @@ async def post_init(app):
         window_h,
     )
 
-    # 1. Carica cap funding (one-time al boot)
+    # 1. Carica watchlist persistente
+    logger.info("Caricamento watchlist persistente...")
+    wm.load()
+
+    # 2. Carica cap funding (one-time al boot)
     logger.info("Caricamento instruments info...")
     caps = await bc.get_instruments_info()
     al.set_symbol_caps(caps)
