@@ -1,160 +1,171 @@
-import os
-import logging
+"""
+bot.py — Funding King Bot
+Entry point principale: avvio bot Telegram, job di monitoraggio, WebSocket liquidazioni.
+"""
+
 import asyncio
-import time
+import logging
+import os
+from datetime import datetime, timezone
+
 from dotenv import load_dotenv
-from telegram.ext import (
-    ApplicationBuilder,
-    CommandHandler,
-    ConversationHandler,
-    CallbackQueryHandler,
-    MessageHandler,
-    filters,
-)
+from telegram import Bot
+from telegram.ext import ApplicationBuilder
 
-from commands import (
-    # Setup wizard
-    start, setup_menu, ask_api_key, save_api_key,
-    ask_api_secret, save_api_secret, verify_config,
-    inline_command, cancel,
-    MENU, WAIT_API_KEY, WAIT_API_SECRET,
-    # Comandi
-    help_command,
-    status_command,
-    test_command,
-    funding_top,
-    funding_bottom,
-    saldo_command,
-    posizioni_command,
-)
-from alert_logic import process_funding
-from bybit_client import BybitClient
+import bybit_client as bc
+import alert_logic as al
+import commands
+import ws_liquidations as wsl
 
+# ── Configurazione ─────────────────────────────────────────────────────────────
 load_dotenv()
 
-BOT_TOKEN      = os.getenv("TELEGRAM_TOKEN")
-CHAT_ID        = os.getenv("CHAT_ID")
-BYBIT_API_KEY  = os.getenv("BYBIT_API_KEY")
-BYBIT_API_SECRET = os.getenv("BYBIT_API_SECRET")
-
 logging.basicConfig(
-    format="%(asctime)s - %(levelname)s - %(message)s",
+    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
     level=logging.INFO,
 )
+logger = logging.getLogger(__name__)
 
-if not BOT_TOKEN:
-    raise ValueError(
-        "TELEGRAM_TOKEN mancante nel file .env\n"
-        "Crea il file .env con: TELEGRAM_TOKEN=il_tuo_token"
-    )
+BOT_TOKEN    = os.getenv("TELEGRAM_TOKEN", "")
+CHAT_ID      = os.getenv("CHAT_ID", "")
+JOB_INTERVAL = int(os.getenv("JOB_INTERVAL", 60))
 
 
-# ─── JOB: ciclo funding ──────────────────────────────────────────
-
-async def funding_job(app):
-    """Ciclo principale: fetch funding, processa alert, aggiorna bot_data."""
-    bybit_client: BybitClient = app.bot_data.get("bybit_client")
-    if not bybit_client:
+# ── Helper: invia messaggio Telegram ──────────────────────────────────────────
+async def send_alert(bot: Bot, text: str):
+    chat_id = os.getenv("CHAT_ID", CHAT_ID)
+    if not chat_id:
+        logger.warning("CHAT_ID non impostato, alert non inviato.")
         return
+    try:
+        await bot.send_message(chat_id=chat_id, text=text, parse_mode="Markdown")
+    except Exception as e:
+        logger.error("Errore invio alert: %s", e)
+
+
+# ── Job principale: monitoraggio funding ──────────────────────────────────────
+async def funding_job(context):
+    bot: Bot  = context.bot
+    bot_data  = context.bot_data
 
     try:
-        tickers = await bybit_client.get_funding_rates()
-        if not tickers:
-            logging.warning("Nessun dato funding ricevuto.")
-            return
-
-        app.bot_data["funding_data"] = tickers
-        app.bot_data["last_fetch_time"] = time.time()
-        app.bot_data["symbol_count"] = len(tickers)
-
-        # Leggi chat_id aggiornato dal .env (può essere cambiato via wizard)
-        chat_id = os.getenv("CHAT_ID") or CHAT_ID
-        if not chat_id:
-            logging.warning("CHAT_ID non configurato — alert non inviati.")
-            return
-
-        for item in tickers:
-            symbol   = item["symbol"]
-            rate     = item["rate"]
-            interval = item["interval"]
-
-            alert = process_funding(symbol, rate, interval)
-            if alert:
-                await app.bot.send_message(
-                    chat_id=chat_id,
-                    text=alert,
-                    parse_mode="Markdown",
-                )
-                # Conta alert inviati nella sessione
-                app.bot_data["alert_count_session"] = (
-                    app.bot_data.get("alert_count_session", 0) + 1
-                )
-                logging.info(f"Alert inviato: {symbol} rate={rate:+.4f}%")
-
+        tickers = await bc.get_funding_tickers()
     except Exception as e:
-        logging.error(f"Errore nel funding_job: {e}")
+        logger.error("funding_job: errore fetch tickers: %s", e)
+        return
+
+    bot_data["symbols_count"] = len(tickers)
+    bot_data["monitoring"]    = True
+    bot_data["last_cycle"]    = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M:%S UTC")
+
+    if not tickers:
+        logger.warning("Nessun ticker ricevuto.")
+        return
+
+    for ticker in tickers:
+        symbol = ticker.get("symbol", "")
+        if not commands.is_watched(symbol):
+            continue
+
+        rate_raw        = float(ticker.get("fundingRate", 0))
+        rate_pct        = rate_raw * 100
+        interval_h      = ticker.get("fundingIntervalHour", 8)
+        next_funding_ts = int(ticker.get("nextFundingTime", 0))
+        prev_price_1h   = ticker.get("prevPrice1h", "0")
+        pct_24h         = ticker.get("price24hPcnt", "0")
+        last_price      = ticker.get("lastPrice", "0")
+
+        # 1. Alert funding rate
+        alert_text = al.process_funding(symbol, rate_pct, interval_h)
+        if alert_text:
+            await send_alert(bot, alert_text)
+            bot_data["alerts_sent"] = bot_data.get("alerts_sent", 0) + 1
+
+        # 2. Alert prossimo funding (entro X minuti)
+        if next_funding_ts:
+            next_text = al.process_next_funding(symbol, rate_pct, interval_h, next_funding_ts)
+            if next_text:
+                await send_alert(bot, next_text)
+                bot_data["alerts_sent"] = bot_data.get("alerts_sent", 0) + 1
+
+        # 3. Alert PUMP/DUMP prezzo (calcola variazione 1H)
+        try:
+            lp   = float(last_price)
+            pp1h = float(prev_price_1h)
+            var_1h_raw = str((lp - pp1h) / pp1h) if pp1h > 0 else "0"
+        except (ValueError, ZeroDivisionError):
+            var_1h_raw = "0"
+
+        pump_text = al.process_pump_dump(symbol, var_1h_raw, str(float(pct_24h)), last_price)
+        if pump_text:
+            await send_alert(bot, pump_text)
+            bot_data["alerts_sent"] = bot_data.get("alerts_sent", 0) + 1
 
 
-# ─── MAIN ────────────────────────────────────────────────────────
+# ── WebSocket liquidazioni: callback ─────────────────────────────────────────
+_bot_ref: Bot | None = None
 
+
+async def liquidation_callback(msg: str):
+    if _bot_ref:
+        await send_alert(_bot_ref, msg)
+
+
+# ── post_init: caricamento dati al boot ───────────────────────────────────────
+async def post_init(app):
+    global _bot_ref
+    _bot_ref = app.bot
+
+    app.bot_data["uptime_start"] = datetime.now(timezone.utc)
+    app.bot_data["alerts_sent"]  = 0
+    app.bot_data["monitoring"]   = False
+    app.bot_data["symbols_count"] = 0
+
+    # 1. Carica cap funding per tutti i simboli (one-time al boot)
+    logger.info("Caricamento instruments info (cap funding)...")
+    caps = await bc.get_instruments_info()
+    al.set_symbol_caps(caps)
+
+    # 2. Recupera simboli attivi per il WebSocket liquidazioni
+    logger.info("Recupero simboli attivi per WebSocket...")
+    tickers = await bc.get_funding_tickers()
+    symbols = [t["symbol"] for t in tickers]
+
+    if symbols:
+        logger.info("Avvio WebSocket liquidazioni su %d simboli...", len(symbols))
+        asyncio.create_task(
+            wsl.run_liquidation_ws(liquidation_callback, symbols=symbols)
+        )
+
+
+# ── Main ──────────────────────────────────────────────────────────────────────
 def main():
-    app = ApplicationBuilder().token(BOT_TOKEN).build()
+    if not BOT_TOKEN:
+        raise ValueError(
+            "TELEGRAM_TOKEN non impostato.\n"
+            "Aggiungi il token nel file .env e riavvia."
+        )
 
-    # ── Bybit client ─────────────────────────────────────────────
-    bybit_client = BybitClient(
-        api_key=os.getenv("BYBIT_API_KEY"),
-        api_secret=os.getenv("BYBIT_API_SECRET"),
+    app = (
+        ApplicationBuilder()
+        .token(BOT_TOKEN)
+        .post_init(post_init)
+        .build()
     )
-    app.bot_data["bybit_client"] = bybit_client
-    app.bot_data["start_time"] = time.time()
-    app.bot_data["alert_count_session"] = 0
-    app.bot_data["funding_data"] = []
-    app.bot_data["symbol_count"] = 0
 
-    # ── ConversationHandler: setup wizard ────────────────────────
-    setup_conv = ConversationHandler(
-        entry_points=[
-            CommandHandler("start", start),
-            CallbackQueryHandler(setup_menu, pattern="^setup$"),
-        ],
-        states={
-            MENU: [
-                CallbackQueryHandler(ask_api_key,     pattern="^set_apikey$"),
-                CallbackQueryHandler(ask_api_secret,  pattern="^set_apisecret$"),
-                CallbackQueryHandler(verify_config,   pattern="^verify$"),
-                CallbackQueryHandler(inline_command,  pattern="^cmd_"),
-                CallbackQueryHandler(setup_menu,      pattern="^setup$"),
-            ],
-            WAIT_API_KEY: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, save_api_key),
-            ],
-            WAIT_API_SECRET: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, save_api_secret),
-            ],
-        },
-        fallbacks=[CommandHandler("cancel", cancel)],
-        allow_reentry=True,
-    )
-    app.add_handler(setup_conv)
+    # Registra tutti i command handler
+    commands.register(app)
 
-    # ── Comandi standard ─────────────────────────────────────────
-    app.add_handler(CommandHandler("help",            help_command))
-    app.add_handler(CommandHandler("status",          status_command))
-    app.add_handler(CommandHandler("test",            test_command))
-    app.add_handler(CommandHandler("funding_top",     funding_top))
-    app.add_handler(CommandHandler("funding_bottom",  funding_bottom))
-    app.add_handler(CommandHandler("saldo",           saldo_command))
-    app.add_handler(CommandHandler("posizioni",       posizioni_command))
-
-    # ── Job periodico: funding ogni 60s ──────────────────────────
+    # Job di monitoraggio ogni JOB_INTERVAL secondi
     app.job_queue.run_repeating(
-        lambda ctx: asyncio.ensure_future(funding_job(app)),
-        interval=60,
-        first=5,
+        funding_job,
+        interval=JOB_INTERVAL,
+        first=10,          # prima esecuzione dopo 10s (tempo per il boot)
+        name="funding_monitor",
     )
 
-    logging.info("🚀 Funding King Bot avviato!")
-    app.run_polling()
+    logger.info("🚀 Funding King Bot avviato — interval=%ds", JOB_INTERVAL)
+    app.run_polling(allowed_updates=["message", "callback_query"])
 
 
 if __name__ == "__main__":
