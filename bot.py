@@ -153,6 +153,43 @@ async def post_init(app):
             wsl.run_liquidation_ws(liquidation_callback, symbols=symbols)
         )
 
+    # ── Registra comandi e Menu Button Telegram ───────────────────────────
+    await _setup_bot_menu(app.bot)
+
+
+# ── Setup Menu Button + comandi Telegram ─────────────────────────────────────
+async def _setup_bot_menu(bot):
+    """Registra i comandi e attiva il Menu Button (☰) accanto alla barra di testo."""
+    from telegram import BotCommand, MenuButtonCommands
+
+    bot_commands = [
+        BotCommand("start",          "🚀 Avvia il bot e configura le API"),
+        BotCommand("help",           "📋 Lista completa dei comandi"),
+        BotCommand("status",         "📡 Stato bot e monitoraggio attivo"),
+        BotCommand("top10",          "🔥 Top 10 SHORT + LONG in tempo reale"),
+        BotCommand("funding_top",    "📈 Top 10 funding positivi (SHORT)"),
+        BotCommand("funding_bottom", "📉 Top 10 funding negativi (LONG)"),
+        BotCommand("storico",        "🕐 Ultimi 8 cicli di un simbolo"),
+        BotCommand("storico7g",      "📊 Storico 7 giorni con grafici"),
+        BotCommand("backtest",       "🧪 Simula P&L 30gg (SYMBOL|top10|watchlist)"),
+        BotCommand("watchlist",      "👁 Stato watchlist e simboli monitorati"),
+        BotCommand("watch",          "➕ Aggiungi simboli alla watchlist"),
+        BotCommand("unwatch",        "➖ Rimuovi simboli dalla watchlist"),
+        BotCommand("mute",           "🔇 Silenzia alert per un simbolo"),
+        BotCommand("unmute",         "🔔 Riattiva alert per un simbolo"),
+        BotCommand("alerts",         "⚙️ Soglie custom per simbolo"),
+        BotCommand("saldo",          "💼 Saldo wallet Bybit"),
+        BotCommand("posizioni",      "📂 Posizioni aperte con PnL"),
+        BotCommand("test",           "🔧 Test connessione Bybit + Telegram"),
+    ]
+
+    try:
+        await bot.set_my_commands(bot_commands)
+        await bot.set_chat_menu_button(menu_button=MenuButtonCommands())
+        logger.info("Menu Button e %d comandi registrati su Telegram.", len(bot_commands))
+    except Exception as exc:
+        logger.warning("_setup_bot_menu: %s", exc)
+
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 def main():
