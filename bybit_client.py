@@ -225,44 +225,45 @@ async def get_wallet_balance() -> Optional[dict]:
 
 # ── Posizioni aperte ──────────────────────────────────────────────────────────
 async def get_positions() -> list[dict]:
-    """Restituisce tutte le posizioni aperte (linear USDT perpetual)."""
-    try:
-        res = await _run(
-            get_session().get_positions,
-            category="linear",
-            settleCoin="USDT",
-        )
-        if res.get("retCode") != 0:
-            logger.error("get_positions error: %s", res.get("retMsg"))
-            return []
-        positions = []
-        for p in res["result"]["list"]:
-            size = float(p.get("size", 0))
-            if size == 0:
+    """Restituisce tutte le posizioni aperte (linear perpetual, USDT e USDC)."""
+    positions = []
+    for settle in ("USDT", "USDC"):
+        try:
+            res = await _run(
+                get_session().get_positions,
+                category="linear",
+                settleCoin=settle,
+                limit=200,
+            )
+            if res.get("retCode") != 0:
+                logger.error("get_positions [%s] error: %s", settle, res.get("retMsg"))
                 continue
-            position_im   = float(p.get("positionIM", 0))
-            unrealised_pnl = float(p.get("unrealisedPnl", 0))
-            pnl_pct = (unrealised_pnl / position_im * 100) if position_im else 0
-            positions.append({
-                "symbol":         p["symbol"],
-                "side":           p["side"],
-                "size":           size,
-                "avgPrice":       float(p.get("avgPrice", 0)),
-                "markPrice":      float(p.get("markPrice", 0)),
-                "leverage":       p.get("leverage", "—"),
-                "unrealisedPnl":  unrealised_pnl,
-                "pnlPct":         pnl_pct,
-                "positionIM":     position_im,
-                "liqPrice":       float(p.get("liqPrice", 0)),
-                "takeProfit":     float(p.get("takeProfit", 0)),
-                "stopLoss":       float(p.get("stopLoss", 0)),
-                "curRealisedPnl": float(p.get("curRealisedPnl", 0)),
-                "positionStatus": p.get("positionStatus", "Normal"),
-            })
-        return positions
-    except Exception as e:
-        logger.error("get_positions: %s", e)
-        return []
+            for p in res["result"]["list"]:
+                size = float(p.get("size", 0))
+                if size == 0:
+                    continue
+                position_im    = float(p.get("positionIM", 0))
+                unrealised_pnl = float(p.get("unrealisedPnl", 0))
+                pnl_pct = (unrealised_pnl / position_im * 100) if position_im else 0
+                positions.append({
+                    "symbol":         p["symbol"],
+                    "side":           p["side"],
+                    "size":           size,
+                    "avgPrice":       float(p.get("avgPrice", 0)),
+                    "markPrice":      float(p.get("markPrice", 0)),
+                    "leverage":       p.get("leverage", "—"),
+                    "unrealisedPnl":  unrealised_pnl,
+                    "pnlPct":         pnl_pct,
+                    "positionIM":     position_im,
+                    "liqPrice":       float(p.get("liqPrice", 0)),
+                    "takeProfit":     float(p.get("takeProfit", 0)),
+                    "stopLoss":       float(p.get("stopLoss", 0)),
+                    "curRealisedPnl": float(p.get("curRealisedPnl", 0)),
+                    "positionStatus": p.get("positionStatus", "Normal"),
+                })
+        except Exception as e:
+            logger.error("get_positions [%s]: %s", settle, e)
+    return positions
 
 
 # ── Test connessione ──────────────────────────────────────────────────────────
