@@ -92,21 +92,7 @@ async def funding_job(context):
                 await send_alert(bot, next_text)
                 bot_data["alerts_sent"] = bot_data.get("alerts_sent", 0) + 1
 
-        # 3. Alert PUMP/DUMP prezzo
-        # Solo per simboli che hanno già ricevuto un alert di funding (HIGH/EXTREME/HARD)
-        # oppure sono nella watchlist esplicita dell'utente
-        if al.is_funded(symbol) or wm.is_explicitly_watched(symbol):
-            try:
-                lp         = float(last_price)
-                pp1h       = float(prev_price_1h)
-                var_1h_raw = str((lp - pp1h) / pp1h) if pp1h > 0 else "0"
-            except (ValueError, ZeroDivisionError):
-                var_1h_raw = "0"
-
-            pump_text = al.process_pump_dump(symbol, var_1h_raw, str(float(pct_24h)), last_price)
-            if pump_text:
-                await send_alert(bot, pump_text)
-                bot_data["alerts_sent"] = bot_data.get("alerts_sent", 0) + 1
+        # 3. Alert PUMP/DUMP — RIMOSSO (utente non desidera questi alert)
 
 
 # ── WebSocket liquidazioni: callback ─────────────────────────────────────────
