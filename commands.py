@@ -20,23 +20,17 @@ from telegram.ext import (
 
 import bybit_client as bc
 import alert_logic as al
+import watchlist_manager as wm
 
 logger = logging.getLogger(__name__)
 
 # ── ConversationHandler states ────────────────────────────────────────────────
 MENU, WAITING_API_KEY, WAITING_API_SECRET = range(3)
 
-# ── Lista simboli watchlist ────────────────────────────────────────────────────
-_watchlist: set[str] = set()   # se vuota → monitora tutto
-_muted: set[str] = set()       # simboli silenziati
-
 
 def is_watched(symbol: str) -> bool:
-    if _muted and symbol in _muted:
-        return False
-    if _watchlist:
-        return symbol in _watchlist
-    return True
+    """Proxy verso watchlist_manager — usato da bot.py."""
+    return wm.is_watched(symbol)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -180,12 +174,14 @@ async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "/saldo — Saldo wallet Bybit\n"
         "/posizioni — Posizioni aperte con PnL%\n\n"
         "━━━━━━━━━━━━━━━━━━━━━\n"
-        "🎯 *WATCHLIST*\n"
-        "/watch `<SYM1 SYM2 ...>` — Monitora simboli specifici\n"
-        "/unwatch `<SYM>` — Rimuovi da watchlist\n"
-        "/mute `<SYM>` — Silenzia un simbolo\n"
+        "🎯 *WATCHLIST & NOTIFICHE*\n"
+        "/watchlist — Stato completo watchlist\n"
+        "/watch `<SYM>` — Aggiungi simboli (es. `BTC ETH SOL`)\n"
+        "/unwatch `<SYM>` — Rimuovi | `/unwatch all` per reset\n"
+        "/mute `<SYM>` — Silenzia simbolo\n"
         "/unmute `<SYM>` — Riattiva simbolo\n"
-        "/watchlist — Mostra watchlist attuale\n\n"
+        "/alerts — Soglie custom per simbolo\n"
+        "/alerts `<SYM> <livello> <valore>` — Imposta soglia\n\n"
         "━━━━━━━━━━━━━━━━━━━━━\n"
         "🔧 *SISTEMA*\n"
         "/start — Setup / configurazione credenziali\n"
@@ -618,58 +614,307 @@ async def posizioni(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# Watchlist: /watch /unwatch /mute /unmute /watchlist
+# Watchlist persistente: /watch /unwatch /mute /unmute /watchlist /alerts
 # ══════════════════════════════════════════════════════════════════════════════
 
+# Cache simboli validi Bybit (aggiornata al primo uso)
+_known_symbols: set[str] = set()
+
+
+async def _get_known_symbols() -> set[str]:
+    global _known_symbols
+    if not _known_symbols:
+        tickers = await bc.get_funding_tickers()
+        _known_symbols = {t["symbol"] for t in tickers}
+    return _known_symbols
+
+
 async def watch_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    args = [a.upper() for a in context.args]
-    if not args:
-        await update.message.reply_text("Uso: /watch BTCUSDT ETHUSDT")
+    if not context.args:
+        wl = wm.get_watchlist()
+        mode = "filtro attivo" if wl else "tutti i simboli"
+        await update.message.reply_text(
+            f"*Uso:* `/watch BTC ETH SOL` \n_(aggiunge USDT automaticamente)_\n\n"
+            f"Watchlist attuale: *{mode}*",
+            parse_mode="Markdown",
+        )
         return
-    _watchlist.update(args)
-    await update.message.reply_text(
-        f"✅ Watchlist aggiornata:\n" + "\n".join(f"  • {s}" for s in sorted(_watchlist)),
-        parse_mode="Markdown",
-    )
+
+    known = await _get_known_symbols()
+    raw   = context.args
+    valid, unknown = wm.validate_symbols(raw, known)
+
+    if valid:
+        added = wm.add_symbols(valid)
+        wl    = wm.get_watchlist()
+        lines = [f"✅ *Watchlist aggiornata* ({len(wl)} simboli)\n"]
+        for s in sorted(wl):
+            alert_state = al._state.get(s, {}).get("level", "none")
+            badge = " 🔴" if alert_state != "none" else ""
+            custom = wm.get_all_custom_thresholds().get(s)
+            custom_tag = " ⚙️" if custom else ""
+            muted = "🔇" if s in wm.get_muted() else ""
+            lines.append(f"  • `{s}`{badge}{custom_tag}{muted}")
+    else:
+        lines = []
+
+    if unknown:
+        lines.append(f"\n⚠️ Non trovati su Bybit: `{'`, `'.join(unknown)}`")
+
+    if not valid and not unknown:
+        lines = ["⚠️ Nessun simbolo valido specificato."]
+
+    lines.append("\n_⚙️ = soglie custom  🔴 = in alert  🔇 = silenziato_")
+    await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
 
 
 async def unwatch_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    args = [a.upper() for a in context.args]
-    if not args:
-        await update.message.reply_text("Uso: /unwatch BTCUSDT")
+    if not context.args:
+        await update.message.reply_text(
+            "*Uso:* `/unwatch BTCUSDT ETHUSDT`\n"
+            "Per rimuovere tutti: `/unwatch all`",
+            parse_mode="Markdown",
+        )
         return
-    for a in args:
-        _watchlist.discard(a)
-    await update.message.reply_text(f"✅ Rimossi dalla watchlist: {', '.join(args)}")
+
+    if context.args[0].lower() == "all":
+        wm.clear_watchlist()
+        await update.message.reply_text(
+            "✅ Watchlist svuotata. Il bot monitora ora *tutti* i simboli.",
+            parse_mode="Markdown",
+        )
+        return
+
+    raw     = context.args
+    symbols = [s.upper() if s.upper().endswith("USDT") else s.upper() + "USDT" for s in raw]
+    removed = wm.remove_symbols(symbols)
+    not_found = [s for s in symbols if s not in removed]
+
+    lines = []
+    if removed:
+        lines.append(f"✅ Rimossi: `{'`, `'.join(removed)}`")
+    if not_found:
+        lines.append(f"⚠️ Non erano in watchlist: `{'`, `'.join(not_found)}`")
+
+    wl = wm.get_watchlist()
+    if wl:
+        lines.append(f"\nWatchlist: {', '.join(f'`{s}`' for s in sorted(wl))}")
+    else:
+        lines.append("\nWatchlist vuota — monitor *tutti* i simboli.")
+
+    await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
 
 
 async def mute_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    args = [a.upper() for a in context.args]
-    if not args:
-        await update.message.reply_text("Uso: /mute BTCUSDT")
+    if not context.args:
+        muted = wm.get_muted()
+        msg = (
+            f"🔇 *Simboli silenziati:* {', '.join(f'`{s}`' for s in sorted(muted))}"
+            if muted else
+            "🔇 *Nessun simbolo silenziato.*\n*Uso:* `/mute BTCUSDT`"
+        )
+        await update.message.reply_text(msg, parse_mode="Markdown")
         return
-    _muted.update(args)
-    await update.message.reply_text(f"🔇 Silenziati: {', '.join(args)}")
+
+    known   = await _get_known_symbols()
+    valid, unknown = wm.validate_symbols(context.args, known)
+    added   = wm.mute_symbols(valid)
+
+    lines = []
+    if added:
+        lines.append(f"🔇 Silenziati: `{'`, `'.join(added)}`")
+    if unknown:
+        lines.append(f"⚠️ Non trovati: `{'`, `'.join(unknown)}`")
+    await update.message.reply_text("\n".join(lines) or "Nessun simbolo modificato.", parse_mode="Markdown")
 
 
 async def unmute_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    args = [a.upper() for a in context.args]
-    if not args:
-        await update.message.reply_text("Uso: /unmute BTCUSDT")
+    if not context.args:
+        await update.message.reply_text("*Uso:* `/unmute BTCUSDT`", parse_mode="Markdown")
         return
-    for a in args:
-        _muted.discard(a)
-    await update.message.reply_text(f"🔔 Riattivati: {', '.join(args)}")
+
+    symbols = [s.upper() if s.upper().endswith("USDT") else s.upper() + "USDT" for s in context.args]
+    removed = wm.unmute_symbols(symbols)
+    lines   = []
+    if removed:
+        lines.append(f"🔔 Riattivati: `{'`, `'.join(removed)}`")
+    else:
+        lines.append("⚠️ Nessuno di questi simboli era silenziato.")
+    await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
 
 
 async def watchlist_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    wl = sorted(_watchlist) or ["(tutti i simboli)"]
-    mu = sorted(_muted) or ["(nessuno)"]
+    summary = wm.get_summary()
+    wl      = summary["watchlist"]
+    muted   = summary["muted"]
+    custom  = summary["custom_thresholds"]
+    mode    = summary["mode"]
+
+    # Sezione watchlist
+    if wl:
+        wl_lines = []
+        for s in sorted(wl):
+            alert_state = al._state.get(s, {}).get("level", "none")
+            badges = []
+            if s in muted:                    badges.append("🔇")
+            if alert_state != "none":         badges.append(f"🔴{alert_state.upper()}")
+            if s in custom:                   badges.append("⚙️")
+            badge_str = "  " + " ".join(badges) if badges else ""
+            wl_lines.append(f"  • `{s}`{badge_str}")
+        wl_section = "\n".join(wl_lines)
+    else:
+        wl_section = "  _(tutti i simboli Bybit — nessun filtro)_"
+
+    # Sezione muted
+    muted_section = (
+        "  " + ", ".join(f"`{s}`" for s in sorted(muted))
+        if muted else
+        "  _(nessuno)_"
+    )
+
+    # Sezione soglie custom
+    if custom:
+        custom_lines = []
+        for sym, levels in sorted(custom.items()):
+            parts = [f"{lvl}: {val}%" for lvl, val in sorted(levels.items())]
+            custom_lines.append(f"  `{sym}` — {', '.join(parts)}")
+        custom_section = "\n".join(custom_lines)
+    else:
+        custom_section = "  _(usa soglie globali per tutti)_"
+
     text = (
-        f"🎯 *Watchlist attiva:*\n" + "\n".join(f"  • {s}" for s in wl) +
-        f"\n\n🔇 *Silenziati:*\n" + "\n".join(f"  • {s}" for s in mu)
+        f"🎯 *WATCHLIST — Modalità: {mode}*\n\n"
+        f"📡 *Simboli monitorati:*\n{wl_section}\n\n"
+        f"🔇 *Silenziati:*\n{muted_section}\n\n"
+        f"⚙️ *Soglie custom:*\n{custom_section}\n\n"
+        f"_Usa /watch, /unwatch, /mute, /unmute, /alerts_"
     )
     await update.message.reply_text(text, parse_mode="Markdown")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# /alerts — Gestione soglie custom per simbolo
+# ══════════════════════════════════════════════════════════════════════════════
+
+_LEVEL_NAMES = {
+    "hard": "HARD (default 2.00%)",
+    "extreme": "EXTREME (default 1.50%)",
+    "high": "HIGH (default 1.00%)",
+    "close_tip": "CHIUSURA (default 0.23%)",
+    "rientro": "RIENTRO (default 0.75%)",
+}
+
+
+async def alerts_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Uso:
+      /alerts                          — mostra tutte le soglie custom
+      /alerts BTCUSDT                  — mostra soglie per il simbolo
+      /alerts BTCUSDT high 1.5         — imposta HIGH a 1.5% per BTC
+      /alerts BTCUSDT reset            — riporta BTC ai default globali
+    """
+    args = context.args
+
+    # Nessun argomento: mostra riepilogo globale
+    if not args:
+        custom = wm.get_all_custom_thresholds()
+        if not custom:
+            await update.message.reply_text(
+                "ℹ️ *Nessuna soglia custom impostata.*\n\n"
+                "Tutti i simboli usano le soglie globali:\n"
+                "  🔴 HARD: 2.00%\n"
+                "  🔥 EXTREME: 1.50%\n"
+                "  🚨 HIGH: 1.00%\n"
+                "  ℹ️ CHIUSURA: 0.23%\n"
+                "  ✅ RIENTRO: 0.75%\n\n"
+                "*Uso:* `/alerts BTCUSDT high 1.5`\n"
+                "*Reset:* `/alerts BTCUSDT reset`",
+                parse_mode="Markdown",
+            )
+            return
+
+        lines = ["⚙️ *SOGLIE CUSTOM ATTIVE*\n"]
+        for sym, levels in sorted(custom.items()):
+            lines.append(f"*{sym}*")
+            for lvl, val in sorted(levels.items()):
+                default = {"hard": 2.0, "extreme": 1.5, "high": 1.0, "close_tip": 0.23, "rientro": 0.75}.get(lvl, 0)
+                arrow = "↑" if val > default else "↓"
+                lines.append(f"  {lvl}: `{val}%` {arrow} _(default: {default}%)_")
+        lines.append("\n_/alerts SIMBOLO reset per tornare ai default_")
+        await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
+        return
+
+    symbol = args[0].upper()
+    if not symbol.endswith("USDT"):
+        symbol += "USDT"
+
+    # /alerts BTCUSDT reset
+    if len(args) == 2 and args[1].lower() == "reset":
+        wm.remove_custom_thresholds(symbol)
+        await update.message.reply_text(
+            f"✅ Soglie di `{symbol}` ripristinate ai valori globali.",
+            parse_mode="Markdown",
+        )
+        return
+
+    # /alerts BTCUSDT  (mostra soglie del simbolo)
+    if len(args) == 1:
+        custom = wm.get_all_custom_thresholds().get(symbol, {})
+        defaults = {"hard": 2.0, "extreme": 1.5, "high": 1.0, "close_tip": 0.23, "rientro": 0.75}
+        lines = [f"⚙️ *Soglie per {symbol}*\n"]
+        for lvl, default in defaults.items():
+            val = custom.get(lvl, default)
+            tag = " _⚙️ custom_" if lvl in custom else " _default_"
+            lines.append(f"  {lvl}: `{val}%`{tag}")
+        lines.append(f"\n*Uso:* `/alerts {symbol} high 1.5`")
+        await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
+        return
+
+    # /alerts BTCUSDT high 1.5
+    if len(args) == 3:
+        level = args[1].lower()
+        try:
+            value = float(args[2].replace(",", "."))
+        except ValueError:
+            await update.message.reply_text(
+                f"❌ Valore non valido: `{args[2]}`\nUsa un numero (es. 1.5)",
+                parse_mode="Markdown",
+            )
+            return
+
+        if value <= 0 or value > 10:
+            await update.message.reply_text(
+                "❌ Il valore deve essere tra 0 e 10.",
+                parse_mode="Markdown",
+            )
+            return
+
+        ok = wm.set_custom_threshold(symbol, level, value)
+        if not ok:
+            levels_str = ", ".join(f"`{l}`" for l in _LEVEL_NAMES)
+            await update.message.reply_text(
+                f"❌ Livello `{level}` non valido.\nLivelli disponibili: {levels_str}",
+                parse_mode="Markdown",
+            )
+            return
+
+        default = {"hard": 2.0, "extreme": 1.5, "high": 1.0, "close_tip": 0.23, "rientro": 0.75}.get(level, 0)
+        arrow = "↑ più restrittivo" if value > default else "↓ più sensibile"
+        await update.message.reply_text(
+            f"✅ Soglia custom impostata:\n"
+            f"  `{symbol}` — {level}: `{value}%` ({arrow}, default: {default}%)",
+            parse_mode="Markdown",
+        )
+        return
+
+    await update.message.reply_text(
+        "*Uso:*\n"
+        "`/alerts` — riepilogo globale\n"
+        "`/alerts BTCUSDT` — soglie del simbolo\n"
+        "`/alerts BTCUSDT high 1.5` — imposta soglia\n"
+        "`/alerts BTCUSDT reset` — ripristina default",
+        parse_mode="Markdown",
+    )
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -888,3 +1133,4 @@ def register(app):
     app.add_handler(CommandHandler("mute", mute_cmd))
     app.add_handler(CommandHandler("unmute", unmute_cmd))
     app.add_handler(CommandHandler("watchlist", watchlist_cmd))
+    app.add_handler(CommandHandler("alerts", alerts_cmd))
