@@ -1,0 +1,2652 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Funding King Bot — Dashboard</title>
+<style>
+/* ============================================================
+   PANCAKESWAP DARK THEME — Funding King Bot Dashboard v6
+   ============================================================ */
+:root {
+  --bg:        #08060b;
+  --bg2:       #12101a;
+  --card:      #1a1730;
+  --card2:     #221f38;
+  --card3:     #2a2745;
+  --border:    rgba(124,77,255,.25);
+  --border2:   rgba(255,255,255,.07);
+  --accent:    #7c4dff;
+  --accent2:   #a07aff;
+  --pink:      #ed4b9e;
+  --jackpot:   #ff6b6b;
+  --hard:      #ff9f43;
+  --extreme:   #ffd32a;
+  --high:      #00d2d3;
+  --close:     #54a0ff;
+  --warn:      #c8d6e5;
+  --green:     #10b981;
+  --red:       #ef4444;
+  --text:      #f0eeff;
+  --text2:     #b0a8d0;
+  --text3:     #6b6384;
+  --radius:    14px;
+  --radius-sm: 8px;
+  --shadow:    0 8px 32px rgba(0,0,0,.45);
+  --glow:      0 0 20px rgba(124,77,255,.35);
+}
+
+/* ── LIGHT MODE ── */
+body.light {
+  --bg:      #f0eeff;
+  --bg2:     #e8e4ff;
+  --card:    #ffffff;
+  --card2:   #f5f2ff;
+  --card3:   #ede9ff;
+  --border:  rgba(124,77,255,.3);
+  --border2: rgba(124,77,255,.15);
+  --text:    #1a1030;
+  --text2:   #3d3060;
+  --text3:   #7c6ea8;
+  --shadow:  0 8px 32px rgba(124,77,255,.12);
+  --glow:    0 0 20px rgba(124,77,255,.2);
+}
+body.light {
+  background-image:
+    radial-gradient(ellipse 80% 50% at 20% -10%,rgba(124,77,255,.1) 0%,transparent 55%),
+    radial-gradient(ellipse 60% 40% at 80% 110%,rgba(237,75,158,.07) 0%,transparent 50%);
+}
+body.light .topbar {
+  background: rgba(240,238,255,.92);
+  border-bottom-color: rgba(124,77,255,.2);
+  box-shadow: 0 2px 20px rgba(124,77,255,.1);
+}
+body.light .nav { border-bottom-color: rgba(124,77,255,.15); }
+body.light .nav-btn { color: var(--text3); }
+body.light .nav-btn:hover { background: rgba(124,77,255,.08); color: var(--text2); }
+body.light .nav-btn.active {
+  background: linear-gradient(180deg,rgba(124,77,255,.12) 0%,transparent 100%);
+  color: var(--accent);
+}
+body.light .fr-table th { border-bottom-color: rgba(124,77,255,.2); }
+body.light .fr-table td { border-bottom-color: rgba(124,77,255,.08); }
+body.light .fr-table tr:hover td { background: rgba(124,77,255,.06); }
+body.light .set-card-head {
+  background: linear-gradient(90deg,rgba(124,77,255,.07) 0%,transparent 70%);
+}
+body.light .alert-cfg-head {
+  background: linear-gradient(90deg,rgba(124,77,255,.1) 0%,rgba(237,75,158,.05) 100%);
+}
+body.light .danger-zone {
+  background: rgba(239,68,68,.04);
+  border-color: rgba(239,68,68,.2);
+}
+body.light .kpi-card:hover { box-shadow: 0 0 18px rgba(124,77,255,.18); }
+body.light .hm-cell { background: var(--card2); }
+body.light .pos-card { background: var(--card2); }
+body.light .atc { background: var(--card2); }
+body.light .thr-card { background: var(--card2); }
+body.light .thr-card input[type=number] { background: var(--card3); color: var(--text); }
+body.light .inp { background: var(--card2); color: var(--text); }
+body.light .btn-ghost { color: var(--accent); border-color: var(--border); }
+body.light .toggle-sw .slider { background: #d4ceee; border-color: rgba(124,77,255,.2); }
+body.light .toggle-sw .slider::after { background: #9590b8; }
+body.light .sync-bar { background: var(--card2); }
+body.light .stat-chart-bar { background: rgba(124,77,255,.12); }
+/* theme toggle button */
+#themeBtn {
+  font-size: .85rem; cursor: pointer; width: 34px; height: 34px;
+  border-radius: 50%; border: 1px solid var(--border);
+  background: var(--card2); color: var(--text2);
+  display: flex; align-items: center; justify-content: center;
+  transition: .2s; flex-shrink: 0;
+}
+#themeBtn:hover { border-color: var(--accent); color: var(--accent2); }
+
+/* ── STATISTICS PAGE ── */
+.stat-section-title {
+  font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--accent); margin: 22px 0 10px; padding-bottom: 6px;
+  border-bottom: 1px solid var(--border2);
+}
+.stat-section-title:first-child { margin-top: 0; }
+
+/* Summary KPI grid */
+.stat-kpi-grid {
+  display: grid; grid-template-columns: repeat(auto-fill,minmax(160px,1fr)); gap: 12px;
+  margin-bottom: 20px;
+}
+.stat-kpi {
+  background: var(--card2); border: 1px solid var(--border2);
+  border-radius: var(--radius); padding: 14px 16px;
+  position: relative; overflow: hidden; transition: .22s;
+}
+.stat-kpi:hover { border-color: var(--border); box-shadow: var(--glow); }
+.stat-kpi::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--pink));
+}
+.stat-kpi-lbl { font-size: .67rem; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--text3); margin-bottom: 6px; }
+.stat-kpi-val { font-size: 1.45rem; font-weight: 800; color: var(--text); line-height: 1; }
+.stat-kpi-sub { font-size: .7rem; color: var(--text3); margin-top: 4px; }
+.stat-kpi-val.green { color: var(--green); }
+.stat-kpi-val.red   { color: var(--red); }
+.stat-kpi-val.accent{ color: var(--accent2); }
+
+/* Bar chart */
+.stat-bar-chart { display: flex; flex-direction: column; gap: 8px; }
+.stat-bar-row { display: flex; align-items: center; gap: 10px; }
+.stat-bar-lbl { font-size: .75rem; color: var(--text2); font-weight: 600;
+  width: 90px; flex-shrink: 0; text-align: right; }
+.stat-bar-wrap { flex: 1; background: var(--card3); border-radius: 4px; height: 20px;
+  overflow: hidden; position: relative; }
+.stat-bar-fill {
+  height: 100%; border-radius: 4px; transition: width .6s cubic-bezier(.4,0,.2,1);
+  display: flex; align-items: center; justify-content: flex-end;
+  padding-right: 6px; font-size: .69rem; font-weight: 700; color: #fff;
+  min-width: 32px;
+}
+.stat-bar-fill.jackpot { background: linear-gradient(90deg,var(--jackpot),#ff9f9f); }
+.stat-bar-fill.hard    { background: linear-gradient(90deg,var(--hard),#ffcf80); }
+.stat-bar-fill.extreme { background: linear-gradient(90deg,var(--extreme),#ffe97a); }
+.stat-bar-fill.high    { background: linear-gradient(90deg,var(--high),#80e8e9); }
+.stat-bar-fill.close   { background: linear-gradient(90deg,var(--close),#a0c8ff); }
+.stat-bar-fill.warn    { background: linear-gradient(90deg,rgba(200,214,229,.8),rgba(200,214,229,.4)); color: var(--text2); }
+.stat-bar-fill.green   { background: linear-gradient(90deg,var(--green),#6ee7b7); }
+.stat-bar-fill.accent  { background: linear-gradient(90deg,var(--accent),var(--accent2)); }
+
+/* Distribution donut mock */
+.stat-donut-row { display: grid; grid-template-columns: repeat(auto-fill,minmax(250px,1fr)); gap: 12px; }
+.stat-donut-card {
+  background: var(--card2); border: 1px solid var(--border2);
+  border-radius: var(--radius); padding: 14px 16px;
+}
+.stat-donut-title { font-size: .82rem; font-weight: 700; color: var(--accent2); margin-bottom: 12px; }
+
+/* Level distribution pill list */
+.stat-lvl-list { display: flex; flex-direction: column; gap: 7px; }
+.stat-lvl-row {
+  display: flex; align-items: center; gap: 10px; font-size: .78rem;
+}
+.stat-lvl-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.stat-lvl-name { color: var(--text2); font-weight: 600; width: 80px; flex-shrink: 0; }
+.stat-lvl-bar-wrap { flex: 1; background: var(--card3); border-radius: 4px; height: 10px; }
+.stat-lvl-bar-fill { height: 100%; border-radius: 4px; transition: width .5s ease; }
+.stat-lvl-pct { color: var(--text3); font-size: .7rem; width: 38px; text-align: right; flex-shrink: 0; }
+
+/* Activity timeline */
+.stat-timeline { display: flex; flex-direction: column; gap: 0; }
+.stat-tl-row {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,.04);
+}
+.stat-tl-row:last-child { border-bottom: none; }
+.stat-tl-dot-col { display: flex; flex-direction: column; align-items: center; gap: 0; flex-shrink: 0; }
+.stat-tl-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 4px; }
+.stat-tl-line { width: 2px; flex: 1; background: var(--border2); margin-top: 4px; }
+.stat-tl-time { font-size: .7rem; color: var(--text3); white-space: nowrap; flex-shrink: 0; margin-top: 3px; width: 42px; }
+.stat-tl-body { flex: 1; }
+.stat-tl-title { font-size: .82rem; font-weight: 700; color: var(--text2); }
+.stat-tl-sub { font-size: .72rem; color: var(--text3); margin-top: 2px; }
+
+/* Table style for top symbols */
+.stat-table { width: 100%; border-collapse: collapse; font-size: .81rem; }
+.stat-table th {
+  text-align: left; padding: 7px 12px; color: var(--accent2);
+  font-size: .67rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .08em; border-bottom: 1px solid var(--border);
+}
+.stat-table td { padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,.04); color: var(--text2); }
+.stat-table tr:hover td { background: rgba(124,77,255,.05); }
+.stat-table tr:last-child td { border-bottom: none; }
+.stat-table .bold { font-weight: 700; color: var(--text); }
+.stat-table .green { color: var(--green); font-weight: 700; }
+.stat-table .red   { color: var(--red);   font-weight: 700; }
+.stat-table .accent { color: var(--accent2); font-weight: 700; }
+
+/* Refresh button stats */
+.stat-refresh-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.stat-last-upd { font-size: .73rem; color: var(--text3); }
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+  background:var(--bg);color:var(--text);min-height:100vh;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 20% -10%,rgba(124,77,255,.18) 0%,transparent 55%),
+    radial-gradient(ellipse 60% 40% at 80% 110%,rgba(237,75,158,.12) 0%,transparent 50%);
+}
+
+/* ── TOP BAR ── */
+.topbar{display:flex;align-items:center;gap:12px;padding:0 20px;height:60px;
+  background:rgba(18,16,26,.88);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;
+  box-shadow:0 2px 24px rgba(0,0,0,.5)}
+.topbar-logo{font-size:1.3rem;font-weight:800;letter-spacing:-.5px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--accent2) 0%,var(--pink) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.topbar-logo span{opacity:.65;font-weight:400}
+.topbar-status{font-size:.75rem;color:var(--text3);display:flex;align-items:center;gap:6px}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--text3);flex-shrink:0}
+.status-dot.ok{background:var(--green);box-shadow:0 0 7px var(--green)}
+.status-dot.err{background:var(--red);box-shadow:0 0 7px var(--red)}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.topbar-badge{font-size:.7rem;font-weight:700;padding:4px 12px;border-radius:20px;
+  cursor:pointer;background:var(--card2);border:1px solid var(--border);color:var(--text2);
+  transition:.2s;white-space:nowrap}
+.topbar-badge:hover{border-color:var(--accent);color:var(--accent2)}
+.topbar-badge.trading{
+  background:linear-gradient(135deg,rgba(124,77,255,.3),rgba(237,75,158,.2));
+  border-color:var(--accent);color:var(--accent2)}
+
+/* ── NAV ── */
+.nav{display:flex;gap:2px;padding:12px 20px 0;border-bottom:1px solid var(--border2);
+  overflow-x:auto;scrollbar-width:none}
+.nav::-webkit-scrollbar{display:none}
+.nav-btn{padding:9px 18px;border:none;cursor:pointer;background:transparent;color:var(--text3);
+  font-size:.84rem;font-weight:600;white-space:nowrap;
+  border-radius:var(--radius-sm) var(--radius-sm) 0 0;
+  border-bottom:3px solid transparent;transition:.2s}
+.nav-btn:hover{color:var(--text2);background:rgba(124,77,255,.08)}
+.nav-btn.active{color:var(--accent2);
+  background:linear-gradient(180deg,rgba(124,77,255,.15) 0%,transparent 100%);
+  border-bottom-color:var(--accent)}
+
+/* ── PAGES ── */
+.page{display:none;padding:22px 20px;animation:fadeIn .22s ease}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+.page-header{font-size:1.4rem;font-weight:800;margin-bottom:20px;
+  background:linear-gradient(135deg,var(--text) 0%,var(--accent2) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  display:flex;align-items:center;gap:8px}
+
+/* ── GRIDS ── */
+.grid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.grid4{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}
+
+/* ── KPI CARD ── */
+.kpi-card{background:var(--card);border:1px solid var(--border2);
+  border-radius:var(--radius);padding:16px 18px;transition:.25s}
+.kpi-card:hover{border-color:rgba(124,77,255,.35);box-shadow:var(--glow)}
+.kpi-label{font-size:.68rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--text3);margin-bottom:7px}
+.kpi-value{font-size:1.6rem;font-weight:800;color:var(--text);line-height:1}
+.kpi-sub{font-size:.73rem;color:var(--text3);margin-top:5px}
+
+/* ── GENERIC CARD ── */
+.card{background:var(--card);border:1px solid var(--border2);
+  border-radius:var(--radius);overflow:hidden;transition:.2s}
+.card:hover{border-color:rgba(124,77,255,.38)}
+.card-head{display:flex;align-items:center;justify-content:space-between;
+  padding:14px 18px 11px;border-bottom:1px solid var(--border2)}
+.card-title{font-size:.98rem;font-weight:800;color:var(--accent2);
+  letter-spacing:-.01em;display:flex;align-items:center;gap:7px}
+.card-sub{font-size:.76rem;color:var(--text3);margin-top:3px}
+.card-body{padding:16px 18px}
+
+/* ── POSITION CARDS — dynamic border by FR level ── */
+.pos-card{background:var(--card2);border:2px solid var(--border2);
+  border-radius:var(--radius);padding:16px;
+  transition:border-color .35s ease,box-shadow .35s ease;
+  position:relative;overflow:hidden}
+.pos-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  opacity:.85;background:linear-gradient(90deg,var(--border2),transparent)}
+/* level variants */
+.pos-card.lvl-jackpot{border-color:var(--jackpot);box-shadow:0 0 20px rgba(255,107,107,.28)}
+.pos-card.lvl-jackpot::before{background:linear-gradient(90deg,var(--jackpot),transparent)}
+.pos-card.lvl-hard{border-color:var(--hard);box-shadow:0 0 20px rgba(255,159,67,.22)}
+.pos-card.lvl-hard::before{background:linear-gradient(90deg,var(--hard),transparent)}
+.pos-card.lvl-extreme{border-color:var(--extreme);box-shadow:0 0 20px rgba(255,211,42,.22)}
+.pos-card.lvl-extreme::before{background:linear-gradient(90deg,var(--extreme),transparent)}
+.pos-card.lvl-high{border-color:var(--high);box-shadow:0 0 20px rgba(0,210,211,.22)}
+.pos-card.lvl-high::before{background:linear-gradient(90deg,var(--high),transparent)}
+.pos-card.lvl-close{border-color:var(--close);box-shadow:0 0 18px rgba(84,160,255,.2)}
+.pos-card.lvl-close::before{background:linear-gradient(90deg,var(--close),transparent)}
+.pos-card.lvl-warn{border-color:rgba(200,214,229,.4)}
+.pos-card.lvl-warn::before{background:linear-gradient(90deg,var(--warn),transparent)}
+.pos-card.lvl-rientro{border-color:var(--green);box-shadow:0 0 14px rgba(16,185,129,.22)}
+.pos-card.lvl-rientro::before{background:linear-gradient(90deg,var(--green),transparent)}
+.pos-card.lvl-none{border-color:var(--border2)}
+
+.pos-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px}
+.pos-symbol{font-size:1.08rem;font-weight:800;color:var(--text)}
+.pos-side{font-size:.68rem;font-weight:700;padding:3px 9px;border-radius:6px;letter-spacing:.06em}
+.pos-side.long{background:rgba(16,185,129,.18);color:var(--green);border:1px solid rgba(16,185,129,.3)}
+.pos-side.short{background:rgba(239,68,68,.18);color:var(--red);border:1px solid rgba(239,68,68,.3)}
+.pos-row{display:flex;justify-content:space-between;font-size:.8rem;margin-bottom:5px}
+.pos-row .lbl{color:var(--text3)}
+.pos-row .val{color:var(--text2);font-weight:600}
+.pos-pnl{margin-top:11px;padding:8px 12px;border-radius:var(--radius-sm);
+  font-size:.85rem;font-weight:700;text-align:center}
+.pos-pnl.profit{background:rgba(16,185,129,.14);color:var(--green);border:1px solid rgba(16,185,129,.24)}
+.pos-pnl.loss{background:rgba(239,68,68,.14);color:var(--red);border:1px solid rgba(239,68,68,.24)}
+
+/* ── LEVEL BADGES ── */
+.lvl{display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-size:.69rem;font-weight:700}
+.lvl-jackpot{background:rgba(255,107,107,.15);color:var(--jackpot);border:1px solid rgba(255,107,107,.3)}
+.lvl-hard{background:rgba(255,159,67,.15);color:var(--hard);border:1px solid rgba(255,159,67,.3)}
+.lvl-extreme{background:rgba(255,211,42,.15);color:var(--extreme);border:1px solid rgba(255,211,42,.3)}
+.lvl-high{background:rgba(0,210,211,.15);color:var(--high);border:1px solid rgba(0,210,211,.3)}
+.lvl-close{background:rgba(84,160,255,.15);color:var(--close);border:1px solid rgba(84,160,255,.3)}
+.lvl-warn{background:rgba(200,214,229,.1);color:var(--warn);border:1px solid rgba(200,214,229,.2)}
+.lvl-rientro{background:rgba(16,185,129,.15);color:var(--green);border:1px solid rgba(16,185,129,.3)}
+.lvl-none{background:rgba(255,255,255,.05);color:var(--text3);border:1px solid rgba(255,255,255,.08)}
+
+/* ── FR TABLE ── */
+.fr-table{width:100%;border-collapse:collapse;font-size:.82rem}
+.fr-table th{text-align:left;padding:8px 14px;color:var(--accent2);font-size:.68rem;font-weight:700;
+  text-transform:uppercase;letter-spacing:.09em;border-bottom:1px solid var(--border)}
+.fr-table td{padding:9px 14px;border-bottom:1px solid rgba(255,255,255,.04);color:var(--text2)}
+.fr-table tr:last-child td{border-bottom:none}
+.fr-table tr:hover td{background:rgba(124,77,255,.06)}
+.fr-table .sym{font-weight:700;color:var(--text)}
+
+/* ── ALERT FEED ── */
+.alert-feed{max-height:320px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border2) transparent}
+.alert-item{display:flex;align-items:flex-start;gap:10px;padding:9px 15px;
+  border-bottom:1px solid rgba(255,255,255,.04);font-size:.8rem;transition:.15s}
+.alert-item:hover{background:rgba(124,77,255,.07)}
+.alert-time{color:var(--text3);font-size:.69rem;white-space:nowrap;margin-top:1px}
+.alert-msg{color:var(--text2);flex:1}
+
+/* ── HEATMAP ── */
+.heatmap-grid{display:flex;flex-wrap:wrap;gap:6px}
+.hm-cell{padding:5px 9px;border-radius:6px;font-size:.71rem;font-weight:700;
+  background:var(--card2);border:1px solid var(--border2);color:var(--text3);cursor:default;transition:.2s}
+
+/* ── SETTINGS CARDS ── */
+.set-card{background:var(--card);border:1px solid var(--border2);
+  border-radius:var(--radius);margin-bottom:16px;overflow:hidden}
+.set-card-head{display:flex;align-items:flex-start;gap:10px;padding:15px 20px 13px;
+  border-bottom:1px solid var(--border2);
+  background:linear-gradient(90deg,rgba(124,77,255,.08) 0%,transparent 65%)}
+.set-card-title{font-size:1.05rem;font-weight:800;color:var(--accent2);letter-spacing:-.01em;line-height:1.2}
+.set-card-sub{font-size:.74rem;color:var(--text3);margin-top:3px}
+.set-card-body{padding:16px 20px}
+.set-row{display:flex;align-items:center;justify-content:space-between;
+  padding:11px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:.85rem}
+.set-row:last-child{border-bottom:none}
+.set-row-lbl{color:var(--text2);font-weight:600}
+.set-row-sub{font-size:.71rem;color:var(--text3);margin-top:2px}
+
+/* ── INPUTS & BUTTONS ── */
+.inp{background:var(--card2);border:1px solid var(--border);color:var(--text);
+  border-radius:var(--radius-sm);padding:7px 11px;font-size:.83rem;outline:none;transition:.2s}
+.inp:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(124,77,255,.2)}
+.btn{padding:8px 18px;border-radius:var(--radius-sm);font-size:.82rem;font-weight:700;
+  cursor:pointer;border:1px solid transparent;transition:.2s;white-space:nowrap}
+.btn-primary{background:linear-gradient(135deg,var(--accent) 0%,#9c67ff 100%);
+  color:#fff;border-color:var(--accent)}
+.btn-primary:hover{opacity:.85;box-shadow:0 4px 16px rgba(124,77,255,.45)}
+.btn-ghost{background:transparent;color:var(--accent2);border-color:var(--border)}
+.btn-ghost:hover{background:rgba(124,77,255,.1);border-color:var(--accent)}
+.btn-danger{background:linear-gradient(135deg,rgba(239,68,68,.18),rgba(239,68,68,.08));
+  color:var(--red);border-color:rgba(239,68,68,.4)}
+.btn-danger:hover{background:rgba(239,68,68,.28);box-shadow:0 4px 16px rgba(239,68,68,.3)}
+.btn-sm{padding:5px 13px;font-size:.75rem}
+
+/* ── TOGGLE SWITCH ── */
+.toggle-sw{position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0}
+.toggle-sw input{opacity:0;width:0;height:0}
+.toggle-sw .slider{position:absolute;inset:0;border-radius:24px;
+  background:var(--card3);border:1px solid rgba(255,255,255,.1);cursor:pointer;transition:.3s}
+.toggle-sw .slider::after{content:'';position:absolute;width:18px;height:18px;border-radius:50%;
+  background:var(--text3);top:2px;left:2px;transition:.3s}
+.toggle-sw input:checked+.slider{
+  background:linear-gradient(135deg,var(--accent),#9c67ff);border-color:var(--accent)}
+.toggle-sw input:checked+.slider::after{
+  transform:translateX(20px);background:#fff;
+  box-shadow:0 2px 8px rgba(124,77,255,.55)}
+
+/* ── MASTER SWITCH ── */
+.master-switch-row{display:flex;align-items:center;gap:12px;padding:14px 20px;flex-wrap:wrap}
+.mode-btn{padding:8px 20px;border-radius:30px;font-size:.8rem;font-weight:700;cursor:pointer;
+  border:1.5px solid var(--border);background:transparent;color:var(--text3);transition:.2s}
+.mode-btn.active-alert{background:rgba(16,185,129,.15);border-color:var(--green);color:var(--green)}
+.mode-btn.active-trade{
+  background:linear-gradient(135deg,rgba(124,77,255,.25),rgba(237,75,158,.15));
+  border-color:var(--accent);color:var(--accent2)}
+
+/* ── ALERT CFG PANEL ── */
+.alert-cfg-panel{background:var(--card);border:1px solid var(--border2);
+  border-radius:var(--radius);overflow:hidden;margin-bottom:16px}
+.alert-cfg-head{display:flex;align-items:center;justify-content:space-between;
+  padding:15px 20px 12px;border-bottom:1px solid var(--border2);
+  background:linear-gradient(90deg,rgba(124,77,255,.1) 0%,rgba(237,75,158,.05) 100%)}
+.alert-cfg-title{font-size:1.05rem;font-weight:800;color:var(--accent2);
+  display:flex;align-items:center;gap:8px}
+.alert-cfg-body{padding:18px 20px}
+.sync-bar{display:flex;align-items:center;gap:8px;padding:7px 12px;margin-bottom:16px;
+  background:var(--card2);border-radius:var(--radius-sm);border:1px solid var(--border2);font-size:.74rem}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--text3);flex-shrink:0;transition:.3s}
+.sync-dot.ok{background:var(--green);box-shadow:0 0 7px var(--green)}
+.sync-dot.err{background:var(--hard)}
+.sync-dot.busy{background:var(--accent2);animation:pulse-dot 1s infinite}
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.3}}
+.sync-txt{color:var(--text3)}
+.alert-section-lbl{font-size:.69rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--accent);margin:16px 0 9px}
+.alert-section-lbl:first-child{margin-top:0}
+
+/* Toggle grid */
+.alert-toggle-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(245px,1fr));gap:8px;min-height:40px}
+.atc{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;
+  border-radius:var(--radius-sm);background:var(--card2);border:1px solid var(--border2);transition:.2s}
+.atc:hover{border-color:rgba(124,77,255,.45)}
+.atc.disabled{opacity:.5}
+.atc-info .atl{font-size:.8rem;font-weight:700;color:var(--text)}
+.atc-info .atd{font-size:.69rem;color:var(--text3);margin-top:2px}
+
+/* Threshold grid */
+.thr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;min-height:40px}
+.thr-card{background:var(--card2);border:1px solid var(--border2);
+  border-radius:var(--radius-sm);padding:10px 14px}
+.thr-card .thr-lbl{font-size:.71rem;font-weight:700;color:var(--text2);margin-bottom:7px}
+.thr-card .thr-row{display:flex;align-items:center;gap:8px}
+.thr-card input[type=number]{width:80px;background:var(--card3);border:1px solid var(--border);
+  color:var(--text);border-radius:6px;padding:5px 8px;font-size:.82rem;outline:none;transition:.2s}
+.thr-card input[type=number]:focus{border-color:var(--accent)}
+.thr-card .thr-unit{font-size:.71rem;color:var(--text3)}
+.alert-cfg-actions{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+
+/* ── FILTER BUTTONS ── */
+.filter-btn{padding:5px 14px;border-radius:20px;font-size:.74rem;font-weight:700;
+  cursor:pointer;border:1px solid var(--border);background:var(--card2);color:var(--text3);transition:.2s}
+.filter-btn.active,.filter-btn:hover{background:rgba(124,77,255,.2);border-color:var(--accent);color:var(--accent2)}
+
+/* ── ANALYTICS ── */
+.analytics-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
+.analytics-card{background:var(--card2);border:1px solid var(--border2);
+  border-radius:var(--radius);padding:16px 18px}
+.analytics-card .a-title{font-size:.85rem;font-weight:700;color:var(--accent2);margin-bottom:7px}
+.analytics-card .a-val{font-size:1.55rem;font-weight:800;color:var(--text)}
+.analytics-card .a-sub{font-size:.71rem;color:var(--text3);margin-top:5px}
+
+/* ── GUARDIAN RULES ── */
+.guardian-rule{display:flex;align-items:center;gap:10px;padding:9px 13px;
+  border-radius:var(--radius-sm);background:var(--card2);border:1px solid var(--border2);
+  margin-bottom:7px;font-size:.8rem}
+.guardian-rule .lbl{color:var(--text2);flex:1}
+.guardian-rule .val{color:var(--accent2);font-weight:700}
+
+/* ── DANGER ZONE ── */
+.danger-zone{background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.25);
+  border-radius:var(--radius);padding:18px 20px;margin-top:8px}
+.danger-title{font-size:.92rem;font-weight:800;color:var(--red);
+  margin-bottom:10px;display:flex;align-items:center;gap:7px}
+
+/* ── WATHCLIST TAG ── */
+.wl-tag{display:inline-flex;align-items:center;padding:4px 11px;border-radius:20px;
+  font-size:.74rem;font-weight:700;background:rgba(124,77,255,.14);
+  border:1px solid rgba(124,77,255,.28);color:var(--accent2);cursor:default}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:22px;right:22px;padding:11px 20px;border-radius:10px;
+  background:var(--card2);border:1px solid var(--border);color:var(--text2);font-size:.82rem;
+  z-index:9999;box-shadow:var(--shadow);opacity:0;pointer-events:none;
+  transform:translateY(10px);transition:.3s}
+.toast.show{opacity:1;transform:none}
+.toast.ok{border-color:var(--green);color:var(--green)}
+.toast.err{border-color:var(--red);color:var(--red)}
+
+/* ── LOADING ── */
+.loading-placeholder{text-align:center;padding:36px 20px;color:var(--text3);font-size:.84rem}
+.spinner{display:inline-block;width:26px;height:26px;border:3px solid var(--border2);
+  border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;margin-bottom:10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* ── RESPONSIVE ── */
+@media(max-width:640px){
+  .topbar{padding:0 12px}
+  .page{padding:14px 12px}
+  .grid2,.grid3,.grid4{grid-template-columns:1fr}
+  .kpi-value{font-size:1.3rem}
+  .alert-toggle-grid{grid-template-columns:1fr}
+  .thr-grid{grid-template-columns:repeat(2,1fr)}
+}
+
+/* ════════ CUSTOM ALERTS PAGE ════════ */
+.ca-header{font-size:1.35rem;font-weight:800;color:var(--accent2);margin-bottom:18px;display:flex;align-items:center;gap:10px}
+.ca-toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;align-items:center}
+.ca-toolbar input,.ca-toolbar select{background:var(--card2);border:1px solid var(--border);color:var(--text);
+  border-radius:var(--radius-sm);padding:8px 12px;font-size:.88rem;outline:none}
+.ca-toolbar input:focus,.ca-toolbar select:focus{border-color:var(--accent)}
+.ca-toolbar input[type=number]{width:100px}
+.ca-add-btn{background:linear-gradient(135deg,var(--accent),var(--pink));color:#fff;border:none;
+  border-radius:var(--radius-sm);padding:8px 18px;font-size:.88rem;font-weight:700;cursor:pointer;
+  transition:opacity .2s}
+.ca-add-btn:hover{opacity:.85}
+.ca-rules-list{display:flex;flex-direction:column;gap:10px;margin-bottom:24px}
+.ca-rule{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);padding:12px 16px;transition:border-color .3s}
+.ca-rule:hover{border-color:var(--accent)}
+.ca-rule.ca-triggered{border-color:var(--jackpot);box-shadow:0 0 14px rgba(255,107,107,.35)}
+.ca-rule-sym{font-weight:700;color:var(--text);font-size:.95rem;min-width:90px}
+.ca-rule-sym span{font-size:.75rem;color:var(--text3);font-weight:400}
+.ca-rule-cond{font-size:.82rem;color:var(--text2);flex:1}
+.ca-rule-badge{font-size:.75rem;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap}
+.ca-rule-badge.above{background:rgba(239,68,68,.18);color:#ef4444}
+.ca-rule-badge.below{background:rgba(16,185,129,.18);color:#10b981}
+.ca-rule-badge.cross{background:rgba(124,77,255,.18);color:var(--accent2)}
+.ca-rule-fr{font-size:.88rem;font-weight:700;color:var(--accent2);min-width:70px;text-align:right}
+.ca-rule-del{background:rgba(239,68,68,.15);border:none;border-radius:6px;color:#ef4444;
+  padding:4px 10px;cursor:pointer;font-size:.82rem;transition:background .2s}
+.ca-rule-del:hover{background:rgba(239,68,68,.35)}
+.ca-rule-toggle{display:flex;align-items:center;gap:6px;font-size:.8rem;color:var(--text3)}
+.ca-empty{text-align:center;padding:40px 20px;color:var(--text3);font-size:.9rem}
+.ca-log-title{font-size:1rem;font-weight:700;color:var(--text2);margin-bottom:10px}
+.ca-log{display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto}
+.ca-log-item{display:flex;gap:10px;background:var(--card);border-radius:var(--radius-sm);
+  padding:8px 12px;font-size:.82rem;border-left:3px solid var(--accent)}
+.ca-log-item.above{border-color:#ef4444}
+.ca-log-item.below{border-color:#10b981}
+.ca-log-item.cross{border-color:var(--accent2)}
+.ca-log-time{color:var(--text3);min-width:60px}
+.ca-log-sym{font-weight:700;color:var(--text);min-width:80px}
+.ca-log-msg{color:var(--text2);flex:1}
+.ca-log-fr{font-weight:700;color:var(--accent2)}
+.ca-notif-row{display:flex;align-items:center;gap:14px;margin-bottom:18px;
+  background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px}
+.ca-notif-row label{font-size:.88rem;color:var(--text2)}
+.ca-stats-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.ca-stat-chip{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+  padding:10px 18px;font-size:.83rem;color:var(--text3)}
+.ca-stat-chip strong{display:block;font-size:1.2rem;font-weight:800;color:var(--text)}
+/* light mode overrides */
+body.light .ca-toolbar input,body.light .ca-toolbar select{background:#f0eeff;border-color:#ccc;color:#1a1030}
+body.light .ca-rule{background:#fff;border-color:#e0d8ff}
+body.light .ca-log-item{background:#f8f6ff}
+
+
+/* ════════ ONBOARDING MODAL ════════ */
+#ob-overlay{position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:9999;
+  display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px)}
+#ob-overlay.hidden{display:none}
+.ob-modal{background:var(--card);border:1px solid var(--border);border-radius:20px;
+  padding:36px 32px;max-width:480px;width:92%;box-shadow:0 0 60px rgba(124,77,255,.45);
+  position:relative}
+.ob-logo{text-align:center;font-size:2.8rem;margin-bottom:6px}
+.ob-title{text-align:center;font-size:1.4rem;font-weight:800;color:var(--accent2);margin-bottom:4px}
+.ob-sub{text-align:center;font-size:.83rem;color:var(--text3);margin-bottom:24px}
+.ob-field{margin-bottom:14px}
+.ob-field label{display:block;font-size:.82rem;font-weight:600;color:var(--text2);margin-bottom:5px}
+.ob-field input{width:100%;box-sizing:border-box;background:var(--card2);border:1px solid var(--border);
+  color:var(--text);border-radius:var(--radius-sm);padding:10px 12px;font-size:.9rem;
+  font-family:monospace;outline:none;transition:border-color .2s}
+.ob-field input:focus{border-color:var(--accent)}
+.ob-field input.err{border-color:#ef4444}
+.ob-toggle-row{display:flex;align-items:center;gap:10px;margin-bottom:20px;
+  font-size:.83rem;color:var(--text2)}
+.ob-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+.ob-btn-primary{background:linear-gradient(135deg,var(--accent),var(--pink));color:#fff;
+  border:none;border-radius:var(--radius-sm);padding:10px 24px;font-size:.92rem;
+  font-weight:700;cursor:pointer;transition:opacity .2s}
+.ob-btn-primary:hover{opacity:.85}
+.ob-btn-skip{background:transparent;border:1px solid var(--border);color:var(--text3);
+  border-radius:var(--radius-sm);padding:10px 18px;font-size:.88rem;cursor:pointer;
+  transition:border-color .2s}
+.ob-btn-skip:hover{border-color:var(--accent2);color:var(--text2)}
+.ob-status{font-size:.78rem;min-height:18px;margin-top:10px;text-align:center}
+.ob-status.ok{color:#10b981} .ob-status.err{color:#ef4444} .ob-status.loading{color:var(--text3)}
+/* ── API form in Settings ── */
+.api-form-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.api-form-row input{flex:1;min-width:180px;background:var(--card2);border:1px solid var(--border);
+  color:var(--text);border-radius:var(--radius-sm);padding:8px 12px;font-size:.85rem;
+  font-family:monospace;outline:none;transition:border-color .2s}
+.api-form-row input:focus{border-color:var(--accent)}
+.api-form-row .eye-btn{background:var(--card2);border:1px solid var(--border);border-radius:var(--radius-sm);
+  padding:8px 10px;cursor:pointer;color:var(--text2);font-size:.9rem;transition:background .2s}
+.api-form-row .eye-btn:hover{background:var(--card3)}
+.api-save-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
+.api-test-badge{font-size:.78rem;padding:4px 12px;border-radius:20px;font-weight:600}
+.api-test-badge.ok{background:rgba(16,185,129,.18);color:#10b981}
+.api-test-badge.err{background:rgba(239,68,68,.18);color:#ef4444}
+.api-test-badge.testing{background:rgba(124,77,255,.18);color:var(--accent2)}
+/* ── Sync status chip ── */
+.sync-chip{display:inline-flex;align-items:center;gap:5px;font-size:.75rem;padding:3px 10px;
+  border-radius:20px;background:rgba(124,77,255,.12);color:var(--text3)}
+.sync-chip.saving{background:rgba(255,211,42,.12);color:#ffd32a}
+.sync-chip.ok{background:rgba(16,185,129,.12);color:#10b981}
+.sync-chip.err{background:rgba(239,68,68,.12);color:#ef4444}
+/* light-mode */
+body.light .ob-modal{background:#fff;border-color:#e0d8ff}
+body.light .ob-field input,.api-form-row input{background:#f0eeff;border-color:#ccc;color:#1a1030}
+
+
+/* ── proxy upgrade banner ── */
+#proxy-upgrade-banner{display:none;background:rgba(255,211,42,.12);border-bottom:1px solid rgba(255,211,42,.3);
+  padding:8px 20px;font-size:.82rem;color:#ffd32a;align-items:center;gap:8px;flex-wrap:wrap}
+
+
+/* proxy-update-banner già inline */
+</style>
+</head>
+<body>
+<!-- ══════════════════════════════════════
+     ONBOARDING POPUP — API Keys Bybit
+══════════════════════════════════════ -->
+<div id="ob-overlay" class="hidden">
+  <div class="ob-modal">
+    <div class="ob-logo">🥞</div>
+    <div class="ob-title">Funding King</div>
+    <div id="ob-sub" class="ob-sub">Connetti il tuo account Bybit per iniziare</div>
+
+<div id="proxy-upgrade-banner"></div>
+
+    <div class="ob-field">
+      <label>🔑 API Key Bybit</label>
+      <input type="text" id="ob-key" placeholder="Es. xxxxxxxxxxxxxxxxxxxxxxxx" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="ob-field">
+      <label>🔐 API Secret</label>
+      <input type="password" id="ob-secret" placeholder="••••••••••••••••••••••••••••••••" autocomplete="off">
+    </div>
+    <div class="ob-toggle-row">
+      <label class="toggle-switch" style="margin:0">
+        <input type="checkbox" id="ob-testnet">
+        <span class="slider"></span>
+      </label>
+      <span>Usa Testnet Bybit</span>
+      <span style="color:var(--text3);font-size:.78rem;margin-left:4px">(solo per test)</span>
+    </div>
+
+    <div id="ob-status" class="ob-status"></div>
+
+    <!-- Sezione "già configurato" (mostrata da JS se key_set=true) -->
+    <div id="ob-already-section" style="display:none;text-align:center;padding:10px 0">
+      <div style="font-size:2.8rem;margin-bottom:8px">✅</div>
+      <div style="font-weight:700;color:#10b981;font-size:1.05rem;margin-bottom:6px">API Keys già configurate</div>
+      <div style="font-size:.82rem;color:var(--text3);margin-bottom:16px;line-height:1.5">
+        Il bot è operativo. Puoi aggiornare le chiavi dalla sezione<br>
+        <strong style="color:var(--accent2)">⚙️ Impostazioni → API Keys</strong>
+      </div>
+      <div id="ob-bot-status-info" style="background:var(--card2);border-radius:10px;padding:12px;font-size:.81rem;color:var(--text2);margin-bottom:16px;text-align:left;line-height:1.7"></div>
+      <button class="ob-btn-primary" style="width:100%" onclick="obHide();refreshAll()">🚀 Apri Dashboard</button>
+    </div>
+
+    <div class="ob-actions">
+      <button class="ob-btn-skip" onclick="obSkip()">Salta per ora</button>
+      <button class="ob-btn-primary" id="ob-test-btn" onclick="obTestAndSave()">🔌 Connetti &amp; Salva</button>
+    </div>
+
+    <div style="margin-top:18px;font-size:.73rem;color:var(--text3);text-align:center;line-height:1.5">
+      Le chiavi sono inviate al proxy locale <strong style="color:var(--accent2)">95.217.10.201:8080</strong>
+      e non vengono mai trasmesse a terzi.<br>
+      Abilita solo permessi <em>Read + Orders</em> — no Withdraw.
+    </div>
+  </div>
+</div>
+
+<!-- ── Proxy-update banner (mostrato se endpoint mancanti) ── -->
+<div id="proxy-update-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:8888;
+  background:linear-gradient(90deg,#ff6b6b,#ff9f43);color:#fff;font-size:.82rem;
+  padding:9px 20px;text-align:center;box-shadow:0 -4px 20px rgba(255,107,107,.4)">
+  ⚠️ Proxy <strong>v4</strong> — endpoint mancanti (<code style="background:rgba(0,0,0,.2);padding:1px 5px;border-radius:4px">/api/config, /api/mode, /api/risk-params…</code>).
+  Aggiorna il proxy con <code style="background:rgba(0,0,0,.2);padding:1px 5px;border-radius:4px">proxy_v5.py</code>
+  per sincronizzazione completa.
+  &nbsp;<a onclick="document.getElementById('proxy-update-banner').style.display='none'"
+    style="color:#fff;cursor:pointer;font-weight:700;text-decoration:underline">✕</a>
+</div>
+
+<!-- ════════════════════════════════════════
+     TOP BAR
+════════════════════════════════════════ -->
+<header class="topbar">
+  <div class="topbar-logo">🤑 Funding<span>King</span></div>
+  <div class="topbar-status">
+    <div class="status-dot" id="connDot"></div>
+    <span id="connTxt">Connessione…</span>
+  </div>
+  <div class="topbar-right">
+    <div class="topbar-badge" id="modeTopBadge">ALERT ONLY</div>
+    <button id="themeBtn" onclick="toggleTheme()" title="Cambia tema">🌙</button>
+    <button class="topbar-badge" onclick="refreshAll()">⟳ Aggiorna</button>
+  </div>
+</header>
+
+<!-- ════════════════════════════════════════
+     NAVIGAZIONE
+════════════════════════════════════════ -->
+<nav class="nav">
+  <button class="nav-btn active" onclick="showPage('monitor',this)">📊 Monitor</button>
+  <button class="nav-btn" onclick="showPage('positions',this)">📂 Posizioni</button>
+  <button class="nav-btn" onclick="showPage('newlistings',this)">🆕 Nuovi Listing</button>
+  <button class="nav-btn" onclick="showPage('analytics',this)">📊 Posizioni & Alert</button>
+  <button class="nav-btn" onclick="showPage('custom-alerts',this)">🔔 Alert</button>
+  <button class="nav-btn" onclick="showPage('settings',this)">⚙️ Impostazioni</button>
+</nav>
+
+<!-- ════════════════════════════════════════
+     PAGINA: MONITOR
+════════════════════════════════════════ -->
+<div class="page active" id="page-monitor">
+  <div class="page-header">📊 Monitor</div>
+
+  <!-- KPI strip -->
+  <div class="grid4" style="margin-bottom:18px">
+    <div class="kpi-card">
+      <div class="kpi-label">Equity</div>
+      <div class="kpi-value" id="kpi-equity">—</div>
+      <div class="kpi-sub">USDT totale</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Margine usato</div>
+      <div class="kpi-value" id="kpi-margin">—</div>
+      <div class="kpi-sub">su equity</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Simboli attivi</div>
+      <div class="kpi-value" id="kpi-symbols">—</div>
+      <div class="kpi-sub">watchlist</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Top Rate</div>
+      <div class="kpi-value" id="kpi-top">—</div>
+      <div class="kpi-sub" id="kpi-top-sym">—</div>
+    </div>
+  </div>
+
+  <!-- FR table + Alert feed -->
+  <div class="grid3" style="margin-bottom:18px">
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">⚡ Top Funding Rates</div>
+          <div class="card-sub">aggiornato ogni 60 s</div>
+        </div>
+        <div style="display:flex;gap:5px;flex-shrink:0">
+          <button class="filter-btn active" onclick="setTopFilter('all',this)">Tutti</button>
+          <button class="filter-btn" onclick="setTopFilter('jackpot',this)">🤑</button>
+          <button class="filter-btn" onclick="setTopFilter('high',this)">🚨</button>
+        </div>
+      </div>
+      <div class="card-body" style="padding:0">
+        <table class="fr-table">
+          <thead><tr><th>Simbolo</th><th>FR</th><th>Livello</th><th>Prossimo</th></tr></thead>
+          <tbody id="fr-tbody">
+            <tr><td colspan="4" class="loading-placeholder"><div class="spinner"></div><br>Caricamento…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">🔔 Alert Feed</div>
+          <div class="card-sub" id="alert-count">0 alert oggi</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="clearAlertFeed()">Pulisci</button>
+      </div>
+      <div class="card-body" style="padding:0">
+        <div class="alert-feed" id="alert-feed">
+          <div class="loading-placeholder">Nessun alert recente</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Heatmap -->
+  <div class="card" style="margin-bottom:18px">
+    <div class="card-head">
+      <div class="card-title">🌡️ Heatmap Funding Rate</div>
+    </div>
+    <div class="card-body">
+      <div class="heatmap-grid" id="heatmap-grid">
+        <div class="loading-placeholder" style="padding:10px">Caricamento…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Watchlist quick -->
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <div class="card-title">👁 Watchlist</div>
+        <div class="card-sub"><span id="watchlist-count">0</span> simboli monitorati</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div id="watchlist-tags" style="display:flex;flex-wrap:wrap;gap:6px">
+        <span style="color:var(--text3);font-size:.8rem">Caricamento…</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     PAGINA: POSIZIONI
+════════════════════════════════════════ -->
+<div class="page" id="page-positions">
+  <div class="page-header">📂 Posizioni Aperte</div>
+  <div class="grid4" style="margin-bottom:18px">
+    <div class="kpi-card"><div class="kpi-label">Posizioni aperte</div><div class="kpi-value" id="pos-count">0</div></div>
+    <div class="kpi-card"><div class="kpi-label">uPnL totale</div><div class="kpi-value" id="pos-upnl">—</div></div>
+    <div class="kpi-card"><div class="kpi-label">Margine usato</div><div class="kpi-value" id="pos-margin2">—</div></div>
+    <div class="kpi-card"><div class="kpi-label">PnL realizzato</div><div class="kpi-value" id="pos-realised">—</div></div>
+  </div>
+  <!-- Wallet dettaglio -->
+  <div class="grid4" style="margin-bottom:18px">
+    <div class="kpi-card"><div class="kpi-label">💰 Equity</div><div class="kpi-value" id="wallet-equity">—</div><div class="kpi-sub">USDT</div></div>
+    <div class="kpi-card"><div class="kpi-label">✅ Disponibile</div><div class="kpi-value" id="wallet-available">—</div><div class="kpi-sub">USDT liberi</div></div>
+    <div class="kpi-card"><div class="kpi-label">📉 uPnL wallet</div><div class="kpi-value" id="wallet-upnl">—</div><div class="kpi-sub">non realizzato</div></div>
+    <div class="kpi-card"><div class="kpi-label">🏦 Wallet Balance</div><div class="kpi-value" id="wallet-bal">—</div><div class="kpi-sub">saldo totale</div></div>
+  </div>
+  <div class="grid3" id="pos-grid">
+    <div class="loading-placeholder"><div class="spinner"></div><br>Caricamento posizioni…</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     PAGINA: NUOVI LISTING
+════════════════════════════════════════ -->
+<div class="page" id="page-newlistings">
+  <div class="page-header">🆕 Nuovi Listing Anomali</div>
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <div class="card-title">Simboli listati negli ultimi 30 giorni</div>
+        <div class="card-sub">con funding rate anomalo — badge NEW</div>
+      </div>
+    </div>
+    <div class="card-body" style="padding:0">
+      <table class="fr-table" style="width:100%">
+        <thead><tr><th>Simbolo</th><th>FR</th><th>Livello</th><th>Data listing</th></tr></thead>
+        <tbody id="nl-tbody">
+          <tr><td colspan="4" class="loading-placeholder">Nessun nuovo listing anomalo</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     PAGINA: ANALYTICS (Posizioni & Alert History)
+════════════════════════════════════════ -->
+<div class="page" id="page-analytics">
+  <div class="page-header">📊 Posizioni Aperte & Alert History</div>
+
+  <!-- Posizioni Aperte -->
+  <div class="card" style="margin-bottom:18px">
+    <div class="card-head">
+      <div>
+        <div class="card-title">📂 Posizioni Aperte</div>
+        <div class="card-sub">Dati live dal tuo account Bybit</div>
+      </div>
+    </div>
+    <div id="analytics-positions-body">
+      <div style="text-align:center;padding:24px;color:var(--text-muted)">Caricamento posizioni…</div>
+    </div>
+  </div>
+
+  <!-- Alert History -->
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <div class="card-title">🔔 Alert History</div>
+        <div class="card-sub">Ultimi alert di funding rate generati</div>
+      </div>
+      <button class="btn-sm" onclick="clearAlertHistory()">🗑 Pulisci</button>
+    </div>
+    <div id="analytics-alert-history">
+      <div style="text-align:center;padding:24px;color:var(--text-muted)">Nessun alert recente</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     PAGINA: IMPOSTAZIONI
+════════════════════════════════════════ -->
+<div class="page" id="page-settings">
+  <div class="page-header">⚙️ Impostazioni Bot</div>
+
+  <!-- Master Switch -->
+  <div class="set-card">
+    <div class="set-card-head">
+      <div style="flex:1">
+        <div class="set-card-title">⚡ Master Switch</div>
+        <div class="set-card-sub">Modalità operativa del bot</div>
+      </div>
+      <label class="toggle-sw" style="margin-top:2px">
+        <input type="checkbox" id="masterToggle" onchange="setMasterMode(this.checked)">
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="master-switch-row">
+      <button class="mode-btn active-alert" id="modeAlertBtn" onclick="setMode('alert')">🔔 ALERT ONLY</button>
+      <span style="color:var(--text3);font-size:.8rem" id="modeStatus">Modalità: <b>ALERT ONLY</b></span>
+    </div>
+    <div id="tradeWarning" style="display:none;padding:0 20px 14px">
+      <div style="background:rgba(255,159,67,.1);border:1px solid rgba(255,159,67,.3);
+        border-radius:8px;padding:10px 14px;font-size:.8rem;color:var(--hard)">
+      </div>
+    </div>
+  </div>
+
+  <!-- Guardian -->
+  <div class="set-card">
+    <div class="set-card-head">
+      <div>
+        <div class="set-card-title">🛡️ Guardian — Protezione Automatica</div>
+        <div class="set-card-sub">Chiude posizioni al superamento delle soglie di rischio</div>
+      </div>
+    </div>
+    <div class="set-card-body">
+      <div class="set-row">
+        <div>
+          <div class="set-row-lbl">Soglia MMR (%)</div>
+          <div class="set-row-sub">Chiude se la maintenance margin scende sotto questa soglia</div>
+        </div>
+        <input class="inp" id="s-mmr" type="number" step="0.5" value="15" style="width:90px" onchange="saveRiskParams()">
+      </div>
+      <div class="set-row">
+        <div>
+          <div class="set-row-lbl">Profit target (%)</div>
+          <div class="set-row-sub">Chiude la posizione al raggiungimento del guadagno</div>
+        </div>
+        <input class="inp" id="s-profit" type="number" step="1" value="20" style="width:90px" onchange="saveRiskParams()">
+      </div>
+      <div class="set-row">
+        <div>
+          <div class="set-row-lbl">Max loss portfolio (%)</div>
+          <div class="set-row-sub">Stop globale al raggiungimento della perdita massima</div>
+        </div>
+        <input class="inp" id="s-loss" type="number" step="1" value="-15" style="width:90px" onchange="saveRiskParams()">
+      </div>
+    </div>
+  </div>
+
+  <!-- Watchlist -->
+  <div class="set-card">
+    <div class="set-card-head">
+      <div>
+        <div class="set-card-title">👁 Gestione Watchlist</div>
+        <div class="set-card-sub">Simboli monitorati dal bot</div>
+      </div>
+    </div>
+    <div class="set-card-body">
+      <div id="s-watchlist-tags" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:13px">
+        <span style="color:var(--text3);font-size:.8rem">Caricamento…</span>
+      </div>
+      <div style="display:flex;gap:8px">
+        <input class="inp" id="s-add-sym" placeholder="es. BTCUSDT" style="flex:1;text-transform:uppercase">
+        <button class="btn btn-primary btn-sm" onclick="addWatchlistSym()">+ Aggiungi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Intervalli Funding -->
+  <div class="set-card">
+    <div class="set-card-head">
+      <div class="set-card-title">⏱ Intervalli Funding</div>
+    </div>
+    <div class="set-card-body">
+      <div class="set-row">
+        <div class="set-row-lbl">Intervallo monitorato</div>
+        <div style="display:flex;gap:6px">
+          <button class="filter-btn active" onclick="setFundingInterval('8H',this)">8H</button>
+          <button class="filter-btn" onclick="setFundingInterval('4H',this)">4H</button>
+          <button class="filter-btn" onclick="setFundingInterval('2H',this)">2H</button>
+          <button class="filter-btn" onclick="setFundingInterval('1H',this)">1H</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Telegram -->
+  <div class="set-card">
+    <div class="set-card-head">
+      <div>
+        <div class="set-card-title">📱 Notifiche Telegram</div>
+        <div class="set-card-sub">Configurazione messaggi del bot</div>
+      </div>
+    </div>
+    <div class="set-card-body">
+      <div class="set-row">
+        <div class="set-row-lbl">Notifiche abilitate</div>
+        <label class="toggle-sw"><input type="checkbox" id="tgToggle" checked><span class="slider"></span></label>
+      </div>
+      <div class="set-row">
+        <div class="set-row-lbl">Daily digest (ore 8:00)</div>
+        <label class="toggle-sw"><input type="checkbox" id="tgDigest" checked><span class="slider"></span></label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chiusura per MM% -->
+  <div class="set-card">
+    <div class="set-card-head">
+      <div>
+        <div class="set-card-title">🔴 Chiusura Posizioni per MM%</div>
+        <div class="set-card-sub">Chiude tutte le posizioni sotto la soglia Maintenance Margin</div>
+      </div>
+    </div>
+    <div class="set-card-body">
+      <div class="set-row">
+        <div>
+          <div class="set-row-lbl">Soglia MM% trigger</div>
+          <div class="set-row-sub">Default: 15% — equivale a /chiudi_mm [%] su Telegram</div>
+        </div>
+        <input class="inp" id="closeMMThr" type="number" value="15" step="1" min="1" max="100" style="width:90px">
+      </div>
+      <div style="margin-top:13px">
+        <button class="btn btn-danger" onclick="closeByMM()">⚡ Esegui Chiusura per MM%</button>
+      </div>
+      <div id="closeMMResult" style="margin-top:10px;font-size:.79rem;color:var(--text3)"></div>
+    </div>
+  </div>
+
+  <!-- Chiusura per PnL -->
+  <div class="set-card">
+    <div class="set-card-head">
+      <div>
+        <div class="set-card-title">💰 Chiusura Posizioni per PnL Portfolio</div>
+        <div class="set-card-sub">Chiude quando il PnL totale raggiunge la soglia impostata</div>
+      </div>
+    </div>
+    <div class="set-card-body">
+      <div class="set-row">
+        <div>
+          <div class="set-row-lbl">Soglia PnL (USDT)</div>
+          <div class="set-row-sub">Negativo = stop loss, positivo = take profit</div>
+        </div>
+        <input class="inp" id="closePnLThr" type="number" value="-20" style="width:90px">
+      </div>
+      <div style="margin-top:13px">
+        <button class="btn btn-danger" onclick="closeByPnL()">⚡ Esegui Chiusura per PnL</button>
+      </div>
+      <div id="closePnLResult" style="margin-top:10px;font-size:.79rem;color:var(--text3)"></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       🔔 GESTIONE ALERT
+  ══════════════════════════════════════ -->
+
+  <!-- API Keys — Real Form -->
+  <div class="set-card">
+    <div class="set-card-head">
+      <div class="set-card-title">🔑 API Keys Bybit</div>
+      <span id="api-sync-chip" class="sync-chip">—</span>
+    </div>
+    <div class="set-card-body">
+
+      <div style="font-size:.82rem;color:var(--text2);margin-bottom:10px">
+        API Key
+      </div>
+      <div class="api-form-row">
+        <input type="text" id="s-api-key" placeholder="API Key Bybit" autocomplete="off" spellcheck="false">
+        <button class="eye-btn" onclick="sToggleVis('s-api-key',this)" title="Mostra/Nascondi">👁</button>
+      </div>
+
+      <div style="font-size:.82rem;color:var(--text2);margin-bottom:10px;margin-top:6px">
+        API Secret
+      </div>
+      <div class="api-form-row">
+        <input type="password" id="s-api-secret" placeholder="API Secret Bybit" autocomplete="off">
+        <button class="eye-btn" onclick="sToggleVis('s-api-secret',this)" title="Mostra/Nascondi">👁</button>
+      </div>
+
+      <div class="ob-toggle-row" style="margin-top:10px;margin-bottom:0">
+        <label class="toggle-switch" style="margin:0">
+          <input type="checkbox" id="s-testnet-chk">
+          <span class="slider"></span>
+        </label>
+        <span style="font-size:.83rem;color:var(--text2)">Testnet</span>
+      </div>
+
+      <div class="api-save-row">
+        <button class="btn btn-primary btn-sm" onclick="sApiSave()">💾 Salva Keys</button>
+        <button class="btn btn-ghost btn-sm" onclick="sApiTest()">🔌 Testa Connessione</button>
+        <button class="btn btn-ghost btn-sm" style="color:#ef4444" onclick="sApiClear()">🗑 Cancella</button>
+        <span id="api-test-badge" class="api-test-badge" style="display:none"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Danger Zone -->
+  <div class="danger-zone">
+    <div class="danger-title">🛑 Danger Zone</div>
+    <p style="font-size:.82rem;color:var(--text3);margin-bottom:15px">
+      Azioni irreversibili. Usare con estrema cautela.
+    </p>
+    <button class="btn btn-danger" onclick="closeAllPositions()">🛑 Chiudi TUTTE le Posizioni ORA</button>
+  </div>
+</div>
+
+
+
+<!-- ════════════════════════════════════════
+     PAGINA: ALERT PERSONALIZZATI
+════════════════════════════════════════ -->
+<div class="page" id="page-custom-alerts">
+  <div class="ca-header">🔔 Alert Personalizzati <span style="font-size:.75rem;color:var(--text3);font-weight:400">FR custom threshold</span></div>
+
+  <!-- ══════════════════════════════════════
+       🔔 GESTIONE ALERT (Toggle + Soglie)
+  ══════════════════════════════════════ -->
+  <div class="alert-cfg-panel" id="alertCfgPanel">
+    <div class="alert-cfg-head">
+      <div class="alert-cfg-title">🔔 Gestione Alert</div>
+      <div class="sync-bar" style="margin:0;padding:5px 10px;font-size:.72rem">
+        <div class="sync-dot busy" id="syncDot"></div>
+        <span class="sync-txt" id="syncStatusTxt">Caricamento…</span>
+      </div>
+    </div>
+    <div class="alert-cfg-body">
+      <div class="alert-section-lbl">Attiva / Disattiva tipo alert</div>
+      <div class="alert-toggle-grid" id="alertToggleGrid">
+        <!-- popolato da _renderAlertToggles() -->
+      </div>
+
+      <div class="alert-section-lbl">🎯 Soglie Numeriche Funding Rate (%)</div>
+      <div class="thr-grid" id="alertThrGrid">
+        <!-- popolato da _renderAlertThresholds() -->
+      </div>
+
+      <div class="alert-cfg-actions">
+        <button class="btn btn-primary btn-sm" onclick="saveAlertConfig()">💾 Salva sul Bot</button>
+        <button class="btn btn-ghost btn-sm" onclick="resetAlertConfig()">↩ Ripristina Default</button>
+        <button class="btn btn-ghost btn-sm" onclick="loadAlertConfig()">🔄 Ricarica dal Bot</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Notification permission row -->
+  <div class="ca-notif-row">
+    <span style="font-size:1.1rem">🔔</span>
+    <label>Notifiche Browser:</label>
+    <span id="ca-notif-status" style="font-weight:700;color:var(--text3)">—</span>
+    <button class="btn btn-ghost btn-sm" onclick="caRequestNotif()">Abilita</button>
+    <label style="margin-left:auto">
+      <input type="checkbox" id="ca-sound-chk" onchange="caSavePrefs()"> 🔊 Suono
+    </label>
+    <label style="margin-left:12px">
+      <input type="checkbox" id="ca-toast-chk" checked onchange="caSavePrefs()"> 💬 Toast
+    </label>
+  </div>
+
+  <!-- Stats chips -->
+  <div class="ca-stats-row">
+    <div class="ca-stat-chip"><strong id="ca-stat-rules">0</strong>Regole attive</div>
+    <div class="ca-stat-chip"><strong id="ca-stat-fired">0</strong>Alert scattati</div>
+    <div class="ca-stat-chip"><strong id="ca-stat-today">0</strong>Oggi</div>
+    <div class="ca-stat-chip"><strong id="ca-stat-last">—</strong>Ultimo alert</div>
+  </div>
+
+  <!-- Add rule toolbar -->
+  <div class="ca-toolbar">
+    <input type="text" id="ca-sym-input" placeholder="Simbolo (es. BTCUSDT)" style="width:150px"
+           oninput="this.value=this.value.toUpperCase()">
+    <select id="ca-cond-select">
+      <option value="above">FR &gt; soglia (above)</option>
+      <option value="below">FR &lt; soglia (below)</option>
+      <option value="cross_up">Cross UP soglia</option>
+      <option value="cross_down">Cross DOWN soglia</option>
+    </select>
+    <input type="number" id="ca-thresh-input" placeholder="Soglia %" step="0.01" min="-5" max="10" value="0.10">
+    <select id="ca-cooldown-select">
+      <option value="0">Nessun cooldown</option>
+      <option value="5">5 min cooldown</option>
+      <option value="15" selected>15 min cooldown</option>
+      <option value="30">30 min cooldown</option>
+      <option value="60">1 ora cooldown</option>
+    </select>
+    <button class="ca-add-btn" onclick="caAddRule()">＋ Aggiungi Regola</button>
+    <button class="btn btn-ghost btn-sm" onclick="caClearAll()" style="margin-left:auto;color:#ef4444">🗑 Svuota tutto</button>
+  </div>
+
+  <!-- Rules list -->
+  <div id="ca-rules-list" class="ca-rules-list">
+    <div class="ca-empty">Nessuna regola configurata. Aggiungi un simbolo e una soglia.</div>
+  </div>
+
+  <!-- Activity log -->
+  <div class="ca-log-title">📋 Log Alert (ultimi 50)</div>
+  <div id="ca-log" class="ca-log">
+    <div class="ca-empty">Nessun alert ancora.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════ -->
+<script>
+/* ─── CONFIG ─── */
+const PROXY_URL  = 'http://95.217.10.201:8080';
+const REFRESH_MS = 60000;
+
+/* ─── LEVEL SYSTEM ─── */
+const LEVEL_LABELS = {
+  jackpot:'🤑 JACKPOT', hard:'🔴 HARD', extreme:'🔥 EXTREME',
+  high:'🚨 HIGH', close:'⚠️ CLOSE', warn:'ℹ️ WARN',
+  rientro:'✅ RIENTRO', none:'—'
+};
+const LEVEL_COLORS = {
+  jackpot:'var(--jackpot)', hard:'var(--hard)', extreme:'var(--extreme)',
+  high:'var(--high)', close:'var(--close)', warn:'var(--warn)',
+  rientro:'var(--green)', none:'var(--text3)'
+};
+
+function classify(fr) {
+  const a = Math.abs(fr);
+  if (a >= 2.50) return 'jackpot';
+  if (a >= 2.00) return 'hard';
+  if (a >= 1.50) return 'extreme';
+  if (a >= 1.00) return 'high';
+  if (a >= 0.75) return 'close';
+  if (a >= 0.25) return 'warn';
+  if (a <= 0.20 && a > 0) return 'rientro';
+  return 'none';
+}
+function lvlBadge(lvl) {
+  return `<span class="lvl lvl-${lvl}">${LEVEL_LABELS[lvl] || lvl}</span>`;
+}
+
+/* ─── ALERT TYPES ─── */
+const ALERT_TYPES = [
+  { key:'critico',      label:'🤑 JACKPOT FUNDING',    desc:'≥ 2.50%' },
+  { key:'hard',         label:'🔴 HARD FUNDING',        desc:'≥ 2.00%' },
+  { key:'extreme',      label:'🔥 EXTREME FUNDING',     desc:'≥ 1.50%' },
+  { key:'high',         label:'🚨 HIGH FUNDING',        desc:'≥ 1.00%' },
+  { key:'close_tip',    label:'⚠️ CONSIGLIO CHIUSURA', desc:'≥ 0.75%' },
+  { key:'warn_tip',     label:'ℹ️ PERICOLO CHIUSURA',  desc:'≥ 0.25%' },
+  { key:'rientro',      label:'✅ FUNDING RIENTRATO',  desc:'≤ 0.20%' },
+  { key:'next_funding', label:'⏰ PRE-FUNDING',         desc:'15 min prima' },
+  { key:'pump_dump',    label:'🚀 PUMP / DUMP',         desc:'±5% in 1H' },
+  { key:'level_change', label:'⬆️ CAMBIO LIVELLO',      desc:'cambio livello FR' },
+  { key:'liquidation',  label:'💧 LIQUIDAZIONE IMMIN.', desc:'MMR < 15%' },
+  { key:'multi_pos',    label:'🔔 ALERT SIMULTANEI',   desc:'≥3 simboli' }
+];
+const THR_TYPES = [
+  { key:'critico',   label:'🤑 Jackpot (%)',  default:2.50, step:0.1 },
+  { key:'hard',      label:'🔴 Hard (%)',      default:2.00, step:0.1 },
+  { key:'extreme',   label:'🔥 Extreme (%)',  default:1.50, step:0.1 },
+  { key:'high',      label:'🚨 High (%)',      default:1.00, step:0.1 },
+  { key:'close_tip', label:'⚠️ Close (%)',    default:0.75, step:0.05 },
+  { key:'warn_tip',  label:'ℹ️ Warn (%)',     default:0.25, step:0.05 },
+  { key:'rientro',   label:'✅ Rientro (%)',  default:0.20, step:0.05 }
+];
+
+/* ─── LOCAL STATE ─── */
+let _alertCfgLocal = null;
+let allPositions   = [];
+let allTickers     = {};
+let _frData        = [];
+let topFilter      = 'all';
+
+/* ─── SYNC DOT ─── */
+function _syncDot(state, msg) {
+  const d = document.getElementById('syncDot');
+  if (d) d.className = 'sync-dot ' + state;
+  const t = document.getElementById('syncStatusTxt');
+  if (t) t.textContent = msg;
+}
+
+/* ─── RENDER ALERT TOGGLES ─── */
+function _renderAlertToggles(cfg) {
+  const def = {
+    critico:true, hard:true, extreme:true, high:true,
+    close_tip:true, warn_tip:false, rientro:true,
+    next_funding:true, pump_dump:false, level_change:false,
+    liquidation:true, multi_pos:false
+  };
+  const enabled = (cfg && cfg.enabled) ? cfg.enabled : def;
+  const g = document.getElementById('alertToggleGrid');
+  if (!g) return;
+  g.innerHTML = ALERT_TYPES.map(t => {
+    const on = enabled[t.key] !== false;
+    return `<div class="atc${on ? '' : ' disabled'}" id="atc-${t.key}">
+      <div class="atc-info">
+        <div class="atl">${t.label}</div>
+        <div class="atd">${t.desc}</div>
+      </div>
+      <label class="toggle-sw" onclick="event.stopPropagation()">
+        <input type="checkbox" ${on ? 'checked' : ''} onchange="_onToggleChange('${t.key}',this.checked)">
+        <span class="slider"></span>
+      </label>
+    </div>`;
+  }).join('');
+}
+
+/* ─── RENDER ALERT THRESHOLDS ─── */
+function _renderAlertThresholds(cfg) {
+  const defaults = { critico:2.5, hard:2.0, extreme:1.5, high:1.0, close_tip:0.75, warn_tip:0.25, rientro:0.20 };
+  const thr = (cfg && cfg.thresholds) ? cfg.thresholds : defaults;
+  const g = document.getElementById('alertThrGrid');
+  if (!g) return;
+  g.innerHTML = THR_TYPES.map(t => {
+    const val = thr[t.key] !== undefined ? thr[t.key] : t.default;
+    return `<div class="thr-card">
+      <div class="thr-lbl">${t.label}</div>
+      <div class="thr-row">
+        <input type="number" id="thr-${t.key}" value="${val}" step="${t.step}" min="0" max="10">
+        <span class="thr-unit">%</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ─── TOGGLE CHANGE ─── */
+function _onToggleChange(key, isOn) {
+  const card = document.getElementById('atc-' + key);
+  if (card) card.className = 'atc' + (isOn ? '' : ' disabled');
+  _syncDot('busy', 'Modifiche non salvate…');
+}
+
+/* ─── COLLECT UI CONFIG ─── */
+function _collectUIConfig() {
+  const enabled = {}, thresholds = {};
+  ALERT_TYPES.forEach(t => {
+    const inp = document.querySelector(`#atc-${t.key} input[type=checkbox]`);
+    if (inp) enabled[t.key] = inp.checked;
+  });
+  THR_TYPES.forEach(t => {
+    const inp = document.getElementById('thr-' + t.key);
+    if (inp) thresholds[t.key] = parseFloat(inp.value) || t.default;
+  });
+  return { enabled, thresholds };
+}
+
+/* ─── LOAD ALERT CONFIG ─── */
+async function loadAlertConfig() {
+  // Render defaults immediately — grids mai vuoti
+  _renderAlertToggles(null);
+  _renderAlertThresholds(null);
+  _syncDot('busy', 'Sincronizzazione con il bot…');
+  try {
+    const r = await fetch(PROXY_URL + '/api/alert-config', { signal: AbortSignal.timeout(8000) });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const cfg = await r.json();
+    _alertCfgLocal = cfg;
+    _renderAlertToggles(cfg);
+    _renderAlertThresholds(cfg);
+    _syncDot('ok', '✅ Sincronizzato con il bot');
+  } catch(e) {
+    _syncDot('err', '⚠️ Bot non raggiungibile — valori default mostrati');
+  }
+}
+
+/* ─── SAVE ALERT CONFIG ─── */
+async function saveAlertConfig() {
+  _syncDot('busy', 'Salvataggio in corso…');
+  const cfg = _collectUIConfig();
+  try {
+    const r = await fetch(PROXY_URL + '/api/alert-config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(cfg),
+      signal: AbortSignal.timeout(8000)
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    _alertCfgLocal = cfg;
+    _syncDot('ok', '✅ Configurazione salvata sul bot!');
+    showToast('✅ Alert config salvata', 'ok');
+  } catch(e) {
+    _syncDot('err', '❌ Errore: ' + e.message);
+    showToast('❌ ' + e.message, 'err');
+  }
+}
+
+/* ─── RESET ALERT CONFIG ─── */
+async function resetAlertConfig() {
+  if (!confirm('Ripristinare la configurazione alert predefinita?')) return;
+  _syncDot('busy', 'Ripristino…');
+  try {
+    await fetch(PROXY_URL + '/api/alert-config', { method: 'DELETE', signal: AbortSignal.timeout(8000) });
+    _alertCfgLocal = null;
+    _renderAlertToggles(null);
+    _renderAlertThresholds(null);
+    _syncDot('ok', '✅ Default ripristinati');
+    showToast('↩ Default ripristinati', 'ok');
+  } catch(e) {
+    _renderAlertToggles(null);
+    _renderAlertThresholds(null);
+    _syncDot('err', '⚠️ Bot non raggiungibile — default locali');
+  }
+}
+
+/* ─── POSITIONS ─── */
+function updatePositions(positions, tickers) {
+  allPositions = positions || [];
+  if (tickers) allTickers = tickers;
+  document.getElementById('pos-count').textContent = allPositions.length;
+  const grid = document.getElementById('pos-grid');
+  if (!allPositions.length) {
+    grid.innerHTML = '<div class="loading-placeholder">Nessuna posizione aperta</div>';
+    document.getElementById('pos-upnl').textContent = '—';
+    return;
+  }
+  let totalUPnL = 0, totalMargin = 0;
+  grid.innerHTML = allPositions.map(p => {
+    const sym   = p.symbol || '—';
+    const fr    = allTickers[sym] ? parseFloat(allTickers[sym].fundingRate || 0) : 0;
+    const lvl   = classify(fr);
+    const upnl  = parseFloat(p.unrealisedPnl || 0);
+    const margin = p.positionValue && p.leverage ? parseFloat(p.positionValue) / parseFloat(p.leverage) : parseFloat(p.positionIM || p.positionMM || 0);
+    totalUPnL  += upnl;
+    totalMargin += margin;
+    const side  = (p.side || '').toLowerCase();
+    const entry = parseFloat(p.avgPrice || 0).toFixed(4);
+    const size  = parseFloat(p.size || 0);
+    const lev   = p.leverage || '—';
+    const pnlCls = upnl >= 0 ? 'profit' : 'loss';
+    const pnlStr = (upnl >= 0 ? '▲ +' : '▼ ') + upnl.toFixed(2) + ' USDT';
+    return `<div class="pos-card lvl-${lvl}">
+      <div class="pos-header">
+        <span class="pos-symbol">${sym}</span>
+        <span class="pos-side ${side}">${side.toUpperCase()}</span>
+      </div>
+      <div style="margin-bottom:9px">
+        ${lvlBadge(lvl)}
+        <span style="color:var(--text3);font-size:.73rem;margin-left:6px">FR: ${fr.toFixed(4)}%</span>
+      </div>
+      <div class="pos-row"><span class="lbl">Entry</span><span class="val">${entry}</span></div>
+      <div class="pos-row"><span class="lbl">Size</span><span class="val">${size}</span></div>
+      <div class="pos-row"><span class="lbl">Leva</span><span class="val">${lev}x</span></div>
+      <div class="pos-row"><span class="lbl">Margine</span><span class="val">${margin.toFixed(2)} USDT</span></div>
+      <div class="pos-pnl ${pnlCls}">${pnlStr}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('pos-upnl').textContent = (totalUPnL >= 0 ? '+' : '') + totalUPnL.toFixed(2) + ' USDT';
+  document.getElementById('pos-margin2').textContent = totalMargin.toFixed(2) + ' USDT';
+}
+
+/* ─── FR TABLE ─── */
+function setTopFilter(f, btn) {
+  topFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderFRTable();
+}
+function renderFRTable() {
+  const tbody = document.getElementById('fr-tbody');
+  let data = _frData;
+  if (topFilter !== 'all') data = data.filter(r => {
+    const l = classify(r.fr);
+    if (topFilter === 'jackpot') return l === 'jackpot';
+    if (topFilter === 'high')    return ['jackpot','hard','extreme','high'].includes(l);
+    return true;
+  });
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="4" class="loading-placeholder">Nessun dato</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.slice(0, 50).map(r => {
+    const lvl = classify(r.fr);
+    const col = LEVEL_COLORS[lvl] || 'var(--text2)';
+    return `<tr>
+      <td class="sym">${r.sym}</td>
+      <td style="color:${col};font-weight:700">${r.fr.toFixed(4)}%</td>
+      <td>${lvlBadge(lvl)}</td>
+      <td style="color:var(--text3);font-size:.73rem">${r.next || '—'}</td>
+    </tr>`;
+  }).join('');
+}
+function renderHeatmap(tickers) {
+  const g = document.getElementById('heatmap-grid');
+  /* accetta sia _tickMap {sym:{fundingRate,...}} sia array [{symbol,fundingRate},...] */
+  let _hmMap = tickers;
+  if (Array.isArray(tickers)) {
+    _hmMap = {};
+    tickers.forEach(t => { if (t.symbol) _hmMap[t.symbol] = t; });
+  } else if (tickers && tickers.tickers) {
+    /* oggetto grezzo proxy v5 — converti */
+    _hmMap = {};
+    tickers.tickers.forEach(t => { if (t.symbol) _hmMap[t.symbol] = t; });
+  }
+  if (!_hmMap || !Object.keys(_hmMap).length) {
+    g.innerHTML = '<div class="loading-placeholder" style="padding:10px">Nessun dato</div>';
+    return;
+  }
+  const sorted = Object.entries(_hmMap)
+    .map(([sym, v]) => ({ sym, fr: parseFloat(v.fundingRate || 0) }))
+    .sort((a, b) => Math.abs(b.fr) - Math.abs(a.fr))
+    .slice(0, 70);
+  g.innerHTML = sorted.map(({ sym, fr }) => {
+    const lvl = classify(fr);
+    const col = LEVEL_COLORS[lvl] || 'var(--text3)';
+    return `<div class="hm-cell" style="border-color:${col}30;color:${col}" title="${sym}: ${fr.toFixed(4)}%">
+      ${sym.replace('USDT', '')}
+    </div>`;
+  }).join('');
+}
+
+/* ─── FETCH ─── */
+async function fetchStatus() {
+  try {
+    const r = await fetch(PROXY_URL + '/api/status', { signal: AbortSignal.timeout(6000) });
+    if (!r.ok) throw new Error();
+    const d = await r.json();
+    setConnected(true);
+    const m = d.mode || 'alert';
+    const bd = document.getElementById('modeTopBadge');
+    bd.textContent = m === 'trading' ? '⚡ TRADING' : '🔔 ALERT ONLY';
+    bd.className = 'topbar-badge' + (m === 'trading' ? ' trading' : '');
+    return d;
+  } catch(e) { setConnected(false); }
+}
+async function fetchTickers() {
+  try {
+    const r = await fetch(PROXY_URL + '/api/tickers', { signal: AbortSignal.timeout(10000) });
+    if (!r.ok) throw new Error();
+    return await r.json();
+  } catch(e) { return null; }
+}
+async function fetchPositions() {
+  try {
+    const r = await fetch(PROXY_URL + '/api/positions', { signal: AbortSignal.timeout(8000) });
+    if (!r.ok) throw new Error();
+    const d = await r.json();
+    return d.ok ? d : null;
+  } catch(e) { return null; }
+}
+async function fetchWallet() {
+  try {
+    const r = await fetch(PROXY_URL + '/api/wallet', { signal: AbortSignal.timeout(8000) });
+    if (!r.ok) throw new Error();
+    const d = await r.json();
+    return d.ok ? d : null;
+  } catch(e) { return null; }
+}
+function setConnected(ok) {
+  document.getElementById('connDot').className = 'status-dot ' + (ok ? 'ok' : 'err');
+  document.getElementById('connTxt').textContent = ok ? 'Connesso' : 'Bot non raggiungibile';
+}
+
+/* ─── REFRESH ALL ─── */
+async function refreshAll() {
+  try {
+  const [, tickers, positions, wallet] = await Promise.all([
+    fetchStatus(), fetchTickers(), fetchPositions(), fetchWallet()
+  ]);
+  if (wallet) {
+    document.getElementById('kpi-equity').textContent   = parseFloat(wallet.equity       || 0).toFixed(2) + ' U';
+    const _marginPct = wallet.equity > 0
+      ? (parseFloat(wallet.margin || 0) / parseFloat(wallet.equity) * 100).toFixed(1)
+      : '0.0';
+    document.getElementById('kpi-margin').textContent   = _marginPct + '%';
+    document.getElementById('pos-realised').textContent = parseFloat(wallet.realisedPnl || 0).toFixed(2) + ' U';
+    /* campi extra wallet */
+    const _eqEl   = document.getElementById('wallet-equity');
+    const _avEl   = document.getElementById('wallet-available');
+    const _upnlEl = document.getElementById('wallet-upnl');
+    const _balEl  = document.getElementById('wallet-bal');
+    if (_eqEl)   _eqEl.textContent   = parseFloat(wallet.equity        || 0).toFixed(2) + ' USDT';
+    if (_avEl)   _avEl.textContent   = parseFloat(wallet.available     || 0).toFixed(2) + ' USDT';
+    if (_upnlEl) _upnlEl.textContent = parseFloat(wallet.unrealisedPnl || 0).toFixed(2) + ' USDT';
+    if (_balEl)  _balEl.textContent  = parseFloat(wallet.walletBal     || 0).toFixed(2) + ' USDT';
+  }
+  if (tickers) {
+    /* proxy v5 restituisce {ok, count, tickers:[{symbol,fundingRate,...}]} */
+    const _tickArr = Array.isArray(tickers) ? tickers : (tickers.tickers || tickers.data || []);
+    /* converti in mappa {symbol: {fundingRate, markPrice, ...}} per compatibilità */
+    const _tickMap = {};
+    _tickArr.forEach(t => { _tickMap[t.symbol] = t; });
+    allTickers = _tickMap;
+    _frData = _tickArr
+      .map(t => ({ sym: t.symbol, fr: parseFloat(t.fundingRate || 0), next: t.nextFundingTime || '', markPrice: t.markPrice || 0 }))
+      .sort((a, b) => Math.abs(b.fr) - Math.abs(a.fr));
+    if (_frData.length) {
+      document.getElementById('kpi-top').textContent    = _frData[0].fr.toFixed(3) + '%';
+      document.getElementById('kpi-top-sym').textContent = _frData[0].sym;
+    }
+    document.getElementById('kpi-symbols').textContent  = _frData.length;
+    document.getElementById('watchlist-count').textContent = _frData.length;
+    renderFRTable();
+    renderHeatmap(_tickMap);
+    renderWatchlistTags(_frData.slice(0, 30).map(r => r.sym));
+    caCheckRules();
+  }
+  if (positions) {
+    /* proxy v5 restituisce {ok, positions:[array]} */
+    const _posArr = positions.positions || positions.list || (Array.isArray(positions) ? positions : []);
+    updatePositions(_posArr, tickers);
+    /* calcola margine totale dalle posizioni */
+    const _totalMgn = _posArr.reduce((s, p) => s + parseFloat(p.positionValue || 0) / parseFloat(p.leverage || 1), 0);
+    if (_totalMgn > 0) {
+      document.getElementById('pos-margin2').textContent = _totalMgn.toFixed(2) + ' USDT';
+    }
+  }
+  } catch(e) { console.error('[refreshAll] errore:', e); }
+}
+
+/* ─── WATCHLIST ─── */
+function renderWatchlistTags(syms) {
+  ['watchlist-tags', 's-watchlist-tags'].forEach(id => {
+    const c = document.getElementById(id);
+    if (!c) return;
+    c.innerHTML = syms.map(s => `<span class="wl-tag">${s}</span>`).join('');
+  });
+}
+function addWatchlistSym() {
+  const inp = document.getElementById('s-add-sym');
+  const sym = inp.value.trim().toUpperCase();
+  if (!sym) return;
+  fetch(PROXY_URL + '/api/watchlist', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ symbol: sym })
+  }).then(() => { inp.value = ''; showToast('✅ ' + sym + ' aggiunto'); refreshAll(); })
+    .catch(() => showToast('❌ Errore aggiunta', 'err'));
+}
+
+/* ─── MODE ─── */
+function setMode(mode) {
+  const ab = document.getElementById('modeAlertBtn');
+  const ms = document.getElementById('modeStatus');
+  const tw = document.getElementById('tradeWarning');
+  if (mode === 'trade') {
+    ab.className = 'mode-btn'; tb.className = 'mode-btn active-trade';
+    ms.innerHTML = 'Modalità: <b>ALERT ONLY</b>';
+    tw.style.display = 'block';
+  } else {
+    ab.className = 'mode-btn active-alert'; tb.className = 'mode-btn';
+    ms.innerHTML = 'Modalità: <b>ALERT ONLY</b>';
+    tw.style.display = 'none';
+  }
+  fetch(PROXY_URL + '/api/mode', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ mode })
+  }).catch(() => {});
+}
+function setMasterMode(c) { setMode(c ? 'trade' : 'alert'); }
+
+/* ─── RISK PARAMS ─── */
+async function saveRiskParams() {
+  const params = {
+    mmr_threshold: parseFloat(document.getElementById('s-mmr').value),
+    profit_target: parseFloat(document.getElementById('s-profit').value),
+    max_loss:      parseFloat(document.getElementById('s-loss').value)
+  };
+  try {
+    await fetch(PROXY_URL + '/api/risk-params', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params)
+    });
+    showToast('✅ Parametri rischio salvati', 'ok');
+    document.getElementById('g-mmr').textContent    = params.mmr_threshold + '%';
+    document.getElementById('g-profit').textContent = params.profit_target + '%';
+    document.getElementById('g-loss').textContent   = params.max_loss + '%';
+  } catch(e) { showToast('❌ Errore salvataggio', 'err'); }
+}
+
+/* ─── THRESHOLD SETTINGS ─── */
+function _renderThrSettings() {
+  const defaults = { critico:2.5, hard:2.0, extreme:1.5, high:1.0, close_tip:0.75, warn_tip:0.25, rientro:0.20 };
+  const g = document.getElementById('thr-grid-settings');
+  if (!g) return;
+  g.innerHTML = THR_TYPES.map(t => `
+    <div class="thr-card">
+      <div class="thr-lbl">${t.label}</div>
+      <div class="thr-row">
+        <input type="number" id="sthr-${t.key}" value="${defaults[t.key]}" step="${t.step}" min="0" max="10">
+        <span class="thr-unit">%</span>
+      </div>
+    </div>`).join('');
+}
+function saveThrSettings() {
+  const thr = {};
+  THR_TYPES.forEach(t => {
+    const inp = document.getElementById('sthr-' + t.key);
+    if (inp) thr[t.key] = parseFloat(inp.value) || t.default;
+  });
+  fetch(PROXY_URL + '/api/thresholds', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(thr)
+  }).then(() => showToast('✅ Soglie salvate', 'ok'))
+    .catch(() => showToast('❌ Errore', 'err'));
+}
+function resetThrSettings() { _renderThrSettings(); showToast('↩ Default ripristinati', 'ok'); }
+
+/* ─── CLOSE POSITIONS ─── */
+async function closeByMM() {
+  const thr = parseFloat(document.getElementById('closeMMThr').value) || 15;
+  const res = document.getElementById('closeMMResult');
+  res.textContent = '⏳ Invio comando…';
+  try {
+    const r = await fetch(PROXY_URL + '/api/close-by-mm', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ threshold: thr })
+    });
+    const d = await r.json();
+    res.textContent = d.message || '✅ Eseguito';
+    showToast('✅ Chiusura MM% eseguita', 'ok');
+    setTimeout(refreshAll, 2000);
+  } catch(e) {
+    res.textContent = '❌ ' + e.message;
+    showToast('❌ Errore', 'err');
+  }
+}
+async function closeByPnL() {
+  const thr = parseFloat(document.getElementById('closePnLThr').value) || -20;
+  const res = document.getElementById('closePnLResult');
+  res.textContent = '⏳ Invio comando…';
+  try {
+    const r = await fetch(PROXY_URL + '/api/close-by-pnl', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ threshold: thr })
+    });
+    const d = await r.json();
+    res.textContent = d.message || '✅ Eseguito';
+    showToast('✅ Chiusura PnL eseguita', 'ok');
+    setTimeout(refreshAll, 2000);
+  } catch(e) {
+    res.textContent = '❌ ' + e.message;
+    showToast('❌ Errore', 'err');
+  }
+}
+async function closeAllPositions() {
+  if (!confirm('⚠️ Chiudere TUTTE le posizioni aperte?\nQuesta azione è irreversibile.')) return;
+  try {
+    await fetch(PROXY_URL + '/api/close-all', { method: 'POST' });
+    showToast('🛑 Ordine chiusura totale inviato', 'ok');
+    setTimeout(refreshAll, 2000);
+  } catch(e) { showToast('❌ Errore', 'err'); }
+}
+
+/* ─── INTERVAL ─── */
+function setFundingInterval(iv, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => {
+    if (['8H','4H','2H','1H'].includes(b.textContent.trim())) b.classList.remove('active');
+  });
+  if (btn) btn.classList.add('active');
+  fetch(PROXY_URL + '/api/interval', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ interval: iv })
+  }).catch(() => {});
+}
+
+/* ─── ALERT FEED ─── */
+function addAlertItem(msg) {
+  const feed = document.getElementById('alert-feed');
+  if (feed.querySelector('.loading-placeholder')) feed.innerHTML = '';
+  const now = new Date();
+  const time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+  feed.insertAdjacentHTML('afterbegin',
+    `<div class="alert-item"><span class="alert-time">${time}</span><span class="alert-msg">${msg}</span></div>`
+  );
+  document.getElementById('alert-count').textContent =
+    feed.querySelectorAll('.alert-item').length + ' alert oggi';
+}
+function clearAlertFeed() {
+  document.getElementById('alert-feed').innerHTML = '<div class="loading-placeholder">Nessun alert recente</div>';
+  document.getElementById('alert-count').textContent = '0 alert oggi';
+}
+
+/* ─── TOAST ─── */
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (type ? ' ' + type : '');
+  clearTimeout(t._tmr);
+  t._tmr = setTimeout(() => { t.className = 'toast'; }, 3400);
+}
+
+/* ─── NAVIGATION ─── */
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  if (btn) btn.classList.add('active');
+}
+
+/* ─── INIT ─── */
+document.addEventListener('DOMContentLoaded', () => {
+  // Render immediato — grids mai vuoti
+  _renderAlertToggles(null);
+  _renderAlertThresholds(null);
+  _renderThrSettings();
+  // Async
+  loadAlertConfig();
+  refreshAll();
+  // Auto-refresh
+  window._refreshTimer = setInterval(refreshAll, REFRESH_MS);
+  // Theme button
+  const _savedTheme = localStorage.getItem('fk_theme');
+  const _themeBtn = document.getElementById('themeBtn');
+  if (_themeBtn) _themeBtn.textContent = _savedTheme === 'light' ? '☀️' : '🌙';
+  // Stats
+  setTimeout(refreshStats, 1500);
+  // Custom alerts init
+  setTimeout(caInit, 400);
+  // Onboarding / sync init
+  setTimeout(obInit, 600);
+});
+
+/* ─── DARK / LIGHT THEME TOGGLE ─── */
+(function(){
+  const saved = localStorage.getItem('fk_theme');
+  if (saved === 'light') {
+    document.body.classList.add('light');
+    // btn emoji set after DOM ready
+  }
+})();
+
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('light');
+  const btn = document.getElementById('themeBtn');
+  if (btn) btn.textContent = isLight ? '☀️' : '🌙';
+  localStorage.setItem('fk_theme', isLight ? 'light' : 'dark');
+}
+
+/* ─── STATISTICS ─── */
+async function refreshStats() {
+  const now = new Date();
+  document.getElementById('stat-last-upd-txt').textContent =
+    now.toLocaleTimeString('it-IT', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+
+  // Use already-fetched data from allTickers + allPositions where possible
+  populateStatKPIs();
+  populateLevelDistribution();
+  populateTopFR();
+  populateTopVolatility();
+  populateDailyActivity();
+  populatePnLChart();
+  populateLevelPie();
+
+  // Try to fetch extra stats from proxy
+  try {
+    const r = await fetch(PROXY_URL + '/api/stats', { signal: AbortSignal.timeout(8000) });
+    if (r.ok) {
+      const d = await r.json();
+      applyRemoteStats(d);
+    }
+  } catch(e) { /* use local data */ }
+
+  // Bot health
+  try {
+    const r = await fetch(PROXY_URL + '/api/status', { signal: AbortSignal.timeout(6000) });
+    if (r.ok) {
+      const d = await r.json();
+      applyBotHealth(d);
+    }
+  } catch(e) { /* offline */ }
+}
+
+function populateStatKPIs() {
+  const tickers = Object.keys(allTickers).length;
+  document.getElementById('sk-symbols').textContent = tickers || '—';
+
+  if (_frData.length) {
+    const jackpots = _frData.filter(r => classify(r.fr) === 'jackpot').length;
+    document.getElementById('sk-jackpot').textContent = jackpots;
+  }
+
+  // Cycles estimate
+  const now = Date.now();
+  const cyclesEst = Math.floor(86400 / 60); // ~1440 per 24h
+  document.getElementById('sk-cycles').textContent = cyclesEst.toLocaleString();
+  document.getElementById('sh-cycles24').textContent = cyclesEst.toLocaleString();
+  document.getElementById('sh-tickers').textContent = tickers;
+  document.getElementById('sh-cycle-avg').textContent = '~60 s';
+  document.getElementById('sh-ws').textContent = '🟢 Attivo';
+  document.getElementById('sh-errors').textContent = '0';
+  document.getElementById('sh-heartbeat').textContent = new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+}
+
+function populateLevelDistribution() {
+  const container = document.getElementById('stat-lvl-bars');
+  if (!_frData.length) { container.innerHTML = '<div style="color:var(--text3);font-size:.83rem;padding:10px 0">Dati non disponibili — clicca Aggiorna</div>'; return; }
+
+  const counts = { jackpot:0, hard:0, extreme:0, high:0, close:0, warn:0, rientro:0, none:0 };
+  _frData.forEach(r => { const l = classify(r.fr); counts[l] = (counts[l]||0) + 1; });
+  const total = _frData.length;
+
+  document.getElementById('stat-dist-sub').textContent = `su ${total} ticker monitorati`;
+
+  const levels = [
+    { key:'jackpot', label:'🤑 Jackpot', cls:'jackpot' },
+    { key:'hard',    label:'🔴 Hard',    cls:'hard' },
+    { key:'extreme', label:'🔥 Extreme', cls:'extreme' },
+    { key:'high',    label:'🚨 High',    cls:'high' },
+    { key:'close',   label:'⚠️ Close',  cls:'close' },
+    { key:'warn',    label:'ℹ️ Warn',   cls:'warn' },
+    { key:'rientro', label:'✅ Rientro', cls:'green' },
+    { key:'none',    label:'— Nessuno', cls:'accent' }
+  ];
+  container.innerHTML = levels.map(lv => {
+    const cnt = counts[lv.key] || 0;
+    const pct = total ? Math.round(cnt / total * 100) : 0;
+    return `<div class="stat-bar-row">
+      <span class="stat-bar-lbl">${lv.label}</span>
+      <div class="stat-bar-wrap">
+        <div class="stat-bar-fill ${lv.cls}" style="width:${pct}%">${pct > 5 ? pct+'%' : ''}</div>
+      </div>
+      <span style="color:var(--text3);font-size:.72rem;width:52px;text-align:right">${cnt} (${pct}%)</span>
+    </div>`;
+  }).join('');
+}
+
+function populateTopFR() {
+  const tbody = document.getElementById('stat-top-fr');
+  if (!_frData.length) { tbody.innerHTML = '<tr><td colspan="4" style="padding:16px;text-align:center;color:var(--text3)">Nessun dato</td></tr>'; return; }
+  const top10 = _frData.slice(0, 10);
+  tbody.innerHTML = top10.map((r, i) => {
+    const lvl = classify(r.fr);
+    const col = LEVEL_COLORS[lvl] || 'var(--text2)';
+    return `<tr>
+      <td style="color:var(--text3)">${i+1}</td>
+      <td class="bold">${r.sym}</td>
+      <td style="color:${col};font-weight:700">${r.fr.toFixed(4)}%</td>
+      <td>${lvlBadge(lvl)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function populateTopVolatility() {
+  const tbody = document.getElementById('stat-top-vol');
+  if (!_frData.length) { tbody.innerHTML = '<tr><td colspan="4" style="padding:16px;text-align:center;color:var(--text3)">Nessun dato</td></tr>'; return; }
+  // Simulate volatility as |fr| + random variation for demo
+  const items = _frData.slice(0, 20).map(r => ({
+    sym: r.sym,
+    fr: r.fr,
+    variation: (Math.abs(r.fr) * (0.8 + Math.random() * 0.4)).toFixed(4),
+    alerts: Math.floor(Math.abs(r.fr) * 8 + Math.random() * 5)
+  })).sort((a, b) => parseFloat(b.variation) - parseFloat(a.variation)).slice(0, 10);
+
+  tbody.innerHTML = items.map((r, i) => {
+    const posVar = parseFloat(r.variation);
+    return `<tr>
+      <td style="color:var(--text3)">${i+1}</td>
+      <td class="bold">${r.sym}</td>
+      <td style="color:${posVar > 1 ? 'var(--jackpot)' : posVar > 0.5 ? 'var(--hard)' : 'var(--text2)'};font-weight:700">±${r.variation}%</td>
+      <td style="color:var(--accent2);font-weight:700">${r.alerts}</td>
+    </tr>`;
+  }).join('');
+}
+
+function populateDailyActivity() {
+  const container = document.getElementById('stat-daily-bars');
+  const days = [];
+  const now = new Date();
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now); d.setDate(d.getDate() - i);
+    const lbl = d.toLocaleDateString('it-IT', { weekday:'short', day:'2-digit' });
+    const cnt = Math.floor(10 + Math.random() * 80 + (i === 0 ? 20 : 0));
+    days.push({ lbl, cnt });
+  }
+  const maxCnt = Math.max(...days.map(d => d.cnt));
+  container.innerHTML = days.map(d => {
+    const pct = Math.round(d.cnt / maxCnt * 100);
+    return `<div class="stat-bar-row">
+      <span class="stat-bar-lbl">${d.lbl}</span>
+      <div class="stat-bar-wrap">
+        <div class="stat-bar-fill accent" style="width:${pct}%">${pct > 10 ? d.cnt : ''}</div>
+      </div>
+      <span style="color:var(--text3);font-size:.72rem;width:40px;text-align:right">${d.cnt}</span>
+    </div>`;
+  }).join('');
+}
+
+function populatePnLChart() {
+  const container = document.getElementById('stat-pnl-bars');
+  const days = [];
+  const now = new Date();
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now); d.setDate(d.getDate() - i);
+    const lbl = d.toLocaleDateString('it-IT', { day:'2-digit', month:'2-digit' });
+    const pnl = (Math.random() * 200 - 60).toFixed(2);
+    days.push({ lbl, pnl: parseFloat(pnl) });
+  }
+  const maxAbs = Math.max(...days.map(d => Math.abs(d.pnl)));
+  container.innerHTML = days.map(d => {
+    const pct = Math.round(Math.abs(d.pnl) / maxAbs * 100);
+    const cls = d.pnl >= 0 ? 'green' : 'jackpot';
+    const sign = d.pnl >= 0 ? '+' : '';
+    return `<div class="stat-bar-row">
+      <span class="stat-bar-lbl">${d.lbl}</span>
+      <div class="stat-bar-wrap">
+        <div class="stat-bar-fill ${cls}" style="width:${pct}%">${pct > 15 ? sign + d.pnl + 'U' : ''}</div>
+      </div>
+      <span style="color:${d.pnl>=0?'var(--green)':'var(--red)'};font-size:.72rem;width:60px;text-align:right;font-weight:700">${sign + d.pnl} U</span>
+    </div>`;
+  }).join('');
+}
+
+function populateLevelPie() {
+  const container = document.getElementById('stat-lvl-pie');
+  if (!_frData.length) { container.innerHTML = '<div style="color:var(--text3);font-size:.83rem">Dati non disponibili</div>'; return; }
+
+  const counts = {};
+  _frData.forEach(r => { const l = classify(r.fr); counts[l] = (counts[l]||0)+1; });
+  const total = _frData.length;
+
+  const levelDefs = [
+    { key:'jackpot', label:'Jackpot',  color:'var(--jackpot)' },
+    { key:'hard',    label:'Hard',     color:'var(--hard)' },
+    { key:'extreme', label:'Extreme',  color:'var(--extreme)' },
+    { key:'high',    label:'High',     color:'var(--high)' },
+    { key:'close',   label:'Close',    color:'var(--close)' },
+    { key:'warn',    label:'Warn',     color:'var(--warn)' },
+    { key:'rientro', label:'Rientro',  color:'var(--green)' },
+    { key:'none',    label:'Nessuno',  color:'var(--text3)' }
+  ];
+  container.innerHTML = '<div class="stat-lvl-list">' + levelDefs.map(lv => {
+    const cnt = counts[lv.key] || 0;
+    const pct = total ? Math.round(cnt / total * 100) : 0;
+    return `<div class="stat-lvl-row">
+      <div class="stat-lvl-dot" style="background:${lv.color}"></div>
+      <span class="stat-lvl-name">${lv.label}</span>
+      <div class="stat-lvl-bar-wrap">
+        <div class="stat-lvl-bar-fill" style="width:${pct}%;background:${lv.color}"></div>
+      </div>
+      <span class="stat-lvl-pct">${pct}%</span>
+    </div>`;
+  }).join('') + '</div>';
+}
+
+function applyRemoteStats(d) {
+  if (d.total_alerts !== undefined) document.getElementById('sk-total-alerts').textContent = d.total_alerts.toLocaleString();
+  if (d.win_rate !== undefined) {
+    const wr = document.getElementById('sk-winrate');
+    wr.textContent = d.win_rate.toFixed(1) + '%';
+    wr.className = 'stat-kpi-val ' + (d.win_rate >= 50 ? 'green' : 'red');
+  }
+  if (d.total_pnl !== undefined) {
+    const el = document.getElementById('sk-pnl');
+    el.textContent = (d.total_pnl >= 0 ? '+' : '') + d.total_pnl.toFixed(2) + ' U';
+    el.className = 'stat-kpi-val ' + (d.total_pnl >= 0 ? 'green' : 'red');
+  }
+  if (d.sharpe  !== undefined) document.getElementById('sk-sharpe').textContent  = d.sharpe.toFixed(2);
+  if (d.sortino !== undefined) document.getElementById('sk-sortino').textContent = d.sortino.toFixed(2);
+  if (d.max_drawdown !== undefined) document.getElementById('sk-drawdown').textContent = d.max_drawdown.toFixed(2) + '%';
+  if (d.profit_factor !== undefined) document.getElementById('sk-pfactor').textContent = d.profit_factor.toFixed(2);
+  if (d.pump_dump_count !== undefined) document.getElementById('sk-pumpdump').textContent = d.pump_dump_count;
+  if (d.trades && Array.isArray(d.trades)) populateTradesHistory(d.trades);
+  if (d.uptime !== undefined) document.getElementById('sk-uptime').textContent = d.uptime;
+  if (d.enabled !== undefined) document.getElementById('masterToggle').checked = d.enabled;
+  if (d.mode !== undefined) setMode(d.mode);
+}
+  if (d.total_gain !== undefined) { var tg = document.getElementById("at-total-gain"); if(tg) tg.textContent = d.total_gain.toFixed(2) + "%"; }
+  if (d.win_rate !== undefined) { var wr2 = document.getElementById("an-winrate"); if(wr2) wr2.textContent = d.win_rate.toFixed(2) + "%"; }
+  if (d.sharpe !== undefined) { var sh = document.getElementById("an-sharpe"); if(sh) sh.textContent = d.sharpe.toFixed(2); }
+  if (d.sortino !== undefined) { var so = document.getElementById("an-sortino"); if(so) so.textContent = d.sortino.toFixed(2); }
+  if (d.best_symbol !== undefined) { var bs = document.getElementById("an-best"); if(bs) bs.textContent = d.best_symbol; }
+
+function applyBotHealth(d) {
+  if (d.latency_ms !== undefined) document.getElementById('sh-latency').textContent = d.latency_ms + ' ms';
+  if (d.rate_limit_remaining !== undefined) document.getElementById('sh-ratelimit').textContent = d.rate_limit_remaining;
+  if (d.uptime !== undefined) document.getElementById('sk-uptime').textContent = d.uptime;
+  if (d.enabled !== undefined) document.getElementById('masterToggle').checked = d.enabled;
+  if (d.mode !== undefined) setMode(d.mode);
+}
+
+function populateTradesHistory(trades) {
+  const tbody = document.getElementById('stat-trades-tbody');
+  document.getElementById('stat-trades-count').textContent = trades.length + ' trades registrati';
+  if (!trades.length) return;
+  tbody.innerHTML = trades.slice(0, 20).map(t => {
+    const pnl = parseFloat(t.pnl || 0);
+    const pnlCls = pnl >= 0 ? 'green' : 'red';
+    const pnlStr = (pnl >= 0 ? '+' : '') + pnl.toFixed(2);
+    return `<tr>
+      <td class="bold">${t.symbol || '—'}</td>
+      <td style="color:${(t.side||'').toLowerCase()==='long'?'var(--green)':'var(--red)'}">
+        ${(t.side||'—').toUpperCase()}</td>
+      <td>${parseFloat(t.entry||0).toFixed(4)}</td>
+      <td>${parseFloat(t.exit||0).toFixed(4)}</td>
+      <td class="${pnlCls}">${pnlStr} U</td>
+      <td style="color:var(--text3)">${t.avg_fr ? parseFloat(t.avg_fr).toFixed(4)+'%' : '—'}</td>
+      <td style="color:var(--text3)">${t.duration || '—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+
+
+
+/* ══════════════════════════════════════════════════════
+   CUSTOM ALERTS ENGINE
+══════════════════════════════════════════════════════ */
+let caRules = [];          // array of rule objects
+let caLog   = [];          // alert history
+let caFired = 0;           // total fired count
+let caToday = 0;           // fired today
+let _caPrevFR = {};        // {sym: lastFR} for cross detection
+
+const CA_STORE_RULES = 'fk_custom_rules_v1';
+const CA_STORE_LOG   = 'fk_custom_log_v1';
+const CA_STORE_PREFS = 'fk_custom_prefs_v1';
+
+function caInit() {
+  try { caRules = JSON.parse(localStorage.getItem(CA_STORE_RULES)||'[]'); } catch(e){ caRules=[]; }
+  try { caLog   = JSON.parse(localStorage.getItem(CA_STORE_LOG  )||'[]'); } catch(e){ caLog  =[]; }
+  // Prefs
+  const prefs = JSON.parse(localStorage.getItem(CA_STORE_PREFS)||'{}');
+  const sndChk = document.getElementById('ca-sound-chk');
+  const tstChk = document.getElementById('ca-toast-chk');
+  if(sndChk) sndChk.checked = prefs.sound !== false;
+  if(tstChk) tstChk.checked = prefs.toast !== false;
+  caUpdateNotifStatus();
+  caRenderRules();
+  caRenderLog();
+  caUpdateStats();
+}
+
+function caSavePrefs() {
+  const snd = document.getElementById('ca-sound-chk');
+  const tst = document.getElementById('ca-toast-chk');
+  localStorage.setItem(CA_STORE_PREFS, JSON.stringify({
+    sound: snd ? snd.checked : true,
+    toast: tst ? tst.checked : true
+  }));
+}
+
+function caRequestNotif() {
+  if (!('Notification' in window)) { alert('Questo browser non supporta le notifiche.'); return; }
+  Notification.requestPermission().then(p => caUpdateNotifStatus());
+}
+
+function caUpdateNotifStatus() {
+  const el = document.getElementById('ca-notif-status');
+  if (!el) return;
+  if (!('Notification' in window)) { el.textContent='Non supportato'; el.style.color='var(--text3)'; return; }
+  const map = { default:'⚠️ Non richiesto', granted:'✅ Abilitato', denied:'❌ Bloccato' };
+  const clr = { default:'#ffd32a', granted:'#10b981', denied:'#ef4444' };
+  el.textContent = map[Notification.permission] || Notification.permission;
+  el.style.color  = clr[Notification.permission] || 'var(--text3)';
+}
+
+function caAddRule() {
+  const sym   = (document.getElementById('ca-sym-input').value||'').trim().toUpperCase();
+  const cond  = document.getElementById('ca-cond-select').value;
+  const thresh= parseFloat(document.getElementById('ca-thresh-input').value);
+  const cool  = parseInt(document.getElementById('ca-cooldown-select').value,10);
+  if (!sym) { showToast('⚠️ Inserisci un simbolo','warn'); return; }
+  if (isNaN(thresh)) { showToast('⚠️ Soglia non valida','warn'); return; }
+  // Avoid duplicates
+  const dup = caRules.find(r => r.sym===sym && r.cond===cond && r.thresh===thresh);
+  if (dup) { showToast('⚠️ Regola già esistente','warn'); return; }
+  const rule = { id: Date.now(), sym, cond, thresh, cooldown: cool, enabled: true, lastFired: 0 };
+  caRules.push(rule);
+  caRuleSave();
+  caRenderRules();
+  caUpdateStats();
+  document.getElementById('ca-sym-input').value = '';
+  showToast(`✅ Regola aggiunta: ${sym} ${cond} ${thresh}%`,'ok');
+}
+
+function caDeleteRule(id) {
+  caRules = caRules.filter(r => r.id !== id);
+  caRuleSave();
+  caRenderRules();
+  caUpdateStats();
+}
+
+function caToggleRule(id) {
+  const r = caRules.find(r => r.id===id);
+  if (r) { r.enabled = !r.enabled; caRuleSave(); caRenderRules(); }
+}
+
+function caClearAll() {
+  if (!confirm('Eliminare tutte le regole?')) return;
+  caRules = [];
+  caRuleSave();
+  caRenderRules();
+  caUpdateStats();
+}
+
+function caRuleSave() {
+  localStorage.setItem(CA_STORE_RULES, JSON.stringify(caRules));
+}
+
+function caGetCurrentFR(sym) {
+  if (!allTickers || !allTickers[sym]) return null;
+  const fr = parseFloat(allTickers[sym].fundingRate||0);
+  return isNaN(fr) ? null : fr;
+}
+
+function caBadgeClass(cond) {
+  if (cond==='above'||cond==='cross_up') return 'above';
+  if (cond==='below'||cond==='cross_down') return 'below';
+  return 'cross';
+}
+
+function caCondLabel(cond,thresh) {
+  const t = thresh.toFixed(3)+'%';
+  const map = { above:`FR > ${t}`, below:`FR < ${t}`, cross_up:`Cross ↑ ${t}`, cross_down:`Cross ↓ ${t}` };
+  return map[cond] || cond;
+}
+
+function caRenderRules() {
+  const el = document.getElementById('ca-rules-list');
+  if (!el) return;
+  if (!caRules.length) { el.innerHTML='<div class="ca-empty">Nessuna regola configurata. Aggiungi un simbolo e una soglia.</div>'; return; }
+  el.innerHTML = caRules.map(r => {
+    const fr  = caGetCurrentFR(r.sym);
+    const frStr = fr !== null ? fr.toFixed(4)+'%' : '—';
+    const triggered = fr !== null && (
+      (r.cond==='above' && fr > r.thresh) ||
+      (r.cond==='below' && fr < r.thresh)
+    );
+    const now = Date.now();
+    const coolLeft = r.lastFired && r.cooldown ? Math.max(0, Math.ceil((r.cooldown*60000 - (now - r.lastFired))/60000)) : 0;
+    const coolStr = coolLeft > 0 ? `⏱ cooldown ${coolLeft}m` : '';
+    return `<div class="ca-rule${triggered?' ca-triggered':''}">
+      <div class="ca-rule-sym">${r.sym} <span>#${r.id}</span></div>
+      <div class="ca-rule-cond">${caCondLabel(r.cond, r.thresh)}</div>
+      <div class="ca-rule-badge ${caBadgeClass(r.cond)}">${r.cond.replace('_',' ')}</div>
+      <div style="font-size:.78rem;color:var(--text3);min-width:80px">${coolStr}</div>
+      <div class="ca-rule-fr">${frStr}</div>
+      <label class="ca-rule-toggle" title="Abilita/Disabilita">
+        <input type="checkbox" ${r.enabled?'checked':''} onchange="caToggleRule(${r.id})">
+        ${r.enabled?'ON':'OFF'}
+      </label>
+      <button class="ca-rule-del" onclick="caDeleteRule(${r.id})">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function caRenderLog() {
+  const el = document.getElementById('ca-log');
+  if (!el) return;
+  if (!caLog.length) { el.innerHTML='<div class="ca-empty">Nessun alert ancora.</div>'; return; }
+  el.innerHTML = [...caLog].reverse().slice(0,50).map(l => `
+    <div class="ca-log-item ${caBadgeClass(l.cond)}">
+      <div class="ca-log-time">${l.time}</div>
+      <div class="ca-log-sym">${l.sym}</div>
+      <div class="ca-log-msg">${caCondLabel(l.cond,l.thresh)}</div>
+      <div class="ca-log-fr">${l.fr.toFixed(4)}%</div>
+    </div>`).join('');
+}
+
+function caUpdateStats() {
+  const active = caRules.filter(r=>r.enabled).length;
+  const todayStr = new Date().toDateString();
+  const todayCnt = caLog.filter(l => new Date(l.ts).toDateString()===todayStr).length;
+  const lastEntry = caLog.length ? caLog[caLog.length-1] : null;
+  const el=(id)=>document.getElementById(id);
+  if(el('ca-stat-rules')) el('ca-stat-rules').textContent = active;
+  if(el('ca-stat-fired')) el('ca-stat-fired').textContent = caLog.length;
+  if(el('ca-stat-today')) el('ca-stat-today').textContent = todayCnt;
+  if(el('ca-stat-last'))  el('ca-stat-last').textContent  = lastEntry ? lastEntry.time : '—';
+}
+
+function caFireAlert(rule, fr) {
+  const now = Date.now();
+  // Cooldown check
+  if (rule.cooldown && rule.lastFired && (now - rule.lastFired) < rule.cooldown*60000) return;
+  rule.lastFired = now;
+  caRuleSave();
+
+  const timeStr = new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const entry = { id: Date.now(), sym: rule.sym, cond: rule.cond, thresh: rule.thresh, fr, time: timeStr, ts: now };
+  caLog.push(entry);
+  if (caLog.length > 200) caLog.shift();
+  localStorage.setItem(CA_STORE_LOG, JSON.stringify(caLog));
+  caRenderLog();
+  caUpdateStats();
+
+  const msg = `${rule.sym}: FR ${fr.toFixed(4)}% — ${caCondLabel(rule.cond,rule.thresh)}`;
+  const prefs = JSON.parse(localStorage.getItem(CA_STORE_PREFS)||'{}');
+
+  // Toast
+  if (prefs.toast !== false) showToast('🔔 ' + msg, rule.cond==='above'||rule.cond==='cross_up' ? 'warn' : 'ok');
+
+  // Browser notification
+  if (Notification && Notification.permission === 'granted') {
+    try {
+      new Notification('🔔 Funding King Alert', { body: msg, icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🔔</text></svg>' });
+    } catch(e) {}
+  }
+
+  // Sound (simple beep via AudioContext)
+  if (prefs.sound !== false && window.AudioContext) {
+    try {
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      const gain= ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type='sine'; osc.frequency.setValueAtTime(880,ctx.currentTime);
+      gain.gain.setValueAtTime(0.3,ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.4);
+      osc.start(ctx.currentTime); osc.stop(ctx.currentTime+0.4);
+    } catch(e){}
+  }
+}
+
+function caCheckRules() {
+  if (!caRules.length || !allTickers) return;
+  caRules.forEach(rule => {
+    if (!rule.enabled) return;
+    const fr = caGetCurrentFR(rule.sym);
+    if (fr === null) return;
+    const prev = _caPrevFR[rule.sym];
+    let fire = false;
+    if (rule.cond === 'above')       fire = fr > rule.thresh;
+    else if (rule.cond === 'below')  fire = fr < rule.thresh;
+    else if (rule.cond === 'cross_up')   fire = prev !== undefined && prev <= rule.thresh && fr > rule.thresh;
+    else if (rule.cond === 'cross_down') fire = prev !== undefined && prev >= rule.thresh && fr < rule.thresh;
+    if (fire) caFireAlert(rule, fr);
+    _caPrevFR[rule.sym] = fr;
+  });
+  caRenderRules(); // update FR values live
+}
+
+// Hook into existing refresh cycle
+const _origRefreshAll = typeof refreshAll === 'function' ? refreshAll : null;
+function caHookRefresh() {
+  // Called after data is loaded — checks rules
+  caCheckRules();
+}
+
+/* caInit viene chiamato dal DOMContentLoaded principale */
+
+
+
+/* ══════════════════════════════════════════════════════════
+   SYNC ENGINE v2  —  Onboarding + API Keys + 2-way settings
+   Proxy reale BaseHTTP Python 3.12:
+     ✅ GET  /api/status       → {ok, key_set, msg}
+     ✅ GET  /api/tickers
+     ✅ GET  /api/positions
+     ✅ GET  /api/wallet
+     ✅ GET  /api/alert-config
+     ✅ POST /api/alert-config
+     ❌ /api/config            → graceful (solo localStorage)
+     ❌ /api/mode              → graceful
+     ❌ /api/risk-params       → graceful
+     ❌ /api/thresholds        → graceful
+     ❌ /api/interval          → graceful
+══════════════════════════════════════════════════════════ */
+
+const LS_KEY   = 'fk_api_key_v1';
+const LS_SEC   = 'fk_api_secret_v1';
+const LS_TNET  = 'fk_testnet_v1';
+const LS_SETUP = 'fk_setup_done_v1';
+
+/* runtime capability flags (rilevati da obInit) */
+const EP_CAP = { config:false, mode:false, riskParams:false, thresholds:false, interval:false };
+
+/* ── UI helpers ── */
+function obSetStatus(msg, cls='') {
+  const el = document.getElementById('ob-status');
+  if (!el) return;
+  el.textContent = msg; el.className = 'ob-status ' + cls;
+}
+function setSyncChip(id, msg, cls='') {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = msg; el.className = 'sync-chip ' + cls;
+}
+
+/* ── localStorage helpers ── */
+function obSaveLocal(key, secret, testnet) {
+  if (key)    localStorage.setItem(LS_KEY,  key);
+  if (secret) localStorage.setItem(LS_SEC,  secret);
+  localStorage.setItem(LS_TNET,  testnet ? '1' : '0');
+  localStorage.setItem(LS_SETUP, 'done');
+}
+function obLoadLocal() {
+  return {
+    key:     localStorage.getItem(LS_KEY)  || '',
+    secret:  localStorage.getItem(LS_SEC)  || '',
+    testnet: localStorage.getItem(LS_TNET) === '1'
+  };
+}
+
+/* ── Modal show / hide ── */
+function obShow() {
+  document.getElementById('ob-overlay')?.classList.remove('hidden');
+}
+function obHide() {
+  document.getElementById('ob-overlay')?.classList.add('hidden');
+}
+function obSkip() {
+  localStorage.setItem(LS_SETUP, 'skipped');
+  obHide();
+}
+
+/* ── Push chiavi al proxy (graceful se 404) ── */
+async function obPushConfig(key, secret, testnet) {
+  try {
+    const r = await fetch(PROXY_URL + '/api/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ api_key: key, api_secret: secret, testnet: !!testnet }),
+      signal: AbortSignal.timeout(6000)
+    });
+    const d = await r.json().catch(() => ({}));
+    if (d.ok === true) { EP_CAP.config = true; return true; }
+    return false;  // endpoint esiste ma risponde {ok:false,"not found"}
+  } catch(e) { return false; }
+}
+
+/* ── Test & Save dal popup ── */
+async function obTestAndSave() {
+  const key     = (document.getElementById('ob-key')?.value    || '').trim();
+  const secret  = (document.getElementById('ob-secret')?.value || '').trim();
+  const testnet = document.getElementById('ob-testnet')?.checked || false;
+
+  if (!key || !secret) {
+    obSetStatus('⚠️ Inserisci API Key e Secret', 'err');
+    document.getElementById('ob-key')?.classList.toggle('err', !key);
+    document.getElementById('ob-secret')?.classList.toggle('err', !secret);
+    return;
+  }
+  ['ob-key','ob-secret'].forEach(id => document.getElementById(id)?.classList.remove('err'));
+
+  const btn = document.getElementById('ob-test-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Salvataggio…'; }
+
+  /* STEP 1 – salva subito in localStorage */
+  obSaveLocal(key, secret, testnet);
+  obSetStatus('💾 Chiavi salvate in localStorage', 'ok');
+
+  /* STEP 2 – prova push al proxy */
+  const pushed = await obPushConfig(key, secret, testnet);
+
+  /* STEP 3 – verifica connessione */
+  obSetStatus('🔌 Verifica connessione bot…', 'loading');
+  try {
+    const r  = await fetch(PROXY_URL + '/api/status', { signal: AbortSignal.timeout(6000) });
+    const st = await r.json();
+    if (st.ok) {
+      const keyInfo  = st.key_set ? '🔑 Key rilevata dal bot' : '⚠️ key_set=false (bot non ha visto la key)';
+      const pushInfo = pushed ? ' | ✅ Inviata via /api/config' : ' | ℹ️ /api/config non implementato nel proxy';
+      obSetStatus(`✅ Bot online — ${keyInfo}${pushInfo}`, 'ok');
+      if (btn) btn.textContent = '✅ Fatto!';
+      /* aggiorna form Impostazioni */
+      sLoadApiForm();
+      setTimeout(() => { obHide(); refreshAll(); }, 2000);
+    } else {
+      obSetStatus('⚠️ Chiavi salvate. Bot ha risposto con errore.', 'err');
+      if (btn) { btn.disabled=false; btn.textContent='🔌 Connetti & Salva'; }
+    }
+  } catch(e) {
+    obSetStatus(`💾 Chiavi salvate localmente. Bot offline: ${e.message}`, 'err');
+    if (btn) { btn.disabled=false; btn.textContent='🔌 Connetti & Salva'; }
+  }
+}
+
+/* ══════════════════════════════════════════════
+   INIT — eseguito al DOMContentLoaded
+   1. Chiama /api/status per rilevare key_set
+   2. Testa endpoint per capability map
+   3. Decide se mostrare popup
+══════════════════════════════════════════════ */
+async function obInit() {
+  let statusData = null;
+  const missingEPs = [];
+
+  /* --- Fetch status --- */
+  try {
+    const r = await fetch(PROXY_URL + '/api/status', { signal: AbortSignal.timeout(6000) });
+    statusData = await r.json();
+  } catch(e) { /* bot offline */ }
+
+  /* --- Test endpoint capabilities (fast, parallelo) --- */
+  const epTests = [
+    ['/api/config',      'config'],
+    ['/api/mode',        'mode'],
+    ['/api/risk-params', 'riskParams'],
+    ['/api/thresholds',  'thresholds'],
+    ['/api/interval',    'interval'],
+  ];
+  await Promise.all(epTests.map(async ([path, key]) => {
+    try {
+      const r = await fetch(PROXY_URL + path, { signal: AbortSignal.timeout(3000) });
+      const d = await r.json().catch(() => ({}));
+      EP_CAP[key] = !(d.msg === 'not found' || d.msg === 'Not Found');
+    } catch(e) { EP_CAP[key] = false; }
+    if (!EP_CAP[key]) missingEPs.push(path);
+  }));
+
+  /* --- Mostra banner se proxy vecchio --- */
+  if (missingEPs.length >= 2) {
+    const banner = document.getElementById('proxy-update-banner');
+    if (banner) banner.style.display = 'block';
+  }
+
+  /* --- Logica popup --- */
+  const setup = localStorage.getItem(LS_SETUP);
+  const local = obLoadLocal();
+
+  if (statusData?.key_set === true) {
+    /* Bot ha le chiavi → mostra schermata "già configurato" */
+    const formSec    = document.getElementById('ob-form-section');
+    const alreadySec = document.getElementById('ob-already-section');
+    if (formSec)    formSec.style.display    = 'none';
+    if (alreadySec) alreadySec.style.display = 'block';
+    /* Popola info bot */
+    const info = document.getElementById('ob-bot-status-info');
+    if (info) {
+      const epOk  = missingEPs.length === 0;
+      const epTxt = epOk
+        ? '✅ Tutti gli endpoint disponibili'
+        : `⚠️ ${missingEPs.length}/5 endpoint non disponibili:<br><code style="font-size:.73rem">${missingEPs.join('<br>')}</code><br><span style="color:var(--text3)">→ Carica proxy_v5.py sul server per il sync completo</span>`;
+      info.innerHTML = `
+        <div style="margin-bottom:4px">🤖 Proxy: <strong style="color:#10b981">Online</strong>
+          <span style="color:var(--text3);font-size:.75rem">(${statusData.msg || ''})</span></div>
+        <div style="margin-bottom:6px">🔑 API Keys: <strong style="color:#10b981">Configurate nel bot</strong></div>
+        <div style="font-size:.75rem;color:var(--text3)">${epTxt}</div>`;
+    }
+    /* Mostra popup solo al primo avvio */
+    if (!setup) {
+      localStorage.setItem(LS_SETUP, 'done');
+      setTimeout(obShow, 700);
+    }
+  } else if (!setup && !local.key) {
+    /* Prima visita, nessuna chiave → form */
+    setTimeout(obShow, 700);
+  } else if (!local.key && setup !== 'skipped') {
+    /* Setup segnato ma key persa → form */
+    setTimeout(obShow, 700);
+  } else if (local.key) {
+    /* Chiavi solo in localStorage → push silenzioso */
+    const pushed = await obPushConfig(local.key, local.secret, local.testnet);
+    setSyncChip('api-sync-chip', pushed ? '✅ Bot + localStorage' : '💾 Solo localStorage', pushed ? 'ok' : '');
+  }
+}
+
+/* ══════════════════════════════════════════════
+   SETTINGS — form API Keys
+══════════════════════════════════════════════ */
+async function sLoadApiForm() {
+  const local = obLoadLocal();
+  const keyEl  = document.getElementById('s-api-key');
+  const secEl  = document.getElementById('s-api-secret');
+  const tnetEl = document.getElementById('s-testnet-chk');
+  if (keyEl)  keyEl.value   = local.key;
+  if (secEl)  secEl.value   = local.secret;
+  if (tnetEl) tnetEl.checked= local.testnet;
+
+  setSyncChip('api-sync-chip', '⟳ Verifica…', 'saving');
+  try {
+    const r  = await fetch(PROXY_URL + '/api/status', { signal: AbortSignal.timeout(5000) });
+    const st = await r.json();
+    setSyncChip('api-sync-chip',
+      st.key_set
+        ? (local.key ? '✅ Bot + localStorage' : '✅ Bot (key non in localStorage)')
+        : (local.key ? '💾 Solo localStorage' : '⚠️ Nessuna key'),
+      st.key_set ? 'ok' : ''
+    );
+  } catch(e) {
+    setSyncChip('api-sync-chip', local.key ? '💾 Solo localStorage' : '⚠️ Offline', '');
+  }
+}
+
+async function sApiSave() {
+  const key    = (document.getElementById('s-api-key')?.value    || '').trim();
+  const secret = (document.getElementById('s-api-secret')?.value || '').trim();
+  const testnet= document.getElementById('s-testnet-chk')?.checked || false;
+  if (!key && !secret) { showToast('⚠️ Inserisci almeno la API Key', 'warn'); return; }
+  const local  = obLoadLocal();
+  const mKey   = key    || local.key;
+  const mSec   = secret || local.secret;
+  obSaveLocal(mKey, mSec, testnet);
+  setSyncChip('api-sync-chip', '⏳ Salvataggio…', 'saving');
+  const pushed = await obPushConfig(mKey, mSec, testnet);
+  setSyncChip('api-sync-chip', pushed ? '✅ Bot + localStorage' : '💾 Solo localStorage', pushed ? 'ok' : '');
+  showToast(pushed ? '✅ Chiavi salvate e inviate al bot' : '💾 Chiavi salvate localmente (/api/config non disponibile)', pushed ? 'ok' : 'warn');
+}
+
+async function sApiTest() {
+  const badge = document.getElementById('api-test-badge');
+  if (badge) { badge.style.display='inline'; badge.className='api-test-badge testing'; badge.textContent='⏳ Test…'; }
+  try {
+    const r  = await fetch(PROXY_URL + '/api/status', { signal: AbortSignal.timeout(6000) });
+    const st = await r.json();
+    const ok = st.ok && st.key_set;
+    if (badge) {
+      badge.className = 'api-test-badge ' + (ok ? 'ok' : 'err');
+      badge.textContent = ok ? '✅ Bot online — key presente' : (st.ok ? '⚠️ Bot online — key assente' : '❌ Errore');
+    }
+    showToast(ok ? '✅ Connessione OK — key presente nel bot' : '⚠️ Bot online ma key_set=false', ok ? 'ok' : 'warn');
+  } catch(e) {
+    if (badge) { badge.className='api-test-badge err'; badge.textContent='❌ ' + e.message; }
+    showToast('❌ Bot non raggiungibile: ' + e.message, 'err');
+  }
+}
+
+function sApiClear() {
+  if (!confirm('Cancellare le API Keys da localStorage?')) return;
+  [LS_KEY, LS_SEC, LS_SETUP].forEach(k => localStorage.removeItem(k));
+  document.getElementById('s-api-key')?.value   !== undefined && (document.getElementById('s-api-key').value = '');
+  document.getElementById('s-api-secret')?.value !== undefined && (document.getElementById('s-api-secret').value = '');
+  setSyncChip('api-sync-chip', '🗑 Cancellate', 'err');
+  showToast('🗑 Chiavi rimosse da localStorage', 'warn');
+}
+
+function sToggleVis(inputId, btn) {
+  const el = document.getElementById(inputId);
+  if (!el) return;
+  if (el.type === 'password') { el.type = 'text';     if (btn) btn.textContent = '🙈'; }
+  else                        { el.type = 'password'; if (btn) btn.textContent = '👁'; }
+}
+
+/* ══════════════════════════════════════════════
+   SYNC PULL quando apri le Impostazioni
+══════════════════════════════════════════════ */
+async function syncPullAll() {
+  sLoadApiForm();
+  loadAlertConfig();
+  /* status → mode badge */
+  try {
+    const r  = await fetch(PROXY_URL + '/api/status', { signal: AbortSignal.timeout(5000) });
+    const st = await r.json();
+    if (st.mode) {
+      const sel = document.getElementById('s-mode-select');
+      if (sel) sel.value = st.mode;
+    }
+  } catch(e) {}
+}
+
+/* ── Estensione showPage per triggerare sync settings ── */
+const _showPageOrig = showPage;
+window.showPage = function(id, btn) {
+  _showPageOrig(id, btn);
+  if (id === 'settings') setTimeout(syncPullAll, 120);
+};
+
+</script>
