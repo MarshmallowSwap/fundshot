@@ -10,6 +10,21 @@ from collections import deque
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
+
+# ── Alert Config Manager (sincronizzazione dashboard) ─────────────────────────
+try:
+    import alert_config_manager as _acm
+    _ACM_AVAILABLE = True
+except ImportError:
+    _acm = None
+    _ACM_AVAILABLE = False
+
+def _alert_enabled(alert_type: str) -> bool:
+    if _ACM_AVAILABLE and _acm:
+        return _acm.is_enabled(alert_type)
+    return True
+
+
 TZ_IT = ZoneInfo("Europe/Rome")
 
 logger = logging.getLogger(__name__)
@@ -19,11 +34,19 @@ logger = logging.getLogger(__name__)
 # ══════════════════════════════════════════════════════════════════════════════
 
 # ── Soglie fisse (floor — non scendono mai sotto questi valori) ───────────────
+THRESHOLD_CRITICO     = 2.50   # CRITICO: funding jackpot — massima opportunità di incasso
+THR_JACKPOT   = THRESHOLD_CRITICO  # alias usato da commands.py
+THR_CRITICO   = THRESHOLD_CRITICO
+THR_EXTREME   = 1.50
+THR_HARD      = 2.00
+THR_HIGH      = 1.00
+THR_CLOSE_TIP = 0.75
 THRESHOLD_HARD        = 2.00
 THRESHOLD_EXTREME     = 1.50
 THRESHOLD_HIGH        = 1.00
-THRESHOLD_CLOSE_TIP   = 0.23
-THRESHOLD_RIENTRO     = 0.75
+THRESHOLD_CLOSE_TIP   = 0.75   # CONSIGLIO CHIUSURA: funding rientro area
+THRESHOLD_WARN_TIP    = 0.25   # PERICOLO CHIUSURA: funding basso ma presente
+THRESHOLD_RIENTRO     = 0.20   # Rientro completo: funding quasi assente
 RESET_THRESHOLD       = 0.02
 COOLDOWN_SECONDS      = int(os.getenv("COOLDOWN_SECONDS", 120))
 FUNDING_ALERT_MINUTES = int(os.getenv("FUNDING_ALERT_MINUTES", 15))
@@ -36,11 +59,13 @@ MIN_SAMPLES_DYNAMIC = 10   # campioni minimi prima di attivare la dinamica
 # ── Moltiplicatori per livello (applicati alla media rolling del simbolo) ─────
 # soglia_effettiva = max(soglia_fissa, avg_rolling * moltiplicatore)
 MULTIPLIERS = {
+    "critico":   5.0,
     "hard":      4.0,
     "extreme":   3.0,
     "high":      2.0,
     "close_tip": 1.5,
-    "rientro":   1.2,
+    "warn_tip":  1.1,
+    "rientro":   1.0,
 }
 
 # ── Simboli esclusi dal meccanismo automatico Bybit ───────────────────────────
@@ -124,10 +149,12 @@ def get_history_stats(symbol: str) -> dict:
 # ══════════════════════════════════════════════════════════════════════════════
 
 _FIXED_THRESHOLDS = {
+    "critico":   THRESHOLD_CRITICO,
     "hard":      THRESHOLD_HARD,
     "extreme":   THRESHOLD_EXTREME,
     "high":      THRESHOLD_HIGH,
     "close_tip": THRESHOLD_CLOSE_TIP,
+    "warn_tip":  THRESHOLD_WARN_TIP,
     "rientro":   THRESHOLD_RIENTRO,
 }
 
@@ -170,7 +197,7 @@ def get_thresholds_info(symbol: str) -> dict:
     """
     avg = get_avg_rolling(symbol) if USE_DYNAMIC else 0.0
     result = {"dynamic_active": USE_DYNAMIC, "avg_rolling": avg, "levels": {}}
-    for level in ["hard", "extreme", "high", "close_tip"]:
+    for level in ["critico", "hard", "extreme", "high", "close_tip", "warn_tip"]:
         fixed     = _FIXED_THRESHOLDS[level]
         dynamic   = avg * MULTIPLIERS[level] if avg > 0 else 0.0
         effective = max(fixed, dynamic) if USE_DYNAMIC and avg > 0 else fixed
@@ -193,6 +220,8 @@ def classify(symbol: str, rate_pct: float) -> str:
     """
     abs_rate = abs(rate_pct)
 
+    if abs_rate >= get_effective_threshold(symbol, "critico"):
+        return "critico"
     if abs_rate >= get_effective_threshold(symbol, "hard"):
         return "hard"
     if abs_rate >= get_effective_threshold(symbol, "extreme"):
@@ -201,6 +230,8 @@ def classify(symbol: str, rate_pct: float) -> str:
         return "high"
     if abs_rate >= get_effective_threshold(symbol, "close_tip"):
         return "close_tip"
+    if abs_rate >= get_effective_threshold(symbol, "warn_tip"):
+        return "warn_tip"
     return "none"
 
 
@@ -220,10 +251,12 @@ def _interval_label(interval_h) -> str:
 # ══════════════════════════════════════════════════════════════════════════════
 
 _LEVEL_META = {
+    "critico":   ("🤑", "💎 JACKPOT FUNDING 💎"),
     "hard":      ("🔴", "HARD FUNDING"),
     "extreme":   ("🔥", "EXTREME FUNDING"),
     "high":      ("🚨", "HIGH FUNDING"),
-    "close_tip": ("ℹ️",  "CONSIGLIO CHIUSURA"),
+    "close_tip": ("⚠️",  "CONSIGLIO CHIUSURA"),
+    "warn_tip":  ("ℹ️",  "PERICOLO CHIUSURA"),
     "rientro":   ("✅", "FUNDING RIENTRATO"),
 }
 
@@ -259,12 +292,30 @@ def format_alert(
             f"Eccesso rientrato ✔"
         )
 
+    if level == "critico":
+        side   = "SHORT" if rate_pct > 0 else "LONG"
+        income = "gli short INCASSANO" if rate_pct > 0 else "i long INCASSANO"
+        return (
+            f"{emoji} {title} — {symbol}\n"
+            f"Rate: {rate_str} (ogni {interval}){suffix}\n"
+            f"💰 Funding MASSIMO: {income}\n"
+            f"🚀 Mantieni / Apri {side} — opportunità RARA!"
+        )
+
     if level == "close_tip":
         action = "chiudere posizioni SHORT" if rate_pct > 0 else "chiudere posizioni LONG"
         return (
             f"{emoji} {title} — {symbol}\n"
             f"Rate: {rate_str} (ogni {interval}){suffix}\n"
             f"Valuta di {action}"
+        )
+
+    if level == "warn_tip":
+        action = "posizioni SHORT" if rate_pct > 0 else "posizioni LONG"
+        return (
+            f"{emoji} {title} — {symbol}\n"
+            f"Rate: {rate_str} (ogni {interval}){suffix}\n"
+            f"Attenzione: funding su {action} ancora attivo"
         )
 
     return (
@@ -341,6 +392,28 @@ def predict_next_interval(symbol: str, rate_pct: float, current_interval_h: int)
 
 _state: dict[str, dict] = {}
 
+# Tempo minimo (secondi) prima di re-inviare lo STESSO livello per lo stesso simbolo
+# Evita doppi alert dopo un reset/cooldown breve
+MIN_RESEND_INTERVAL: dict[str, int] = {
+    "critico":   600,   # 10 min (massima urgenza)
+    "hard":      600,   # 10 min
+    "extreme":   600,   # 10 min
+    "high":      600,   # 10 min
+    "close_tip": 300,   #  5 min
+    "warn_tip":  300,   #  5 min
+    "rientro":   300,   #  5 min
+}
+# _last_alert_time[symbol][level] = time.monotonic() dell'ultimo invio
+_last_alert_time: dict[str, dict[str, float]] = {}
+
+# Ultimo tasso non-zero per simbolo (usato per calcolo gain al reset del funding)
+_last_nonzero_rate: dict[str, float] = {}
+
+
+def get_last_nonzero_rate(symbol: str) -> float:
+    """Restituisce l'ultimo funding rate significativo prima del reset."""
+    return _last_nonzero_rate.get(symbol, 0.0)
+
 
 def _get_state(symbol: str) -> dict:
     if symbol not in _state:
@@ -385,6 +458,8 @@ def process_funding(symbol: str, rate_pct: float, interval_h) -> str | None:
         return None
 
     # 3. Classifica con soglie effettive
+    # Memorizza l'ultimo rate significativo (usato da funding_tracker per il calcolo gain)
+    _last_nonzero_rate[symbol] = rate_pct
     new_level  = classify(symbol, rate_pct)
     prev_level = state["level"]
 
@@ -395,6 +470,9 @@ def process_funding(symbol: str, rate_pct: float, interval_h) -> str | None:
             state["level"] = "none"
             # Rientro: invia SOLO se il simbolo aveva già ricevuto un alert HIGH/EXTREME/HARD
             if is_funded(symbol):
+                if not _can_send_alert(symbol, "rientro"):
+                    return None
+                _record_alert(symbol, "rientro")
                 return format_alert(symbol, rate_pct, interval_h, "rientro", prev_level)
             return None
         return None
@@ -406,14 +484,18 @@ def process_funding(symbol: str, rate_pct: float, interval_h) -> str | None:
     # 5. Livello nuovo o upgrade → alert
     state["level"] = new_level
 
-    # close_tip: invia solo se il simbolo è già "funded" (ha avuto HIGH+)
-    # o se esplicitamente monitored via watchlist (check esterno in bot.py)
-    if new_level == "close_tip" and not is_funded(symbol):
-        return None  # sopprimi close_tip per simboli non ancora allertati
+    # close_tip e warn_tip: invia solo se il simbolo è già "funded" (ha avuto HIGH+)
+    if new_level in ("close_tip", "warn_tip") and not is_funded(symbol):
+        return None  # sopprimi per simboli non ancora allertati
 
-    # Segna il simbolo come funded per HIGH / EXTREME / HARD
-    if new_level in ("high", "extreme", "hard"):
+    # Segna il simbolo come funded per CRITICO / HIGH / EXTREME / HARD
+    if new_level in ("critico", "high", "extreme", "hard"):
         mark_funded(symbol)
+
+    # Anti-duplicato temporale: evita re-invio dello stesso livello entro MIN_RESEND_INTERVAL
+    if not _can_send_alert(symbol, new_level):
+        return None
+    _record_alert(symbol, new_level)
 
     return format_alert(symbol, rate_pct, interval_h, new_level, prev_level)
 
@@ -428,6 +510,11 @@ def process_next_funding(
     interval_h,
     next_funding_ts_ms: int,
 ) -> str | None:
+    if not _alert_enabled('next_funding'):
+        return None
+    # Gate: invia alert solo per simboli con posizione aperta (funded)
+    if not is_funded(symbol):
+        return None
     high_thr = get_effective_threshold(symbol, "high")
     if abs(rate_pct) < high_thr:
         return None
@@ -463,6 +550,23 @@ DUMP_THRESHOLD_1H = float(os.getenv("DUMP_THRESHOLD_1H", -5.0))
 # ──────────────────────────────────────────────────────────────────────────────
 _funded_symbols: set[str] = set()
 
+def _can_send_alert(symbol: str, level: str) -> bool:
+    """True se non abbiamo già inviato questo livello per questo simbolo
+    nell'ultimo MIN_RESEND_INTERVAL[level] secondi."""
+    min_interval = MIN_RESEND_INTERVAL.get(level, 0)
+    if min_interval == 0:
+        return True
+    last = _last_alert_time.get(symbol, {}).get(level, 0.0)
+    return (time.monotonic() - last) >= min_interval
+
+
+def _record_alert(symbol: str, level: str) -> None:
+    """Registra l'istante di invio per symbol+level."""
+    if symbol not in _last_alert_time:
+        _last_alert_time[symbol] = {}
+    _last_alert_time[symbol][level] = time.monotonic()
+
+
 def mark_funded(symbol: str) -> None:
     """Registra che il simbolo ha ricevuto almeno un alert HIGH/EXTREME/HARD."""
     _funded_symbols.add(symbol)
@@ -482,6 +586,8 @@ def process_pump_dump(
     pct_24h_raw: str,
     last_price_raw: str,
 ) -> str | None:
+    if not _alert_enabled('pump_dump'):
+        return None
     try:
         pct_1h     = float(pct_1h_raw) * 100
         pct_24h    = float(pct_24h_raw) * 100
@@ -499,3 +605,77 @@ def process_pump_dump(
     if symbol in _pump_state:
         del _pump_state[symbol]
     return None
+
+
+# ══════════════════ CAMBIO LIVELLO ══════════════════
+_prev_level_map = {}
+_level_change_cooldown = {}   # {symbol: last_sent_ts}
+_LEVEL_CHANGE_CD_SEC = 300    # 5 minuti di cooldown
+
+_level_change_cooldown = {}  # {symbol: last_sent_ts}
+_LEVEL_CHANGE_CD_SEC = 300  # 5 minuti
+
+def check_level_change(symbol, new_level):
+    if not _alert_enabled('level_change'):
+        return None
+    prev = _prev_level_map.get(symbol, 'none')
+    _prev_level_map[symbol] = new_level
+    if prev == new_level or prev == 'none' or new_level == 'none': return None
+    import time as _t
+    _now = _t.time()
+    if _now - _level_change_cooldown.get(symbol, 0) < _LEVEL_CHANGE_CD_SEC:
+        return None
+    _level_change_cooldown[symbol] = _now
+    # Cooldown anti-spam: max 1 alert per simbolo ogni 5 minuti
+    _now = time.time()
+    if _now - _level_change_cooldown.get(symbol, 0) < _LEVEL_CHANGE_CD_SEC:
+        return None
+    _level_change_cooldown[symbol] = _now
+    RANK = {'none':0,'rientro':0,'warn_tip':1,'close_tip':2,'high':3,'extreme':4,'hard':5,'critico':6}
+    p_r,n_r = RANK.get(prev,0),RANK.get(new_level,0)
+    if n_r<=0: return None
+    arrow = 'UP' if n_r>p_r else 'DOWN'
+    emoji = {'critico':'🤑','hard':'🔴','extreme':'🔥','high':'🚨'}.get(new_level,'⚡') if n_r>p_r else '📉'
+    lbl = {'critico':'JACKPOT','hard':'HARD','extreme':'EXTREME','high':'HIGH','close_tip':'CLOSE','warn_tip':'WARN'}
+    arrow_sym = '⬆️' if arrow == 'UP' else '⬇️'
+    prev_lbl = lbl.get(prev, prev.upper())
+    new_lbl  = lbl.get(new_level, new_level.upper())
+    return (
+        f'{arrow_sym} {emoji} *CAMBIO LIVELLO — {symbol}*\n'
+        f'{prev_lbl} → {new_lbl}\n'
+        'Verifica posizione aperta!'
+    )
+
+_liq_alerted = {}
+def check_liquidation_risk(symbol,mark,liq,side,danger_pct=15.0):
+    if liq<=0 or mark<=0: return None
+    dist = (mark-liq)/mark*100 if side=='Buy' else (liq-mark)/mark*100
+    if dist<0: dist=0.0
+    if dist<danger_pct and not _liq_alerted.get(symbol):
+        _liq_alerted[symbol]=True
+        d=f'{"LONG" if side=="Buy" else "SHORT"}'
+        return (
+            f'🚨 *LIQUIDAZIONE IMMINENTE — {symbol}*\n'
+            f'Posizione {d} | Mark: `{mark:,.4f}`\n'
+            f'Liq: `{liq:,.4f}` | Distanza: *{dist:.1f}%*\n'
+            '⚠️ AGISCI SUBITO!'
+        )
+    if dist>=20.0 and _liq_alerted.get(symbol): _liq_alerted[symbol]=False
+    return None
+
+_last_multi_ts = 0
+def check_multi_position_alert(funded_syms,min_count=3):
+    import time
+    global _last_multi_ts
+    count=len(funded_syms)
+    if count<min_count: return None
+    now=time.monotonic()
+    if now-_last_multi_ts<1800: return None
+    _last_multi_ts=now
+    sample=', '.join(funded_syms[:5])
+    dots = '...' if count > 5 else ''
+    return (
+        f'🔔 {count} ALERT SIMULTANEI\n'
+        f'{sample}{dots}\n'
+        "Attenzione all'esposizione!"
+    )

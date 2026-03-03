@@ -25,6 +25,10 @@ import bybit_client as bc
 import alert_logic as al
 import watchlist_manager as wm
 import backtester as bt
+import funding_tracker as ft
+from bybit_client import close_positions_by_mm, close_positions_by_pnl
+import user_store
+import session_manager
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +45,11 @@ def is_watched(symbol: str) -> bool:
 # /start — Setup Wizard
 # ══════════════════════════════════════════════════════════════════════════════
 
-def _has_credentials() -> bool:
+def _has_credentials(chat_id: int | str | None = None) -> bool:
+    """Verifica credenziali: per-utente se chat_id è fornito, globale come fallback."""
+    if chat_id is not None:
+        return user_store.has_credentials(chat_id)
+    # Fallback legacy: controlla variabili d'ambiente globali
     return bool(os.getenv("BYBIT_API_KEY")) and bool(os.getenv("BYBIT_API_SECRET"))
 
 
@@ -56,22 +64,20 @@ def _build_menu_keyboard():
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     chat_id = update.effective_chat.id
 
-    # Salva chat_id automaticamente
-    if not os.getenv("CHAT_ID"):
-        _set_env("CHAT_ID", str(chat_id))
-
-    if _has_credentials():
+    if _has_credentials(chat_id):
+        key_masked = _mask(user_store.get_api_key(chat_id))
         await update.message.reply_text(
             "🤖 *Funding King Bot* — Attivo ✅\n\n"
             f"Chat ID: `{chat_id}`\n"
-            f"API Key: `{_mask(os.getenv('BYBIT_API_KEY', ''))}`\n\n"
-            "Usa /help per vedere tutti i comandi.",
+            f"API Key: `{key_masked}`\n\n"
+            "Usa /help per vedere tutti i comandi.\n"
+            "Usa /deletekeys per rimuovere le tue credenziali.",
             parse_mode="Markdown",
         )
         return ConversationHandler.END
 
-    key = _mask(os.getenv("BYBIT_API_KEY", ""))
-    secret = _mask(os.getenv("BYBIT_API_SECRET", ""))
+    key    = _mask(user_store.get_api_key(chat_id))
+    secret = _mask(user_store.get_api_secret(chat_id))
     text = (
         "🤖 *Funding King Bot — Setup*\n\n"
         f"Chat ID: `{chat_id}` ✅ (rilevato automaticamente)\n"
@@ -85,6 +91,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
 async def menu_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     query = update.callback_query
+    chat_id = update.effective_chat.id
     await query.answer()
     data = query.data
 
@@ -103,17 +110,26 @@ async def menu_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
         return WAITING_API_SECRET
 
     if data == "confirm_start":
-        if not _has_credentials():
+        chat_id = query.from_user.id
+        if not _has_credentials(chat_id):
             await query.edit_message_text(
                 "⚠️ Configura prima API Key e API Secret.",
                 reply_markup=_build_menu_keyboard(),
             )
             return MENU
-        bc.reload_session()
+        session_manager.reload_session(chat_id)
+        # Test connessione
+        try:
+            sess = session_manager.get_session(chat_id)
+            test = await sess.test_connection()
+            conn_status = "✅ Connessione Bybit OK" if test.get("ok") else f"⚠️ {test.get('error','errore')}"
+        except Exception as e:
+            conn_status = f"⚠️ Errore test: {e}"
         await query.edit_message_text(
             "✅ *Configurazione completata!*\n\n"
-            f"API Key: `{_mask(os.getenv('BYBIT_API_KEY', ''))}`\n"
-            f"API Secret: `{_mask(os.getenv('BYBIT_API_SECRET', ''))}`\n\n"
+            f"API Key: `{_mask(user_store.get_api_key(chat_id))}`\n"
+            f"API Secret: `{_mask(user_store.get_api_secret(chat_id))}`\n\n"
+            f"{conn_status}\n\n"
             "Il bot inizia il monitoraggio. Usa /help per i comandi.",
             parse_mode="Markdown",
         )
@@ -123,13 +139,15 @@ async def menu_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
 
 
 async def receive_api_key(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    chat_id = update.effective_chat.id
     value = update.message.text.strip()
+    chat_id = update.effective_chat.id
     try:
         await update.message.delete()
     except Exception:
         pass
-    _set_env("BYBIT_API_KEY", value)
-    bc.reload_session()
+    user_store.set_key(chat_id, "api_key", value)
+    session_manager.reload_session(chat_id)
     await update.message.reply_text(
         f"✅ API Key salvata: `{_mask(value)}`",
         parse_mode="Markdown",
@@ -139,13 +157,15 @@ async def receive_api_key(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
 
 async def receive_api_secret(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    chat_id = update.effective_chat.id
     value = update.message.text.strip()
+    chat_id = update.effective_chat.id
     try:
         await update.message.delete()
     except Exception:
         pass
-    _set_env("BYBIT_API_SECRET", value)
-    bc.reload_session()
+    user_store.set_key(chat_id, "api_secret", value)
+    session_manager.reload_session(chat_id)
     await update.message.reply_text(
         f"✅ API Secret salvato: `{_mask(value)}`",
         parse_mode="Markdown",
@@ -157,6 +177,35 @@ async def receive_api_secret(update: Update, context: ContextTypes.DEFAULT_TYPE)
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     await update.message.reply_text("Setup annullato. Usa /start per ricominciare.")
     return ConversationHandler.END
+
+
+async def deletekeys(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat_id = update.effective_chat.id
+    if not user_store.has_credentials(chat_id):
+        await update.message.reply_text("Non hai credenziali salvate.")
+        return
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("Elimina", callback_data="deletekeys_confirm"),
+            InlineKeyboardButton("Annulla", callback_data="deletekeys_cancel"),
+        ]
+    ])
+    await update.message.reply_text(
+        "Sei sicuro di voler eliminare le tue credenziali Bybit?",
+        reply_markup=keyboard,
+    )
+
+
+async def deletekeys_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    chat_id = update.effective_chat.id
+    await query.answer()
+    if query.data == "deletekeys_confirm":
+        user_store.remove_user(chat_id)
+        session_manager.remove_session(chat_id)
+        await query.edit_message_text("Credenziali eliminate. Usa /start per riconfigurare.")
+    else:
+        await query.edit_message_text("Annullato. Credenziali al sicuro.")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1277,6 +1326,440 @@ async def backtest_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Registrazione handlers
 # ══════════════════════════════════════════════════════════════════════════════
 
+
+# ─────────────────────────────────────────────────────────────────────────────
+# /profitto_funding
+# ─────────────────────────────────────────────────────────────────────────────
+
+async def profitto_funding(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Mostra il riepilogo dei guadagni da funding per le posizioni aperte.
+
+    Per ogni simbolo che ha ricevuto alert HIGH/EXTREME/HARD e aveva una
+    posizione aperta, mostra:
+      - Rate dell'ultimo ciclo di funding
+      - Guadagno/costo dell'ultimo ciclo
+      - Totale guadagno/costo da quando la posizione è aperta
+    """
+    if not _has_credentials(update.effective_chat.id):
+        await update.message.reply_text("⚠️ Configura prima le tue API Key con /start")
+        return
+
+    await update.message.reply_text("💹 Recupero guadagni funding...")
+
+    # Recupera posizioni aperte per arricchire il riepilogo
+    try:
+        positions = await bc.get_positions()
+    except Exception:
+        positions = []
+
+    text = ft.format_summary(positions if positions else None)
+    await update.message.reply_text(text, parse_mode="Markdown")
+
+
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# /rischio — Analisi rischio posizioni aperte
+# ═══════════════════════════════════════════════════════════════════════════════
+async def rischio(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Analisi del rischio per ogni posizione aperta: distanza liquidazione, leverage, PnL%."""
+    if not _has_credentials(update.effective_chat.id):
+        await update.message.reply_text("⚠️ Configura prima le tue API Key con /start")
+        return
+    await update.message.reply_text("⚠️ Analisi rischio in corso...")
+    try:
+        positions = await bc.get_positions()
+    except Exception as e:
+        await update.message.reply_text(f"❌ Errore: {e}")
+        return
+    if not positions:
+        await update.message.reply_text("📭 Nessuna posizione aperta.")
+        return
+
+    lines = ["⚠️ *ANALISI RISCHIO POSIZIONI*", ""]
+    for p in positions:
+        sym        = p.get("symbol", "")
+        side_raw   = p.get("side", "Buy")
+        side       = "🟢 LONG" if side_raw == "Buy" else "🔴 SHORT"
+        mark       = float(p.get("markPrice", 0))
+        liq        = float(p.get("liqPrice", 0) or 0)
+        lev        = float(p.get("leverage", 1) or 1)
+        upnl       = float(p.get("unrealisedPnl", 0))
+        pnl_pct    = float(p.get("unrealisedPnlPcnt", 0))
+        size       = float(p.get("size", 0))
+        pos_val    = float(p.get("positionValue", 0))
+
+        if liq > 0 and mark > 0:
+            if side_raw == "Buy":
+                dist_pct = (mark - liq) / mark * 100
+            else:
+                dist_pct = (liq - mark) / mark * 100
+            dist_pct = max(dist_pct, 0)
+            if dist_pct < 5:
+                risk_emoji = "🔴 CRITICO"
+            elif dist_pct < 10:
+                risk_emoji = "🟠 ALTO"
+            elif dist_pct < 20:
+                risk_emoji = "🟡 MEDIO"
+            else:
+                risk_emoji = "🟢 BASSO"
+            dist_str = f"{dist_pct:.1f}% ({risk_emoji})"
+        else:
+            dist_str = "N/D"
+
+        sign = "+" if upnl >= 0 else ""
+        lines.append(f"*{sym}* {side} {lev:.0f}x")
+        lines.append(f"  Mark: `{mark:.4f}` | Liq: `{liq:.4f}`")
+        lines.append(f"  Distanza liq: `{dist_str}`")
+        lines.append(f"  PnL: `{sign}{upnl:.2f} USDT` ({sign}{pnl_pct:.2f}%)")
+        lines.append(f"  Valore pos: `{pos_val:.2f} USDT`")
+        lines.append("")
+
+    await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# /summary — Riepilogo rapido portafoglio
+# ═══════════════════════════════════════════════════════════════════════════════
+async def summary(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Riepilogo rapido: wallet + posizioni aperte."""
+    if not _has_credentials(update.effective_chat.id):
+        await update.message.reply_text("⚠️ Configura prima le tue API Key con /start")
+        return
+    await update.message.reply_text("📊 Calcolo summary...")
+    try:
+        wallet    = await bc.get_wallet()
+        positions = await bc.get_positions()
+    except Exception as e:
+        await update.message.reply_text(f"❌ Errore: {e}")
+        return
+
+    equity  = wallet.get("equity", 0)
+    upnl    = wallet.get("upnl", 0)
+    rpnl    = wallet.get("realisedPnl", 0)
+    avail   = wallet.get("avail", 0)
+    margin  = wallet.get("margin", 0)
+
+    n_long  = sum(1 for p in positions if p.get("side") == "Buy")
+    n_short = sum(1 for p in positions if p.get("side") == "Sell")
+    tot_upnl = sum(float(p.get("unrealisedPnl", 0)) for p in positions)
+
+    best_sym = max(positions, key=lambda p: float(p.get("unrealisedPnl", 0)), default=None)
+    worst_sym = min(positions, key=lambda p: float(p.get("unrealisedPnl", 0)), default=None)
+
+    now_it = datetime.now(TZ_IT).strftime("%d/%m/%Y %H:%M")
+    lines = [
+        f"📊 *SUMMARY PORTAFOGLIO — {now_it}*", "",
+        f"💼 Equity: `{equity:.2f} USDT`",
+        f"💵 Disponibile: `{avail:.2f} USDT`",
+        f"📈 Unrealised PnL: `{upnl:+.2f} USDT`",
+        f"💰 Realised PnL: `{rpnl:+.2f} USDT`",
+        f"🔐 Margine usato: `{margin:.2f} USDT`",
+        "",
+        f"📂 Posizioni: `{len(positions)}` (🟢 {n_long} LONG | 🔴 {n_short} SHORT)",
+        f"📊 PnL totale aperte: `{tot_upnl:+.2f} USDT`",
+    ]
+    if best_sym:
+        b_pnl = float(best_sym.get("unrealisedPnl", 0))
+        lines.append(f"🏆 Migliore: {best_sym.get('symbol')} `{b_pnl:+.2f} USDT`")
+    if worst_sym:
+        w_pnl = float(worst_sym.get("unrealisedPnl", 0))
+        lines.append(f"📉 Peggiore: {worst_sym.get('symbol')} `{w_pnl:+.2f} USDT`")
+
+    await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# /newlistings — Nuovi listing con funding elevato
+# ═══════════════════════════════════════════════════════════════════════════════
+async def newlistings(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Mostra nuovi listing (ultimi 30gg) con funding rate elevato."""
+    await update.message.reply_text("🆕 Recupero nuovi listing...")
+    try:
+        tickers = await bc.get_funding_tickers()
+        # Ordina per funding rate assoluto decrescente e prendi i top 20
+        items = sorted(tickers, key=lambda t: abs(float(t.get("fundingRate", 0))), reverse=True)[:20]
+        items = [{"symbol": t["symbol"], "fundingRate": float(t.get("fundingRate",0))*100,
+                  "markPrice": t.get("lastPrice", 0), "price24hPcnt": float(t.get("price24hPcnt",0))*100,
+                  "daysAgo": 0} for t in items]
+    except Exception as e:
+        await update.message.reply_text(f"❌ Errore: {e}")
+        return
+
+    if not items:
+        await update.message.reply_text("📭 Nessun nuovo listing trovato.")
+        return
+
+    # Filtra per funding rate notevole o mostra tutti
+    notable = [i for i in items if abs(float(i.get("fundingRate", 0))) >= 0.5]
+    show = notable if notable else items[:10]
+
+    lines = [f"🆕 *NUOVI LISTING ({len(items)} totali, ultimi 30gg)*", ""]
+    for item in show[:15]:
+        sym  = item.get("symbol", "")
+        fr   = float(item.get("fundingRate", 0))
+        days = float(item.get("daysAgo", 0))
+        mp   = float(item.get("markPrice", 0))
+        pct  = float(item.get("price24hPcnt", 0))
+        sign = "+" if fr >= 0 else ""
+        fr_badge = "🔥" if abs(fr) >= 2.0 else "⚡" if abs(fr) >= 1.0 else "📊"
+        lines.append(
+            f"{fr_badge} *{sym}* — {days:.0f}gg fa\n"
+            f"  FR: `{sign}{fr:.4f}%` | Price: `{mp:.4f}` ({pct:+.2f}%)"
+        )
+    await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# /analytics — Metriche avanzate funding
+# ═══════════════════════════════════════════════════════════════════════════════
+async def analytics_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Mostra analytics avanzate: win-rate per livello, Sharpe, Sortino, drawdown."""
+    await update.message.reply_text("📈 Calcolo analytics...")
+    try:
+        tickers = await bc.get_funding_tickers()
+        data = {"ok": True, "total_records": len(tickers)}
+    except Exception as e:
+        await update.message.reply_text(f"❌ Errore fetch dati: {e}")
+        return
+    if not tickers:
+        await update.message.reply_text("❌ Nessun dato disponibile")
+        return
+
+    total   = data.get("total_records", 0)
+    t_gain  = data.get("total_gain", 0)
+    wr      = data.get("win_rate", 0)
+    sharpe  = data.get("sharpe", 0)
+    sortino = data.get("sortino", 0)
+    dd      = data.get("max_drawdown", 0)
+    avg_g   = data.get("avg_gain", 0)
+    by_lvl  = data.get("by_level", {})
+
+    lines = [
+        "📈 *ANALYTICS AVANZATI — FUNDING KING*", "",
+        f"📊 Cicli registrati: `{total}`",
+        f"💰 Gain totale: `{t_gain:+.4f} USDT`",
+        f"✅ Win Rate globale: `{wr:.1f}%`",
+        f"📉 Max Drawdown: `{dd:.4f} USDT`",
+        f"📐 Sharpe Ratio: `{sharpe:.3f}`",
+        f"📐 Sortino Ratio: `{sortino:.3f}`",
+        f"📊 Avg Gain/ciclo: `{avg_g:+.4f} USDT`",
+        "",
+        "*Win Rate per livello:*",
+    ]
+
+    level_order = [("jackpot", "💎"), ("extreme", "🔥"), ("hard", "⚡"), ("high", "📊")]
+    for lvl, emoji in level_order:
+        d = by_lvl.get(lvl, {})
+        if d.get("count", 0) > 0:
+            lines.append(
+                f"  {emoji} {lvl.upper()}: `{d.get('win_rate', 0):.1f}%` "
+                f"({d.get('count', 0)} cicli | avg `{d.get('avg_gain', 0):+.4f}`)"
+            )
+
+    await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# /alert_config — Configura soglie alert
+# ═══════════════════════════════════════════════════════════════════════════════
+async def alert_config(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Mostra e permette di configurare le soglie di alert."""
+    import alert_logic as _al
+
+    lines = [
+        "⚙️ *CONFIGURAZIONE SOGLIE ALERT*", "",
+        "*Soglie globali:*",
+        f"  💎 JACKPOT:  `> {_al.THR_JACKPOT:.2f}%`",
+        f"  🔥 EXTREME:  `> {_al.THR_EXTREME:.2f}%`",
+        f"  ⚡ HARD:     `> {_al.THR_HARD:.2f}%`",
+        f"  📊 HIGH:     `> {_al.THR_HIGH:.2f}%`",
+        f"  ⬆️ CLOSE_TIP: `> {_al.THR_CLOSE_TIP:.2f}%`",
+        f"  ⬇️ RIENTRO:  `< {_al.RESET_THRESHOLD:.2f}%`",
+        "",
+        "Per modificare le soglie usa i parametri nel file .env:",
+        "`THR_JACKPOT`, `THR_EXTREME`, `THR_HARD`, `THR_HIGH`",
+        "",
+        "*Alert liquidazione imminente:*",
+        "  🔴 Attivo quando distanza < 15% dal prezzo di liq.",
+        "",
+        "*Per aggiungere soglie custom per simbolo:*",
+        "  `/alerts BTCUSDT` — mostra soglie correnti",
+    ]
+
+    try:
+        lines.append("")
+        lines.append("*Simboli con soglie custom:*")
+        custom = _al.get_custom_thresholds() if hasattr(_al, 'get_custom_thresholds') else {}
+        if custom:
+            for sym, thr in list(custom.items())[:10]:
+                lines.append(f"  • {sym}: `{thr:.2f}%`")
+        else:
+            lines.append("  Nessuna soglia custom impostata")
+    except:
+        pass
+
+    await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
+
+
+
+
+# ══════════════════════════════════════════════════════════
+# PARAMETRI DI RISCHIO — configurabili da /settings
+# ══════════════════════════════════════════════════════════
+_risk_params = {
+    "max_leverage":       10.0,   # leva massima consentita per trade
+    "max_positions":      10,     # numero massimo posizioni simultanee
+    "max_pct_per_trade":  5.0,    # % massima del capitale per singolo trade
+}
+
+async def rischio_settings(update, context):
+    """Mostra e modifica i parametri di rischio.
+    Uso:
+      /rischio_settings                      → mostra parametri
+      /rischio_settings max_leverage 15      → imposta leva max a 15x
+      /rischio_settings max_positions 8      → max 8 posizioni simultanee
+      /rischio_settings max_pct_per_trade 3  → max 3% capitale per trade
+    """
+    args = context.args
+
+    if not args:
+        r = _risk_params
+        lines = [
+            "⚙️ *PARAMETRI DI RISCHIO*\n",
+            f"  📊 Leverage massimo:      `{r['max_leverage']:.0f}x`",
+            f"  📂 Max posizioni simult.: `{r['max_positions']}`",
+            f"  💰 Max % capitale/trade:  `{r['max_pct_per_trade']:.1f}%`",
+            "",
+            "_Usa: /rischio\_settings <param> <valore>_",
+            "_Es:  /rischio\_settings max\_leverage 15_",
+        ]
+        await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
+        return
+
+    if len(args) < 2:
+        await update.message.reply_text("Uso: /rischio_settings <parametro> <valore>")
+        return
+
+    param = args[0].lower()
+    try:
+        value = float(args[1])
+    except ValueError:
+        await update.message.reply_text("❌ Valore non valido.")
+        return
+
+    valid = {"max_leverage", "max_positions", "max_pct_per_trade"}
+    if param not in valid:
+        await update.message.reply_text(
+            f"❌ Parametro sconosciuto: `{param}`\n"
+            f"Disponibili: max\_leverage, max\_positions, max\_pct\_per\_trade",
+            parse_mode="Markdown"
+        )
+        return
+
+    old = _risk_params[param]
+    if param == "max_positions":
+        _risk_params[param] = int(value)
+    else:
+        _risk_params[param] = value
+
+    await update.message.reply_text(
+        f"✅ *{param}* aggiornato\n"
+        f"  {old} → `{_risk_params[param]}`",
+        parse_mode="Markdown"
+    )
+
+
+def get_risk_params() -> dict:
+    """Restituisce i parametri di rischio correnti."""
+    return dict(_risk_params)
+
+
+
+
+# ───────────────────────────────────────────────────────────────────────────
+# CHIUSURA POSIZIONI — by Maintenance Margin e by PnL
+# ───────────────────────────────────────────────────────────────────────────
+
+async def cmd_chiudi_mm(update, context):
+    """Chiude posizioni con MM% sotto la soglia (/chiudi_mm [soglia%])"""
+    from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+    args = context.args
+    threshold = 15.0
+    if args:
+        try:
+            threshold = float(args[0])
+        except ValueError:
+            await update.message.reply_text("❌ Uso: /chiudi_mm [soglia%]\nEs: /chiudi_mm 10")
+            return
+    msg = await update.message.reply_text(
+        f"⏳ Chiusura posizioni con MM < {threshold}%…"
+    )
+    result = await close_positions_by_mm(threshold)
+    if not result["closed"] and not result["errors"]:
+        await msg.edit_text(f"✅ Nessuna posizione con MM < {threshold}%")
+        return
+    lines = [f"🔴 Chiusura posizioni MM < {threshold}%"]
+    for r in result["closed"]:
+        lines.append(f"  ✅ {r['symbol']} {r['side']} — MM {r['mm_pct']:.1f}%")
+    for e in result["errors"]:
+        lines.append(f"  ❌ {e['symbol']}: {e['error']}")
+    await msg.edit_text("\n".join(lines))
+
+
+async def cmd_chiudi_pnl(update, context):
+    """Chiude posizioni in base al PnL totale (/chiudi_pnl [soglia_negativa] [soglia_positiva])"""
+    args = context.args
+    neg_threshold = -5.0   # chiudi se PnL totale < -5 USDT
+    pos_threshold = None   # opzionale: chiudi se PnL totale > X USDT
+    if len(args) >= 1:
+        try:
+            neg_threshold = float(args[0])
+        except ValueError:
+            await update.message.reply_text(
+                "❌ Uso: /chiudi_pnl [soglia_neg] [soglia_pos]\nEs: /chiudi_pnl -10 50"
+            )
+            return
+    if len(args) >= 2:
+        try:
+            pos_threshold = float(args[1])
+        except ValueError:
+            pass
+    msg = await update.message.reply_text(
+        f"⏳ Analisi PnL posizioni (neg < {neg_threshold}, pos > {pos_threshold})…"
+    )
+    result = await close_positions_by_pnl(neg_threshold, pos_threshold)
+    if not result["closed"] and not result["errors"] and not result.get("summary"):
+        await msg.edit_text("✅ Nessuna posizione fuori soglia")
+        return
+    lines = [f"📊 Chiusura posizioni per PnL"]
+    total_pnl = result.get("total_pnl", 0)
+    lines.append(f"PnL totale portfolio: {total_pnl:+.2f} USDT")
+    for r in result["closed"]:
+        lines.append(f"  ✅ {r['symbol']} {r['side']} PnL {r['pnl']:+.2f} USDT")
+    for e in result["errors"]:
+        lines.append(f"  ❌ {e['symbol']}: {e['error']}")
+    await msg.edit_text("\n".join(lines))
+
+
+async def deletekeys_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Elimina le credenziali Bybit dell'utente dal bot."""
+    chat_id = update.effective_chat.id
+    if user_store.delete(chat_id):
+        session_manager.remove_session(chat_id)
+        await update.message.reply_text(
+            "🗑️ *Credenziali eliminate.*\n\n"
+            "Le tue API Key e Secret sono state rimosse.\n"
+            "Usa /start per configurarne di nuove.",
+            parse_mode="Markdown",
+        )
+    else:
+        await update.message.reply_text(
+            "ℹ️ Nessuna credenziale trovata per questo account.",
+        )
+
+
 def register(app):
     """Registra tutti i command handler sull'applicazione Telegram."""
 
@@ -1310,3 +1793,10 @@ def register(app):
     app.add_handler(CommandHandler("watchlist", watchlist_cmd))
     app.add_handler(CommandHandler("alerts", alerts_cmd))
     app.add_handler(CommandHandler("backtest", backtest_cmd))
+    app.add_handler(CommandHandler("profitto_funding", profitto_funding))
+    app.add_handler(CommandHandler("rischio",      rischio))
+    app.add_handler(CommandHandler("summary",      summary))
+    app.add_handler(CommandHandler("newlistings",  newlistings))
+    app.add_handler(CommandHandler("analytics",    analytics_cmd))
+    app.add_handler(CommandHandler("alert_config", alert_config))
+    app.add_handler(CommandHandler("deletekeys",   deletekeys_cmd))

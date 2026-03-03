@@ -362,3 +362,45 @@ async def test_connection() -> dict:
         results["positions"] = {"ok": False, "error": "Skipped (auth failed)", "latency_ms": -1}
 
     return results
+
+
+async def close_position(symbol, side, size, category='linear'):
+    close_side = 'Sell' if side == 'Buy' else 'Buy'
+    try:
+        res = await _run(get_session().place_order, category=category, symbol=symbol,
+            side=close_side, orderType='Market', qty=str(size), reduceOnly=True, timeInForce='IOC')
+        code = res.get('retCode', -1)
+        return {'ok': code==0, 'symbol': symbol, 'side': close_side, 'size': size,
+                'retCode': code, 'retMsg': res.get('retMsg',''), 'orderId': res.get('result',{}).get('orderId','')}
+    except Exception as e:
+        return {'ok': False, 'symbol': symbol, 'error': str(e)}
+
+async def close_positions_by_mm(mm_threshold_pct=15.0):
+    positions = await get_positions()
+    results = []
+    for p in positions:
+        sym = p.get('symbol',''); side = p.get('side','Buy'); size = p.get('size',0.0)
+        cat = p.get('category','linear'); liq = p.get('liqPrice',0.0); mark = p.get('markPrice',0.0)
+        if mark <= 0 or liq <= 0: continue
+        dist_pct = (mark - liq)/mark*100 if side=='Buy' else (liq - mark)/mark*100
+        dist_pct = max(dist_pct, 0.0)
+        if dist_pct <= mm_threshold_pct:
+            res = await close_position(sym, side, size, cat)
+            res['dist_pct_liq'] = round(dist_pct,2); res['trigger'] = 'mm'
+            results.append(res)
+    return results
+
+async def close_positions_by_pnl(pnl_threshold_usdt):
+    positions = await get_positions()
+    if not positions: return []
+    total_pnl = sum(p.get('unrealisedPnl',0.0) for p in positions)
+    triggered = (pnl_threshold_usdt >= 0 and total_pnl >= pnl_threshold_usdt) or                 (pnl_threshold_usdt < 0  and total_pnl <= pnl_threshold_usdt)
+    if not triggered:
+        return [{'ok': False, 'msg': f'PnL {total_pnl:+.2f} non ha raggiunto soglia {pnl_threshold_usdt:+.2f}',
+                 'total_pnl': total_pnl, 'trigger': 'pnl_not_reached'}]
+    results = []
+    for p in positions:
+        res = await close_position(p.get('symbol',''), p.get('side','Buy'), p.get('size',0.0), p.get('category','linear'))
+        res['unrealisedPnl'] = p.get('unrealisedPnl',0.0); res['total_pnl'] = round(total_pnl,4); res['trigger'] = 'pnl'
+        results.append(res)
+    return results
