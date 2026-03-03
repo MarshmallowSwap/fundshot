@@ -908,59 +908,17 @@ body.light .ob-field input,.api-form-row input{background:#f0eeff;border-color:#
 <div class="page" id="page-settings">
   <div class="page-header">⚙️ Impostazioni Bot</div>
 
-  <!-- Master Switch -->
+  <!-- Mode Badge (Alert Only - hardcoded) -->
   <div class="set-card">
     <div class="set-card-head">
       <div style="flex:1">
-        <div class="set-card-title">⚡ Master Switch</div>
-        <div class="set-card-sub">Modalità operativa del bot</div>
+        <div class="set-card-title">⚡ Modalità Operativa</div>
+        <div class="set-card-sub">Il bot opera esclusivamente in modalità alert</div>
       </div>
-      <label class="toggle-sw" style="margin-top:2px">
-        <input type="checkbox" id="masterToggle" onchange="setMasterMode(this.checked)">
-        <span class="slider"></span>
-      </label>
-    </div>
-    <div class="master-switch-row">
-      <button class="mode-btn active-alert" id="modeAlertBtn" onclick="setMode('alert')">🔔 ALERT ONLY</button>
-      <span style="color:var(--text3);font-size:.8rem" id="modeStatus">Modalità: <b>ALERT ONLY</b></span>
-    </div>
-    <div id="tradeWarning" style="display:none;padding:0 20px 14px">
-      <div style="background:rgba(255,159,67,.1);border:1px solid rgba(255,159,67,.3);
-        border-radius:8px;padding:10px 14px;font-size:.8rem;color:var(--hard)">
-      </div>
-    </div>
-  </div>
-
-  <!-- Guardian -->
-  <div class="set-card">
-    <div class="set-card-head">
-      <div>
-        <div class="set-card-title">🛡️ Guardian — Protezione Automatica</div>
-        <div class="set-card-sub">Chiude posizioni al superamento delle soglie di rischio</div>
-      </div>
-    </div>
-    <div class="set-card-body">
-      <div class="set-row">
-        <div>
-          <div class="set-row-lbl">Soglia MMR (%)</div>
-          <div class="set-row-sub">Chiude se la maintenance margin scende sotto questa soglia</div>
-        </div>
-        <input class="inp" id="s-mmr" type="number" step="0.5" value="15" style="width:90px" onchange="saveRiskParams()">
-      </div>
-      <div class="set-row">
-        <div>
-          <div class="set-row-lbl">Profit target (%)</div>
-          <div class="set-row-sub">Chiude la posizione al raggiungimento del guadagno</div>
-        </div>
-        <input class="inp" id="s-profit" type="number" step="1" value="20" style="width:90px" onchange="saveRiskParams()">
-      </div>
-      <div class="set-row">
-        <div>
-          <div class="set-row-lbl">Max loss portfolio (%)</div>
-          <div class="set-row-sub">Stop globale al raggiungimento della perdita massima</div>
-        </div>
-        <input class="inp" id="s-loss" type="number" step="1" value="-15" style="width:90px" onchange="saveRiskParams()">
-      </div>
+      <span style="background:rgba(0,200,100,.15);color:#00c864;border:1px solid rgba(0,200,100,.3);
+        border-radius:20px;padding:4px 14px;font-size:.82rem;font-weight:700;letter-spacing:.5px">
+        🔔 ALERT ONLY
+      </span>
     </div>
   </div>
 
@@ -1021,52 +979,6 @@ body.light .ob-field input,.api-form-row input{background:#f0eeff;border-color:#
     </div>
   </div>
 
-  <!-- Chiusura per MM% -->
-  <div class="set-card">
-    <div class="set-card-head">
-      <div>
-        <div class="set-card-title">🔴 Chiusura Posizioni per MM%</div>
-        <div class="set-card-sub">Chiude tutte le posizioni sotto la soglia Maintenance Margin</div>
-      </div>
-    </div>
-    <div class="set-card-body">
-      <div class="set-row">
-        <div>
-          <div class="set-row-lbl">Soglia MM% trigger</div>
-          <div class="set-row-sub">Default: 15% — equivale a /chiudi_mm [%] su Telegram</div>
-        </div>
-        <input class="inp" id="closeMMThr" type="number" value="15" step="1" min="1" max="100" style="width:90px">
-      </div>
-      <div style="margin-top:13px">
-        <button class="btn btn-danger" onclick="closeByMM()">⚡ Esegui Chiusura per MM%</button>
-      </div>
-      <div id="closeMMResult" style="margin-top:10px;font-size:.79rem;color:var(--text3)"></div>
-    </div>
-  </div>
-
-  <!-- Chiusura per PnL -->
-  <div class="set-card">
-    <div class="set-card-head">
-      <div>
-        <div class="set-card-title">💰 Chiusura Posizioni per PnL Portfolio</div>
-        <div class="set-card-sub">Chiude quando il PnL totale raggiunge la soglia impostata</div>
-      </div>
-    </div>
-    <div class="set-card-body">
-      <div class="set-row">
-        <div>
-          <div class="set-row-lbl">Soglia PnL (USDT)</div>
-          <div class="set-row-sub">Negativo = stop loss, positivo = take profit</div>
-        </div>
-        <input class="inp" id="closePnLThr" type="number" value="-20" style="width:90px">
-      </div>
-      <div style="margin-top:13px">
-        <button class="btn btn-danger" onclick="closeByPnL()">⚡ Esegui Chiusura per PnL</button>
-      </div>
-      <div id="closePnLResult" style="margin-top:10px;font-size:.79rem;color:var(--text3)"></div>
-    </div>
-  </div>
-
   <!-- ══════════════════════════════════════
        🔔 GESTIONE ALERT
   ══════════════════════════════════════ -->
@@ -1112,14 +1024,6 @@ body.light .ob-field input,.api-form-row input{background:#f0eeff;border-color:#
     </div>
   </div>
 
-  <!-- Danger Zone -->
-  <div class="danger-zone">
-    <div class="danger-title">🛑 Danger Zone</div>
-    <p style="font-size:.82rem;color:var(--text3);margin-bottom:15px">
-      Azioni irreversibili. Usare con estrema cautela.
-    </p>
-    <button class="btn btn-danger" onclick="closeAllPositions()">🛑 Chiudi TUTTE le Posizioni ORA</button>
-  </div>
 </div>
 
 
@@ -1640,46 +1544,7 @@ function addWatchlistSym() {
     .catch(() => showToast('❌ Errore aggiunta', 'err'));
 }
 
-/* ─── MODE ─── */
-function setMode(mode) {
-  const ab = document.getElementById('modeAlertBtn');
-  const ms = document.getElementById('modeStatus');
-  const tw = document.getElementById('tradeWarning');
-  if (mode === 'trade') {
-    ab.className = 'mode-btn'; tb.className = 'mode-btn active-trade';
-    ms.innerHTML = 'Modalità: <b>ALERT ONLY</b>';
-    tw.style.display = 'block';
-  } else {
-    ab.className = 'mode-btn active-alert'; tb.className = 'mode-btn';
-    ms.innerHTML = 'Modalità: <b>ALERT ONLY</b>';
-    tw.style.display = 'none';
-  }
-  fetch(PROXY_URL + '/api/mode', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ mode })
-  }).catch(() => {});
-}
-function setMasterMode(c) { setMode(c ? 'trade' : 'alert'); }
-
 /* ─── RISK PARAMS ─── */
-async function saveRiskParams() {
-  const params = {
-    mmr_threshold: parseFloat(document.getElementById('s-mmr').value),
-    profit_target: parseFloat(document.getElementById('s-profit').value),
-    max_loss:      parseFloat(document.getElementById('s-loss').value)
-  };
-  try {
-    await fetch(PROXY_URL + '/api/risk-params', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(params)
-    });
-    showToast('✅ Parametri rischio salvati', 'ok');
-    document.getElementById('g-mmr').textContent    = params.mmr_threshold + '%';
-    document.getElementById('g-profit').textContent = params.profit_target + '%';
-    document.getElementById('g-loss').textContent   = params.max_loss + '%';
-  } catch(e) { showToast('❌ Errore salvataggio', 'err'); }
-}
-
 /* ─── THRESHOLD SETTINGS ─── */
 function _renderThrSettings() {
   const defaults = { critico:2.5, hard:2.0, extreme:1.5, high:1.0, close_tip:0.75, warn_tip:0.25, rientro:0.20 };
@@ -1726,34 +1591,6 @@ async function closeByMM() {
     res.textContent = '❌ ' + e.message;
     showToast('❌ Errore', 'err');
   }
-}
-async function closeByPnL() {
-  const thr = parseFloat(document.getElementById('closePnLThr').value) || -20;
-  const res = document.getElementById('closePnLResult');
-  res.textContent = '⏳ Invio comando…';
-  try {
-    const r = await fetch(PROXY_URL + '/api/close-by-pnl', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ threshold: thr })
-    });
-    const d = await r.json();
-    res.textContent = d.message || '✅ Eseguito';
-    showToast('✅ Chiusura PnL eseguita', 'ok');
-    setTimeout(refreshAll, 2000);
-  } catch(e) {
-    res.textContent = '❌ ' + e.message;
-    showToast('❌ Errore', 'err');
-  }
-}
-async function closeAllPositions() {
-  if (!confirm('⚠️ Chiudere TUTTE le posizioni aperte?\nQuesta azione è irreversibile.')) return;
-  try {
-    await fetch(PROXY_URL + '/api/close-all', { method: 'POST' });
-    showToast('🛑 Ordine chiusura totale inviato', 'ok');
-    setTimeout(refreshAll, 2000);
-  } catch(e) { showToast('❌ Errore', 'err'); }
-}
-
 /* ─── INTERVAL ─── */
 function setFundingInterval(iv, btn) {
   document.querySelectorAll('.filter-btn').forEach(b => {
@@ -2065,7 +1902,7 @@ function applyRemoteStats(d) {
   if (d.trades && Array.isArray(d.trades)) populateTradesHistory(d.trades);
   if (d.uptime !== undefined) document.getElementById('sk-uptime').textContent = d.uptime;
   if (d.enabled !== undefined) document.getElementById('masterToggle').checked = d.enabled;
-  if (d.mode !== undefined) setMode(d.mode);
+  // mode toggle removed (alert-only)
 }
   if (d.total_gain !== undefined) { var tg = document.getElementById("at-total-gain"); if(tg) tg.textContent = d.total_gain.toFixed(2) + "%"; }
   if (d.win_rate !== undefined) { var wr2 = document.getElementById("an-winrate"); if(wr2) wr2.textContent = d.win_rate.toFixed(2) + "%"; }
@@ -2078,7 +1915,7 @@ function applyBotHealth(d) {
   if (d.rate_limit_remaining !== undefined) document.getElementById('sh-ratelimit').textContent = d.rate_limit_remaining;
   if (d.uptime !== undefined) document.getElementById('sk-uptime').textContent = d.uptime;
   if (d.enabled !== undefined) document.getElementById('masterToggle').checked = d.enabled;
-  if (d.mode !== undefined) setMode(d.mode);
+  // mode toggle removed (alert-only)
 }
 
 function populateTradesHistory(trades) {
