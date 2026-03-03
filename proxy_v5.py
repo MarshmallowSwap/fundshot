@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
 """
-proxy_v5.py — Funding King Proxy
+proxy_v5.py â Funding King Proxy
 Aggiunge tutti gli endpoint mancanti al proxy v4 esistente.
 Copia questo file sul server e riavvia con:
     pkill -f proxy && python3 proxy_v5.py &
 
 Endpoint NUOVI rispetto a v4:
-  GET/POST  /api/config        → API key / secret / testnet
-  GET/POST  /api/mode          → modalità alert/trade
-  GET/POST  /api/risk-params   → parametri rischio
-  GET/POST  /api/thresholds    → soglie FR
-  GET/POST  /api/interval      → intervallo refresh
-  GET       /api/watchlist     → lista simboli watchlist
-  POST      /api/watchlist     → aggiungi simbolo
-  DELETE    /api/watchlist     → rimuovi simbolo
-  POST      /api/close-all     → chiudi tutte le posizioni
-  GET       /api/stats         → statistiche aggregate
-  GET       /api/logs          → ultimi log del bot
+  GET/POST  /api/config        â API key / secret / testnet
+  GET/POST  /api/mode          â modalitÃ  alert/trade
+  GET/POST  /api/risk-params   â parametri rischio
+  GET/POST  /api/thresholds    â soglie FR
+  GET/POST  /api/interval      â intervallo refresh
+  GET       /api/watchlist     â lista simboli watchlist
+  POST      /api/watchlist     â aggiungi simbolo
+  DELETE    /api/watchlist     â rimuovi simbolo
+  POST      /api/close-all     â chiudi tutte le posizioni
+  GET       /api/stats         â statistiche aggregate
+  GET       /api/logs          â ultimi log del bot
 
-Endpoint già presenti in v4 (mantenuti identici):
+Endpoint giÃ  presenti in v4 (mantenuti identici):
   GET  /api/status
   GET  /api/tickers
   GET  /api/positions
@@ -35,9 +35,9 @@ from urllib.parse import urlparse, parse_qs
 from urllib.request import urlopen, Request
 from urllib.error import URLError, HTTPError
 
-# ─────────────────────────────────────────────────────────────
+# âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 #  CONFIG
-# ─────────────────────────────────────────────────────────────
+# âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 PORT        = 8080
 CONFIG_FILE = os.path.expanduser('~/.funding_king_config.json')
 STATE_FILE  = os.path.expanduser('~/.funding_king_state.json')
@@ -45,9 +45,9 @@ STATE_FILE  = os.path.expanduser('~/.funding_king_state.json')
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 log = logging.getLogger('proxy_v5')
 
-# ─────────────────────────────────────────────────────────────
+# âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 #  PERSISTENT CONFIG  (legge/scrive su disco)
-# ─────────────────────────────────────────────────────────────
+# âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 DEFAULT_CONFIG = {
     "api_key":    "",
     "api_secret": "",
@@ -111,11 +111,11 @@ def save_config(cfg):
 
 # Carica config al boot
 _config = load_config()
-log.info(f"Config loaded — api_key={'SET' if _config.get('api_key') else 'EMPTY'}")
+log.info(f"Config loaded â api_key={'SET' if _config.get('api_key') else 'EMPTY'}")
 
-# ─────────────────────────────────────────────────────────────
+# âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 #  BYBIT API HELPER  (usa le chiavi dal config)
-# ─────────────────────────────────────────────────────────────
+# âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 def bybit_base():
     return 'https://api-testnet.bybit.com' if _config.get('testnet') else 'https://api.bybit.com'
 
@@ -157,9 +157,9 @@ def bybit_get_auth(path, params=None):
 
 
 
-# ─────────────────────────────────────────────────────────────
+# âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 #  CACHE  (tickers, positions, wallet)
-# ─────────────────────────────────────────────────────────────
+# âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 _cache = {'tickers': None, 'positions': None, 'wallet': None, 'ts': {}}
 _cache_lock = threading.Lock()
 CACHE_TTL = 30  # secondi
@@ -175,13 +175,13 @@ def cache_set(key, value):
         _cache[key] = value
         _cache['ts'][key] = time.time()
 
-# ─────────────────────────────────────────────────────────────
+# âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 #  REQUEST HANDLER
-# ─────────────────────────────────────────────────────────────
+# âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 class ProxyHandler(BaseHTTPRequestHandler):
 
     def log_message(self, fmt, *args):
-        log.info(f"{self.client_address[0]} — {fmt % args}")
+        log.info(f"{self.client_address[0]} â {fmt % args}")
 
     def _headers(self, code=200, ctype='application/json'):
         self.send_response(code)
@@ -203,11 +203,11 @@ class ProxyHandler(BaseHTTPRequestHandler):
     def _not_found(self):
         self._json({'ok': False, 'msg': 'not found'}, 200)  # 200 per compat con v4
 
-    # ── OPTIONS (CORS preflight) ──
+    # ââ OPTIONS (CORS preflight) ââ
     def do_OPTIONS(self):
         self._headers(204)
 
-    # ── GET ──
+    # ââ GET ââ
     def do_GET(self):
         p = urlparse(self.path).path.rstrip('/')
 
@@ -226,8 +226,8 @@ class ProxyHandler(BaseHTTPRequestHandler):
             sec = _config.get('api_secret', '')
             self._json({
                 'ok': True,
-                'api_key': key[:8] + '…' + key[-4:] if len(key) > 12 else ('SET' if key else ''),
-                'api_secret_masked': '•' * min(len(sec), 32),
+                'api_key': key[:8] + 'â¦' + key[-4:] if len(key) > 12 else ('SET' if key else ''),
+                'api_secret_masked': 'â¢' * min(len(sec), 32),
                 'testnet': _config.get('testnet', False)
             })
 
@@ -306,9 +306,15 @@ class ProxyHandler(BaseHTTPRequestHandler):
                     except Exception as e: self._json({"ok":False,"msg":str(e)})
 
         elif p == '/api/close-by-mm':
+            # DISABLED: trading disabled
+            self._json({'ok': False, 'msg': 'Trading disabilitato'}); return
+            if False:
             self._json({'ok': False, 'msg': 'unavail'})
 
         elif p == '/api/close-by-pnl':
+            # DISABLED: trading disabled
+            self._json({'ok': False, 'msg': 'Trading disabilitato'}); return
+            if False:
             self._json({'ok': False, 'msg': 'unavail'})
 
         elif p == '/api/stats':
@@ -349,7 +355,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
         else:
             self._not_found()
 
-    # ── POST ──
+    # ââ POST ââ
     def do_POST(self):
         p = urlparse(self.path).path.rstrip('/')
         body = self._body()
@@ -367,7 +373,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
                 changed = True
             if changed:
                 save_config(_config)
-                log.info(f"Config updated — key={'SET' if _config['api_key'] else 'EMPTY'} testnet={_config['testnet']}")
+                log.info(f"Config updated â key={'SET' if _config['api_key'] else 'EMPTY'} testnet={_config['testnet']}")
             self._json({'ok': True, 'msg': 'Config salvata', 'key_set': bool(_config.get('api_key'))})
 
         elif p == '/api/mode':
@@ -377,7 +383,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
             if mode == 'trading': mode = 'trade'
             _config['mode'] = mode
             save_config(_config)
-            log.info(f"Mode → {mode}")
+            log.info(f"Mode â {mode}")
             self._json({'ok': True, 'mode': mode})
 
         elif p == '/api/risk-params':
@@ -424,12 +430,12 @@ class ProxyHandler(BaseHTTPRequestHandler):
             self._json({'ok': True, 'msg': 'Config salvata', 'config': ac})
 
         elif p == '/api/close-all':
-            self._json({'ok': False, 'msg': 'Autenticazione Bybit richiesta — implementa con chiavi firmate'})
+            self._json({'ok': False, 'msg': 'Autenticazione Bybit richiesta â implementa con chiavi firmate'})
 
         else:
             self._not_found()
 
-    # ── DELETE ──
+    # ââ DELETE ââ
     def do_DELETE(self):
         p = urlparse(self.path).path.rstrip('/')
 
@@ -465,16 +471,16 @@ class ProxyHandler(BaseHTTPRequestHandler):
             self._not_found()
 
 
-# ─────────────────────────────────────────────────────────────
+# âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 #  MAIN
-# ─────────────────────────────────────────────────────────────
+# âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 _start_time = time.time()
 
 if __name__ == '__main__':
     server = HTTPServer(('0.0.0.0', PORT), ProxyHandler)
-    log.info(f"🥞 Funding King Proxy v5 running on :{PORT}")
+    log.info(f"ð¥ Funding King Proxy v5 running on :{PORT}")
     log.info(f"   Config file: {CONFIG_FILE}")
-    log.info(f"   API key: {'SET (' + _config['api_key'][:8] + '…)' if _config.get('api_key') else 'NOT SET'}")
+    log.info(f"   API key: {'SET (' + _config['api_key'][:8] + 'â¦)' if _config.get('api_key') else 'NOT SET'}")
     log.info(f"   Mode: {_config.get('mode','alert')} | Testnet: {_config.get('testnet',False)}")
     try:
         server.serve_forever()
