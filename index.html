@@ -2847,11 +2847,13 @@ async function syncPullAll() {
 }
 
 /* ── Estensione showPage per triggerare sync settings ── */
-window.showPage = function(id, btn) {
-  if(typeof _showPageOrig === "function") _showPageOrig(id, btn);
-  if (id === 'settings') setTimeout(syncPullAll, 120);
-  if (id === 'settings') _initSettingsPage();
-};
+document.addEventListener("DOMContentLoaded", function(){
+  var _orig = window.showPage;
+  window.showPage = function(id, btn) {
+    if(typeof _orig === "function") _orig(id, btn);
+    if (id === "settings") { setTimeout(syncPullAll, 120); _initSettingsPage(); }
+  };
+});
 
 }
 </script>
