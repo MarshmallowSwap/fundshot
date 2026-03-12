@@ -2002,6 +2002,7 @@ function showPage(id, btn) {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('page-' + id).classList.add('active');
   if (btn) btn.classList.add('active');
+  if (id === 'settings') { setTimeout(syncPullAll, 120); _initSettingsPage(); }
 }
 
 /* ─── INIT ─── */
@@ -2847,13 +2848,7 @@ async function syncPullAll() {
 }
 
 /* ── Estensione showPage per triggerare sync settings ── */
-document.addEventListener("DOMContentLoaded", function(){
-  var _orig = window.showPage;
-  window.showPage = function(id, btn) {
-    if(typeof _orig === "function") _orig(id, btn);
-    if (id === "settings") { setTimeout(syncPullAll, 120); _initSettingsPage(); }
-  };
-});
+
 
 }
 </script>
