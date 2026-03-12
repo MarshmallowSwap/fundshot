@@ -1873,6 +1873,7 @@ async function closeByMM() {
     res.textContent = '❌ ' + e.message;
     showToast('❌ Errore', 'err');
   }
+}
 /* ─── INTERVAL ─── */
 function setFundingInterval(iv, btn) {
   document.querySelectorAll('.filter-btn').forEach(b => {
@@ -2186,12 +2187,12 @@ function applyRemoteStats(d) {
   if (d.uptime !== undefined) document.getElementById('sk-uptime').textContent = d.uptime;
   if (d.enabled !== undefined) document.getElementById('masterToggle').checked = d.enabled;
   // mode toggle removed (alert-only)
-}
   if (d.total_gain !== undefined) { var tg = document.getElementById("at-total-gain"); if(tg) tg.textContent = d.total_gain.toFixed(2) + "%"; }
   if (d.win_rate !== undefined) { var wr2 = document.getElementById("an-winrate"); if(wr2) wr2.textContent = d.win_rate.toFixed(2) + "%"; }
   if (d.sharpe !== undefined) { var sh = document.getElementById("an-sharpe"); if(sh) sh.textContent = d.sharpe.toFixed(2); }
   if (d.sortino !== undefined) { var so = document.getElementById("an-sortino"); if(so) so.textContent = d.sortino.toFixed(2); }
   if (d.best_symbol !== undefined) { var bs = document.getElementById("an-best"); if(bs) bs.textContent = d.best_symbol; }
+}
 
 function applyBotHealth(d) {
   if (d.latency_ms !== undefined) document.getElementById('sh-latency').textContent = d.latency_ms + ' ms';
