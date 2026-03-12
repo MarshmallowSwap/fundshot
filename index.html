@@ -2847,9 +2847,8 @@ async function syncPullAll() {
 }
 
 /* ── Estensione showPage per triggerare sync settings ── */
-const _showPageOrig = showPage;
 window.showPage = function(id, btn) {
-  _showPageOrig(id, btn);
+  if(typeof _showPageOrig === "function") _showPageOrig(id, btn);
   if (id === 'settings') setTimeout(syncPullAll, 120);
   if (id === 'settings') _initSettingsPage();
 };
