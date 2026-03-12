@@ -1318,7 +1318,7 @@ async function msLoad() {
     const r = await fetch(PROXY_URL + '/api/trading/switch');
     const d = await r.json();
     msRender(d.enabled || false, d.testnet !== false);
-  } catch { msRender(false, true); }
+  } catch(e) { msRender(false, true); }
 }
 function msRender(enabled, testnet) {
   const badge  = document.getElementById('ms-badge');
@@ -1382,7 +1382,7 @@ async function gdLoad() {
     s('gd-mmr',    d.mmr_pct    || 15);
     s('gd-profit', d.profit_target || 20);
     s('gd-loss',   d.max_loss   || -15);
-  } catch {}
+  } catch(e) {}
 }
 async function gdSave() {
   const g = (id) => parseFloat(document.getElementById(id)?.value) || 0;
