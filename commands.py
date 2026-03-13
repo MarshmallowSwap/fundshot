@@ -1814,18 +1814,7 @@ async def cmd_aperte(update, context):
 
 def register(app):
     """Registra tutti i command handler sull'applicazione Telegram."""
-
-    # Setup wizard (ConversationHandler)
-    conv = ConversationHandler(
-        entry_points=[CommandHandler("start", start)],
-        states={
-            MENU: [CallbackQueryHandler(menu_callback)],
-            WAITING_API_KEY: [MessageHandler(filters.TEXT & ~filters.COMMAND, receive_api_key)],
-            WAITING_API_SECRET: [MessageHandler(filters.TEXT & ~filters.COMMAND, receive_api_secret)],
-        },
-        fallbacks=[CommandHandler("cancel", cancel)],
-    )
-    app.add_handler(conv)
+    # Nota: /start è gestito da onboarding.build_onboarding_handler() in bot.py
 
     # ── Funding Rate ─────────────────────────────────────────────────────────
     app.add_handler(CommandHandler("top10",      top10))

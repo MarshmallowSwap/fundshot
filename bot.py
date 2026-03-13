@@ -1112,12 +1112,12 @@ def main():
         )
         logger.info("📊 Job OI spike schedulato ogni 5 min")
 
+    # Registra wizard onboarding SaaS — DEVE essere prima di commands.register()
+    app.add_handler(onboarding.build_onboarding_handler())
+
     # Registra handler comandi (da commands.py)
     commands.inject_bot_commands(cmd_stats, cmd_posizioni_trader)
     commands.register(app)
-
-    # Registra wizard onboarding SaaS (sostituisce /start legacy)
-    app.add_handler(onboarding.build_onboarding_handler())
 
     # Registra handler comandi trading inline
     from telegram.ext import CommandHandler
