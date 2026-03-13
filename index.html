@@ -741,6 +741,17 @@ nav {
         </div>
       </div>
       <div class="tr">
+        <div><div class="tr-label">📊 BASE</div><div class="tr-sub">Alert segnale minimo</div></div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="display:flex;align-items:center;gap:5px">
+            <span style="font-size:11px;color:var(--text3)">≥</span>
+            <input class="inp" id="thr-base" type="number" step="0.01" min="0" style="width:72px;padding:5px 8px;font-size:12px" value="0.50">
+            <span style="font-size:11px;color:var(--text3)">%</span>
+          </div>
+          <button class="tgl" id="tog-base" onclick="this.classList.toggle('on')"></button>
+        </div>
+      </div>
+      <div class="tr">
         <div><div class="tr-label">⚠️ CONSIGLIO CHIUSURA</div><div class="tr-sub">Solo se posizione aperta</div></div>
         <div style="display:flex;align-items:center;gap:10px">
           <div style="display:flex;align-items:center;gap:5px">
@@ -1829,6 +1840,7 @@ function initSettings() {
   });
   // Soglie
   sv('thr-jackpot', cfg.thr.jackpot);
+  sv('thr-base',    cfg.thr.base ?? 0.50);
   sv('thr-hard',    cfg.thr.hard);
   sv('thr-extreme', cfg.thr.extreme);
   sv('thr-high',    cfg.thr.high);
@@ -1837,7 +1849,7 @@ function initSettings() {
   const t = cfg.tog;
   st('tog-jackpot', t.jackpot); st('tog-hard',    t.hard);
   st('tog-extreme', t.extreme); st('tog-high',    t.high);
-  st('tog-close',   t.close);   st('tog-bot',     t.bot);
+  st('tog-base',    t.base);    st('tog-close',   t.close);   st('tog-bot',     t.bot);
   st('tog-testnet', t.testnet); st('tog-sl',      t.sl);
   st('tog-tp1',     t.tp1);     st('tog-trail',   t.trail);
   st('tog-oi',      t.oi);      st('tog-persist', t.persist);
@@ -1888,12 +1900,13 @@ function saveAll() {
     thr: {
       jackpot: gv('thr-jackpot'), hard:    gv('thr-hard'),
       extreme: gv('thr-extreme'), high:    gv('thr-high'),
+      base:    gv('thr-base'),
       close:   gv('thr-close'),
     },
     tog: {
       jackpot: gt('tog-jackpot'), hard:    gt('tog-hard'),
       extreme: gt('tog-extreme'), high:    gt('tog-high'),
-      close:   gt('tog-close'),   bot:     gt('tog-bot'),
+      base:    gt('tog-base'),    close:   gt('tog-close'),   bot:     gt('tog-bot'),
       testnet: gt('tog-testnet'), sl:      gt('tog-sl'),
       tp1:     gt('tog-tp1'),     trail:   gt('tog-trail'),
       oi:      gt('tog-oi'),      persist: gt('tog-persist'),

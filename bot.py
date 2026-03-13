@@ -300,7 +300,7 @@ async def funding_job(context):
         if abs_r >= 2.00:   lvl = "hard"
         elif abs_r >= 1.50: lvl = "extreme"
         elif abs_r >= 1.00: lvl = "high"
-        # base (<1%) NON entra in monitoring — sotto soglia alert
+        elif abs_r >= 0.50: lvl = "base"
         if lvl and sym not in open_symbols:
             _mon_add(sym, r_raw, lvl)
         elif sym in _monitoring and not lvl:
