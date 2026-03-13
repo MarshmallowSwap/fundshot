@@ -18,6 +18,7 @@ from telegram.ext import ApplicationBuilder
 
 import bybit_client as bc
 import alert_logic as al
+from chart_gen import generate_chart
 
 try:
     import alert_config_manager as _acm
@@ -64,8 +65,10 @@ TRADING_DEMO = os.getenv("TRADING_DEMO", "false").lower() == "true"
 
 
 # ── Helper: invia messaggio Telegram ─────────────────────────────────────────
-async def send_alert(bot: Bot, text: str, target_chat_id=None):
-    """Invia alert a un utente specifico o a tutti gli utenti con credenziali."""
+async def send_alert(bot: Bot, text: str, target_chat_id=None, symbol: str = None, rate: float = None):
+    """Invia alert a un utente specifico o a tutti gli utenti con credenziali.
+    Se symbol e rate sono forniti, invia il grafico candlestick insieme all'alert.
+    """
     if target_chat_id:
         recipients = [str(target_chat_id)]
     else:
@@ -74,9 +77,27 @@ async def send_alert(bot: Bot, text: str, target_chat_id=None):
             fallback = os.getenv("CHAT_ID", CHAT_ID)
             if fallback:
                 recipients = [fallback]
+
+    # Genera grafico se disponibile
+    chart_buf = None
+    if symbol and rate is not None:
+        try:
+            chart_buf = generate_chart(symbol, rate)
+        except Exception as e:
+            logger.warning("Grafico non generato per %s: %s", symbol, e)
+
     for cid in recipients:
         try:
-            await bot.send_message(chat_id=cid, text=text, parse_mode="Markdown")
+            if chart_buf:
+                chart_buf.seek(0)
+                await bot.send_photo(
+                    chat_id=cid,
+                    photo=chart_buf,
+                    caption=text,
+                    parse_mode="Markdown",
+                )
+            else:
+                await bot.send_message(chat_id=cid, text=text, parse_mode="Markdown")
         except Exception as e:
             logger.error("Errore invio alert a %s: %s", cid, e)
 
@@ -219,7 +240,7 @@ async def funding_job(context):
         # 1. Alert funding rate
         alert_text = al.process_funding(symbol, rate_pct, interval_h)
         if alert_text:
-            await send_alert(bot, alert_text)
+            await send_alert(bot, alert_text, symbol=symbol, rate=rate_pct)
             bot_data["alerts_sent"] = bot_data.get("alerts_sent", 0) + 1
 
         # 1b. Alert cambio livello funding
