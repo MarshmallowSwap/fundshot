@@ -361,23 +361,37 @@ class BybitTrader:
     def place_order(self, symbol: str, side: str, qty: float,
                     sl_price: float, tp_price: float) -> Optional[str]:
         """
-        Apre un ordine market specificando la size in USDT (marketUnit: quoteCoin).
-        Bybit calcola automaticamente la qty in base al prezzo corrente.
+        Apre un ordine market calcolando la qty in base a size_usdt * leverage.
         side: "Buy" (long) o "Sell" (short)
         """
+        import math
         self.set_leverage(symbol, CONFIG["leverage"])
 
-        # qty = margine in USDT (Bybit applica la leva configurata)
-        # marketUnit: quoteCoin → qty è in USDT di margine, NON nozionale
-        margin_usdt = CONFIG["size_usdt"]
+        # Nozionale = size * leva, poi divido per prezzo per ottenere qty in coin
+        price = self.get_mark_price(symbol)
+        if not price:
+            logger.error(f"place_order: prezzo non disponibile per {symbol}")
+            return None
+
+        notional = CONFIG["size_usdt"] * CONFIG["leverage"]  # es. 50 * 5 = 250 USDT
+        lot = self.get_lot_info(symbol)
+        step = lot["qty_step"]
+        min_q = lot["min_qty"]
+
+        # Arrotonda al multiplo di step verso il basso
+        raw_qty = notional / price
+        decimals = max(0, -int(math.floor(math.log10(step)))) if step < 1 else 0
+        qty_calc = round(math.floor(raw_qty / step) * step, decimals)
+        qty_calc = max(qty_calc, min_q)
+
+        logger.info(f"place_order {symbol}: price={price} notional={notional} qty={qty_calc} step={step}")
 
         body = {
             "category":       CONFIG["category"],
             "symbol":         symbol,
             "side":           side,
             "orderType":      "Market",
-            "qty":            str(round(margin_usdt, 2)),
-            "marketUnit":     "quoteCoin",   # specifica margine in USDT, Bybit applica leva
+            "qty":            str(qty_calc),
             "stopLoss":       str(round(sl_price, 6)),
             "takeProfit":     str(round(tp_price, 6)),
             "slTriggerBy":    "MarkPrice",
@@ -389,7 +403,7 @@ class BybitTrader:
         r = self._post("/v5/order/create", body)
         if r.get("retCode") == 0:
             return r["result"]["orderId"]
-        logger.error(f"place_order error: {r.get('retMsg')} | {symbol} {side} margin={margin_usdt}USDT leva={CONFIG['leverage']}x")
+        logger.error(f"place_order error: {r.get('retMsg')} | {symbol} {side} qty={qty_calc} notional={notional}USDT")
         return None
 
     def close_position(self, symbol: str, side: str, qty: float) -> bool:
