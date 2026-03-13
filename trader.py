@@ -621,7 +621,7 @@ class FundingTrader:
             f"━━━━━━━━━━━━━━━━━━\n"
             f"🆔 Order ID: `{order_id}`"
         )
-        await self.send(chat_id, msg)
+        await self.send(chat_id, msg, symbol=symbol, rate=funding_rate*100)
         logger.info(f"Trade aperto: {direction} {symbol} @ {mark_price} | level={level}")
 
     # ── MONITORAGGIO ──

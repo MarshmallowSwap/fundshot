@@ -628,14 +628,29 @@ async def post_init(app):
                 demo       = TRADING_DEMO,
             )
 
-            async def _tg_send(chat_id, msg):
-                """Wrapper per inviare messaggi Telegram dal trader."""
+            async def _tg_send(chat_id, msg, symbol=None, rate=None):
+                """Wrapper per inviare messaggi Telegram dal trader, con grafico opzionale."""
                 try:
-                    await app.bot.send_message(
-                        chat_id    = chat_id,
-                        text       = msg,
-                        parse_mode = "Markdown",
-                    )
+                    chart_buf = None
+                    if symbol and rate is not None:
+                        try:
+                            chart_buf = generate_chart(symbol, rate)
+                        except Exception as _ce:
+                            logger.warning("Grafico trader non generato: %s", _ce)
+                    if chart_buf:
+                        chart_buf.seek(0)
+                        await app.bot.send_photo(
+                            chat_id    = chat_id,
+                            photo      = chart_buf,
+                            caption    = msg,
+                            parse_mode = "Markdown",
+                        )
+                    else:
+                        await app.bot.send_message(
+                            chat_id    = chat_id,
+                            text       = msg,
+                            parse_mode = "Markdown",
+                        )
                 except Exception as e:
                     logger.error("_tg_send: %s", e)
 
