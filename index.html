@@ -840,6 +840,24 @@ body.light .ob-field input,.api-form-row input{background:#f0eeff;border-color:#
     <div class="kpi-card"><div class="kpi-label">📉 uPnL wallet</div><div class="kpi-value" id="wallet-upnl">—</div><div class="kpi-sub">non realizzato</div></div>
     <div class="kpi-card"><div class="kpi-label">🏦 Wallet Balance</div><div class="kpi-value" id="wallet-bal">—</div><div class="kpi-sub">saldo totale</div></div>
   </div>
+  <!-- Card Monitoraggio Pre-Trade -->
+  <div class="card" style="margin-bottom:18px">
+    <div class="card-head">
+      <div>
+        <div class="card-title">🔍 Simboli in Monitoraggio</div>
+        <div class="card-sub">Candidati all'apertura trade — funding sopra soglia</div>
+      </div>
+      <span id="mon-count" style="background:var(--p1);color:#fff;padding:2px 10px;border-radius:20px;font-size:12px;font-weight:700">0</span>
+    </div>
+    <div class="card-body" style="padding:0">
+      <div id="mon-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;padding:14px">
+        <div style="color:var(--text-muted);font-size:13px;grid-column:1/-1;text-align:center;padding:12px">
+          Nessun simbolo in monitoraggio
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="grid3" id="pos-grid">
     <div class="loading-placeholder"><div class="spinner"></div><br>Caricamento posizioni…</div>
   </div>
@@ -1744,6 +1762,45 @@ async function fetchWallet() {
     return d.ok ? d : null;
   } catch(e) { return null; }
 }
+async function fetchMonitoring() {
+  try {
+    const r = await fetch(PROXY_URL + '/api/monitoring', { signal: AbortSignal.timeout(5000) });
+    if (!r.ok) throw new Error();
+    const d = await r.json();
+    return d.ok ? d.monitoring : {};
+  } catch(e) { return {}; }
+}
+function updateMonitoringCard(mon) {
+  const grid  = document.getElementById('mon-grid');
+  const count = document.getElementById('mon-count');
+  const items = Object.entries(mon || {});
+  count.textContent = items.length;
+  if (!items.length) {
+    grid.innerHTML = '<div style="color:var(--text-muted);font-size:13px;grid-column:1/-1;text-align:center;padding:12px">Nessun simbolo in monitoraggio</div>';
+    return;
+  }
+  const lvlColor = { hard:'#ef4444', extreme:'#f97316', high:'#eab308', base:'#22c55e' };
+  const lvlEmoji = { hard:'🔴', extreme:'🔥', high:'🚨', base:'📊' };
+  grid.innerHTML = items.map(([sym, d]) => {
+    const since = new Date(d.since * 1000).toLocaleTimeString('it-IT', {hour:'2-digit',minute:'2-digit'});
+    const col   = lvlColor[d.level] || 'var(--p1)';
+    const emoji = lvlEmoji[d.level] || '📊';
+    const dir   = d.direction === 'SHORT'
+      ? '<span style="color:#ef4444">▼ SHORT</span>'
+      : '<span style="color:#22c55e">▲ LONG</span>';
+    return `<div style="background:var(--card2);border:1px solid ${col}44;border-radius:10px;padding:12px;position:relative">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-weight:700;font-size:13px">${sym}</span>
+        <span style="background:${col}22;color:${col};padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700">${emoji} ${d.level.toUpperCase()}</span>
+      </div>
+      <div style="font-size:12px;color:var(--text-muted);display:flex;justify-content:space-between">
+        <span>${dir}</span>
+        <span style="color:${d.rate>=0?'#ef4444':'#22c55e'};font-weight:600">${d.rate>=0?'+':''}${d.rate}%</span>
+      </div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:4px">⏱ Da: ${since}</div>
+    </div>`;
+  }).join('');
+}
 function setConnected(ok) {
   document.getElementById('connDot').className = 'status-dot ' + (ok ? 'ok' : 'err');
   document.getElementById('connTxt').textContent = ok ? 'Connesso' : 'Bot non raggiungibile';
@@ -1752,9 +1809,10 @@ function setConnected(ok) {
 /* ─── REFRESH ALL ─── */
 async function refreshAll() {
   try {
-  const [, tickers, positions, wallet] = await Promise.all([
-    fetchStatus(), fetchTickers(), fetchPositions(), fetchWallet()
+  const [, tickers, positions, wallet, monitoring] = await Promise.all([
+    fetchStatus(), fetchTickers(), fetchPositions(), fetchWallet(), fetchMonitoring()
   ]);
+  updateMonitoringCard(monitoring);
   if (wallet) {
     document.getElementById('kpi-equity').textContent   = parseFloat(wallet.equity       || 0).toFixed(2) + ' U';
     const _marginPct = wallet.equity > 0

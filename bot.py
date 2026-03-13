@@ -133,6 +133,36 @@ async def _get_funding_rate(symbol: str) -> float | None:
     """Ritorna il funding rate corrente dalla cache (aggiornata ogni 60s)."""
     return _funding_cache.get(symbol)
 
+# ── Monitoring pre-trade: simboli candidati all'apertura ──────────────────────
+import time as _time
+_monitoring: dict = {}   # {symbol: {rate, level, since, direction}}
+_MON_FILE = '/tmp/fk_monitoring.json'
+
+def _mon_save():
+    try:
+        import json
+        with open(_MON_FILE, 'w') as f:
+            json.dump(_monitoring, f)
+    except Exception:
+        pass
+
+def _mon_add(symbol: str, rate: float, level: str):
+    if symbol not in _monitoring:
+        direction = 'SHORT' if rate > 0 else 'LONG'
+        _monitoring[symbol] = {
+            'rate': round(rate * 100, 4),
+            'level': level,
+            'direction': direction,
+            'since': int(_time.time()),
+        }
+        _mon_save()
+        logger.info("🔍 Monitoring aggiunto: %s %s %+.4f%%", symbol, direction, rate * 100)
+
+def _mon_remove(symbol: str, reason: str = ''):
+    if symbol in _monitoring:
+        del _monitoring[symbol]
+        _mon_save()
+        logger.info("🔍 Monitoring rimosso: %s (%s)", symbol, reason)
 
 # ── Job principale: monitoraggio funding ──────────────────────────────────────
 _prev_rates: dict[str, float] = {}
@@ -259,6 +289,23 @@ async def funding_job(context):
         except Exception as e_liq:
             logger.debug("liq_check %s: %s", symbol, e_liq)
 
+    # ── Aggiorna _monitoring per TUTTI i simboli (non solo watchlist) ─────────
+    open_symbols = set(_funding_trader.positions.keys()) if _funding_trader else set()
+    for ticker in tickers:
+        sym      = ticker.get("symbol", "")
+        r_raw    = float(ticker.get("fundingRate", 0))
+        _funding_cache[sym] = r_raw  # cache completa per tutti
+        abs_r    = abs(r_raw * 100)
+        lvl      = None
+        if abs_r >= 2.00:   lvl = "hard"
+        elif abs_r >= 1.50: lvl = "extreme"
+        elif abs_r >= 1.00: lvl = "high"
+        elif abs_r >= 0.50: lvl = "base"
+        if lvl and sym not in open_symbols:
+            _mon_add(sym, r_raw, lvl)
+        elif sym in _monitoring and not lvl:
+            _mon_remove(sym, "funding rientrato")
+
     _fj_running = False
 
 
@@ -289,8 +336,8 @@ async def trading_job(context):
         if _funding_trader.positions:
             await _funding_trader.monitor_positions(owner_chat_id)
 
-        # 2. Valuta nuovi segnali sui simboli in watchlist con funding in cache
-        symbols_to_check = [s for s in _funding_cache if commands.is_watched(s)]
+        # 2. Valuta nuovi segnali sui simboli in monitoraggio attivo
+        symbols_to_check = list(_monitoring.keys())
 
         for symbol in symbols_to_check:
             try:
@@ -309,6 +356,7 @@ async def trading_job(context):
                 if ok:
                     await _funding_trader.open_trade(symbol, funding_rate, owner_chat_id)
                     context.bot_data["trades_opened"] = context.bot_data.get("trades_opened", 0) + 1
+                    _mon_remove(symbol, "trade aperto")
                 else:
                     if _funding_trader.persistence.get(symbol, 0) >= 1:
                         logger.debug("trading_job %s: skip — %s", symbol, reason)
