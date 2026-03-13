@@ -368,7 +368,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
                     sign_str = ts + k + recv_window + params
                     sig = _h.new(s.encode(), sign_str.encode(), _hs.sha256).hexdigest()
                     # Demo account usa endpoint diverso
-                    base = _bybit_base()
+                    base = "https://api-demo.bybit.com" if _config.get("demo") else "https://api.bybit.com"
                     url = f"{base}/v5/position/closed-pnl?{params}"
                     req = _u.Request(url, headers={
                         "X-BAPI-API-KEY":     k,
