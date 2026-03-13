@@ -214,40 +214,45 @@ async def deletekeys_callback(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = (
-        "🤖 *FUNDING KING BOT — Comandi disponibili*\n\n"
+        "🤖 *FUNDING KING BOT — Comandi*\n"
         "━━━━━━━━━━━━━━━━━━━━━\n"
         "📊 *FUNDING RATE*\n"
-        "/funding\\_top — Top 10 funding positivi (SHORT)\n"
-        "/funding\\_bottom — Top 10 funding negativi (LONG)\n"
-        "/top10 — Classifica 10 SHORT + 10 LONG in tempo reale\n"
-        "/storico `<SIMBOLO>` — Ultimi 8 cicli\n"
-        "/storico7g `<SIMBOLO>` — Storico 7 giorni con grafici\n"
-        "/backtest `<SYM|top10|watchlist>` — Simula P&L 30 giorni\n\n"
+        "/top10 — Top 10 SHORT + LONG in tempo reale\n"
+        "/storico `SYMBOL` — Ultimi 8 cicli di funding\n"
+        "/storico `SYMBOL 7g` — Storico 7 giorni + statistiche\n"
+        "/backtest `SYMBOL` — Simula P&L 30 giorni\n"
+        "/backtest `top10` — Backtest top 10 simboli\n"
+        "/backtest `watchlist` — Backtest tua watchlist\n\n"
         "━━━━━━━━━━━━━━━━━━━━━\n"
         "💼 *ACCOUNT*\n"
-        "/saldo — Saldo wallet Bybit\n"
-        "/posizioni — Posizioni aperte con PnL%\n\n"
+        "/saldo — Saldo e equity Bybit\n"
+        "/posizioni — Posizioni aperte con PnL%\n"
+        "/rischio — Analisi rischio e distanza liquidazione\n"
+        "/summary — Riepilogo rapido portafoglio\n\n"
+        "━━━━━━━━━━━━━━━━━━━━━\n"
+        "🤖 *AUTO-TRADING*\n"
+        "/trading — Statistiche e posizioni bot\n"
+        "/aperte — Posizioni aperte dall\'auto-trader\n\n"
         "━━━━━━━━━━━━━━━━━━━━━\n"
         "🎯 *WATCHLIST & NOTIFICHE*\n"
         "/watchlist — Stato completo watchlist\n"
-        "/watch `<SYM>` — Aggiungi simboli (es. `BTC ETH SOL`)\n"
-        "/unwatch `<SYM>` — Rimuovi | `/unwatch all` per reset\n"
-        "/mute `<SYM>` — Silenzia simbolo\n"
-        "/unmute `<SYM>` — Riattiva simbolo\n"
+        "/watch `SYM` — Aggiungi simboli (es. BTC ETH SOL)\n"
+        "/unwatch `SYM` — Rimuovi | `/unwatch all` per reset\n"
+        "/mute `SYM` — Silenzia alert per simbolo\n"
+        "/unmute `SYM` — Riattiva alert\n"
         "/alerts — Soglie custom per simbolo\n"
-        "/alerts `<SYM> <livello> <valore>` — Imposta soglia\n\n"
+        "/alerts `SYM livello valore` — Imposta soglia custom\n\n"
         "━━━━━━━━━━━━━━━━━━━━━\n"
         "🔧 *SISTEMA*\n"
-        "/start — Setup / configurazione credenziali\n"
-        "/status — Stato bot e credenziali\n"
+        "/start — Setup credenziali API\n"
+        "/status — Stato bot, uptime, alert attivi\n"
         "/test — Test connessione Bybit\n"
-        "/help — Questo messaggio\n\n"
+        "/deletekeys — Elimina le tue API key\n\n"
         "━━━━━━━━━━━━━━━━━━━━━\n"
-        "🔔 *Alert automatici ogni 60s:*\n"
-        "🔴 HARD ≥ ±2% | 🔥 EXTREME ≥ ±1.5%\n"
-        "🚨 HIGH ≥ ±1% | ℹ️ CHIUSURA ≥ ±0.23%\n"
-        "✅ RIENTRO ≤ ±0.75% | ⏰ Prossimo funding\n"
-        "🚀 PUMP/💥 DUMP ≥ ±5% in 1H\n"
+        "🔔 *Alert automatici:*\n"
+        "🎰 JACKPOT ≥ ±3% | 🔴 HARD ≥ ±2%\n"
+        "🔥 EXTREME ≥ ±1.5% | 🚨 HIGH ≥ ±1%\n"
+        "⏰ PRE-SETTLEMENT 14min prima | 🚀 PUMP/DUMP ≥ ±5% in 1H\n"
         "💧 Liquidazioni ≥ $100k"
     )
     await update.message.reply_text(text, parse_mode="Markdown")
@@ -414,27 +419,46 @@ async def funding_bottom(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ══════════════════════════════════════════════════════════════════════════════
 
 async def storico(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    /storico BTCUSDT      — ultimi 8 cicli
+    /storico BTCUSDT 7g   — storico 7 giorni con statistiche
+    """
     args = context.args
     if not args:
-        await update.message.reply_text("Uso: /storico BTCUSDT")
+        await update.message.reply_text(
+            "📅 *Uso:*\n"
+            "`/storico BTCUSDT`    — ultimi 8 cicli\n"
+            "`/storico BTCUSDT 7g` — storico 7 giorni con statistiche",
+            parse_mode="Markdown"
+        )
         return
+
     symbol = args[0].upper()
-    await update.message.reply_text(f"📊 Storico funding {symbol}...")
+    if not symbol.endswith("USDT"):
+        symbol += "USDT"
 
-    history = await bc.get_funding_history(symbol, limit=8)
-    if not history:
-        await update.message.reply_text(f"Nessun dato per {symbol}.")
-        return
+    mode_7g = len(args) >= 2 and args[1].lower() in ("7g", "7d", "7", "week")
 
-    lines = [f"📅 *STORICO FUNDING — {symbol}*\n"]
-    for entry in history:
-        rate = float(entry.get("fundingRate", 0)) * 100
-        ts = int(entry.get("fundingRateTimestamp", 0)) // 1000
-        dt = datetime.fromtimestamp(ts, tz=TZ_IT).strftime("%d/%m %H:%M")
-        emoji = "🟢" if rate >= 0 else "🔴"
-        lines.append(f"{emoji} {dt} → *{rate:+.4f}%*")
-
-    await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
+    if mode_7g:
+        await storico7g_impl(update, symbol)
+    else:
+        await update.message.reply_text(f"📊 Storico funding {symbol}...")
+        history = await bc.get_funding_history(symbol, limit=8)
+        if not history:
+            await update.message.reply_text(
+                f"❌ Nessun dato per `{symbol}`.\nControlla che il simbolo sia corretto.",
+                parse_mode="Markdown"
+            )
+            return
+        lines = [f"📅 *STORICO FUNDING — {symbol}*\n━━━━━━━━━━━━━━━━━━"]
+        for entry in history:
+            rate = float(entry.get("fundingRate", 0)) * 100
+            ts = int(entry.get("fundingRateTimestamp", 0)) // 1000
+            dt = datetime.fromtimestamp(ts, tz=TZ_IT).strftime("%d/%m %H:%M")
+            emoji = "🟢" if rate >= 0 else "🔴"
+            lines.append(f"{emoji} `{dt}` → `{rate:+.4f}%`")
+        lines.append("\n_/storico " + symbol + " 7g_ per storico completo")
+        await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -473,16 +497,8 @@ def _trend_emoji(rates: list[float]) -> str:
     return "➡️"
 
 
-async def storico7g(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    args = context.args
-    if not args:
-        await update.message.reply_text(
-            "Uso: `/storico7g BTCUSDT`\nMostra storico funding ultimi 7 giorni con statistiche.",
-            parse_mode="Markdown",
-        )
-        return
-
-    symbol = args[0].upper()
+async def storico7g_impl(update, symbol: str):
+    """Storico 7 giorni — chiamato sia da /storico SYMBOL 7g che come funzione interna."""
     await update.message.reply_text(f"📅 Recupero storico 7 giorni — *{symbol}*...", parse_mode="Markdown")
 
     history = await bc.get_funding_history_7d(symbol)
@@ -1135,7 +1151,7 @@ async def top10(update: Update, context: ContextTypes.DEFAULT_TYPE):
         settle   = _settlement_label(t["next_ts"])
         p24h     = f"{t['pct_24h']:+.1f}%"
         interval = f"{t['interval_h']}H"
-        sym_esc = t['symbol'].replace('_', '\_')
+        sym_esc = t['symbol'].replace('_', r'\_')
         short_lines.append(
             f"`{i:>2}.` *{sym_esc}* `{t['rate']:+.4f}%`\n"
             f"     `{bar:<12}` {badge} · {interval} · {settle} · {p24h}"
@@ -1154,7 +1170,7 @@ async def top10(update: Update, context: ContextTypes.DEFAULT_TYPE):
         settle   = _settlement_label(t["next_ts"])
         p24h     = f"{t['pct_24h']:+.1f}%"
         interval = f"{t['interval_h']}H"
-        sym_esc = t['symbol'].replace('_', '\_')
+        sym_esc = t['symbol'].replace('_', r'\_')
         long_lines.append(
             f"`{i:>2}.` *{sym_esc}* `{t['rate']:+.4f}%`\n"
             f"     `{bar:<12}` {badge} · {interval} · {settle} · {p24h}"
@@ -1431,17 +1447,21 @@ async def summary(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     await update.message.reply_text("📊 Calcolo summary...")
     try:
-        wallet    = await bc.get_wallet()
-        positions = await bc.get_positions()
+        wallet_raw = await bc.get_wallet_balance()
+        positions  = await bc.get_positions()
     except Exception as e:
         await update.message.reply_text(f"❌ Errore: {e}")
         return
 
-    equity  = wallet.get("equity", 0)
-    upnl    = wallet.get("upnl", 0)
-    rpnl    = wallet.get("realisedPnl", 0)
-    avail   = wallet.get("avail", 0)
-    margin  = wallet.get("margin", 0)
+    if not wallet_raw:
+        await update.message.reply_text("❌ Impossibile recuperare il saldo.")
+        return
+
+    equity = wallet_raw.get("totalEquity", 0)
+    upnl   = wallet_raw.get("totalPerpUPL", 0)
+    rpnl   = wallet_raw.get("totalPerpRPL", 0)
+    avail  = wallet_raw.get("totalAvailableBalance", 0)
+    margin = wallet_raw.get("totalInitialMargin", 0)
 
     n_long  = sum(1 for p in positions if p.get("side") == "Buy")
     n_short = sum(1 for p in positions if p.get("side") == "Sell")
@@ -1762,6 +1782,36 @@ async def deletekeys_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+# /trading — Statistiche auto-trader (wrapper verso bot.py cmd_stats)
+# /aperte  — Posizioni aperte auto-trader (wrapper verso bot.py cmd_posizioni_trader)
+# Queste funzioni vengono iniettate da bot.py tramite inject_bot_commands()
+# ══════════════════════════════════════════════════════════════════════════════
+
+_bot_cmd_trading  = None
+_bot_cmd_aperte   = None
+
+def inject_bot_commands(cmd_trading_fn, cmd_aperte_fn):
+    """Chiamato da bot.py per iniettare i comandi che richiedono accesso a _funding_trader."""
+    global _bot_cmd_trading, _bot_cmd_aperte
+    _bot_cmd_trading = cmd_trading_fn
+    _bot_cmd_aperte  = cmd_aperte_fn
+
+async def cmd_trading(update, context):
+    """Statistiche auto-trading — delega a bot.py."""
+    if _bot_cmd_trading:
+        await _bot_cmd_trading(update, context)
+    else:
+        await update.message.reply_text("⚠️ Auto-trading non inizializzato.")
+
+async def cmd_aperte(update, context):
+    """Posizioni auto-trader aperte — delega a bot.py."""
+    if _bot_cmd_aperte:
+        await _bot_cmd_aperte(update, context)
+    else:
+        await update.message.reply_text("⚠️ Auto-trading non inizializzato.")
+
+
 def register(app):
     """Registra tutti i command handler sull'applicazione Telegram."""
 
@@ -1777,28 +1827,31 @@ def register(app):
     )
     app.add_handler(conv)
 
-    # Comandi semplici
-    app.add_handler(CommandHandler("help", help_cmd))
-    app.add_handler(CommandHandler("status", status_cmd))
-    app.add_handler(CommandHandler("test", test_cmd))
-    app.add_handler(CommandHandler("top10", top10))
-    app.add_handler(CommandHandler("funding_top", funding_top))
-    app.add_handler(CommandHandler("funding_bottom", funding_bottom))
-    app.add_handler(CommandHandler("storico", storico))
-    app.add_handler(CommandHandler("storico7g", storico7g))
-    app.add_handler(CommandHandler("saldo", saldo))
-    app.add_handler(CommandHandler("posizioni", posizioni))
-    app.add_handler(CommandHandler("watch", watch_cmd))
-    app.add_handler(CommandHandler("unwatch", unwatch_cmd))
-    app.add_handler(CommandHandler("mute", mute_cmd))
-    app.add_handler(CommandHandler("unmute", unmute_cmd))
-    app.add_handler(CommandHandler("watchlist", watchlist_cmd))
-    app.add_handler(CommandHandler("alerts", alerts_cmd))
-    app.add_handler(CommandHandler("backtest", backtest_cmd))
-    app.add_handler(CommandHandler("profitto_funding", profitto_funding))
-    app.add_handler(CommandHandler("rischio",      rischio))
-    app.add_handler(CommandHandler("summary",      summary))
-    app.add_handler(CommandHandler("newlistings",  newlistings))
-    app.add_handler(CommandHandler("analytics",    analytics_cmd))
-    app.add_handler(CommandHandler("alert_config", alert_config))
-    app.add_handler(CommandHandler("deletekeys",   deletekeys_cmd))
+    # ── Funding Rate ─────────────────────────────────────────────────────────
+    app.add_handler(CommandHandler("top10",      top10))
+    app.add_handler(CommandHandler("storico",    storico))      # /storico SYM [7g]
+    app.add_handler(CommandHandler("backtest",   backtest_cmd))
+
+    # ── Account ───────────────────────────────────────────────────────────────
+    app.add_handler(CommandHandler("saldo",      saldo))
+    app.add_handler(CommandHandler("posizioni",  posizioni))
+    app.add_handler(CommandHandler("rischio",    rischio))
+    app.add_handler(CommandHandler("summary",    summary))
+
+    # ── Auto-Trading ──────────────────────────────────────────────────────────
+    app.add_handler(CommandHandler("trading",    cmd_trading))  # stats bot
+    app.add_handler(CommandHandler("aperte",     cmd_aperte))   # posizioni bot
+
+    # ── Watchlist & Alert ─────────────────────────────────────────────────────
+    app.add_handler(CommandHandler("watchlist",  watchlist_cmd))
+    app.add_handler(CommandHandler("watch",      watch_cmd))
+    app.add_handler(CommandHandler("unwatch",    unwatch_cmd))
+    app.add_handler(CommandHandler("mute",       mute_cmd))
+    app.add_handler(CommandHandler("unmute",     unmute_cmd))
+    app.add_handler(CommandHandler("alerts",     alerts_cmd))
+
+    # ── Sistema ───────────────────────────────────────────────────────────────
+    app.add_handler(CommandHandler("help",       help_cmd))
+    app.add_handler(CommandHandler("status",     status_cmd))
+    app.add_handler(CommandHandler("test",       test_cmd))
+    app.add_handler(CommandHandler("deletekeys", deletekeys_cmd))

@@ -338,7 +338,7 @@ def run_backtest(symbol: str, entries: list[dict]) -> BacktestResult:
                     )
 
         # ── Nessuna posizione: controlla se aprire ────────────────────────
-        if open_trade is None and level in ("high", "extreme", "hard"):
+        if open_trade is None and level in ("base", "high", "extreme", "hard", "critico"):
             direction  = "SHORT" if rate_pct > 0 else "LONG"
             open_trade = Trade(
                 symbol=symbol,
@@ -417,7 +417,7 @@ def format_backtest_report(r: BacktestResult) -> str:
             f"ℹ️ Nessun trade simulato.\n"
             f"Il funding rate di *{r.symbol}* è rimasto sotto soglia\n"
             f"per tutti i 30 giorni analizzati.\n\n"
-            f"_Soglia attiva: {al.get_effective_threshold(r.symbol, 'high'):.2f}% (HIGH)_"
+            f"_Soglia attiva: {al.get_effective_threshold(r.symbol, 'base'):.2f}% (BASE)_"
         )
 
     # ── Statistiche principali ────────────────────────────────────────────

@@ -895,6 +895,7 @@ def main():
         logger.info("📊 Job OI spike schedulato ogni 5 min")
 
     # Registra handler comandi (da commands.py)
+    commands.inject_bot_commands(cmd_stats, cmd_posizioni_trader)
     commands.register(app)
 
     # Registra handler comandi trading inline
