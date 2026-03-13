@@ -594,7 +594,7 @@ async def cmd_stats(update, context):
         msg += "\n" + "\n".join(open_lines)
 
     env_label = "🎮 DEMO" if TRADING_DEMO else ("🧪 TESTNET" if TRADING_TESTNET else "🔴 MAINNET")
-    msg += f"\n━━━━━━━━━━━━━━━━━━\n⚡ Ambiente: `{env_label}`"
+    msg += f"\n━━━━━━━━━━━━━━━━━━\n⚡ Environment: `{env_label}`"
 
     await update.message.reply_text(msg, parse_mode="Markdown")
 
@@ -604,7 +604,7 @@ async def cmd_posizioni_trader(update, context):
     """Mostra le posizioni aperte dall'auto-trader con dettagli completi."""
     if _funding_trader is None or not _funding_trader.positions:
         await update.message.reply_text(
-            "📂 Nessuna posizione aperta dall'auto-trader.",
+            "📂 No open positions from auto-trader.",
             parse_mode="Markdown"
         )
         return
@@ -819,12 +819,12 @@ async def post_init(app):
             # Notifica owner al boot
             await send_to_owner(
                 app.bot,
-                f"🤖 *Auto-Trader attivato*\n"
-                f"Ambiente: `{env_label}`\n"
+                f"🤖 *Auto-Trader activated*\n"
+                f"Environment: `{env_label}`\n"
                 f"Size: `{TRADER_CONFIG['size_usdt']} USDT` | "
-                f"Leva: `{TRADER_CONFIG['leverage']}x` | "
+                f"Leverage: `{TRADER_CONFIG['leverage']}x` | "
                 f"Max pos: `{TRADER_CONFIG['max_positions']}`\n"
-                f"Config: `trader_config.json` {'✅' if os.path.exists('trader_config.json') else '⚠️ non trovato (uso defaults)'}"
+                f"Config: `trader_config.json` {'✅' if os.path.exists('trader_config.json') else '⚠️ not found (using defaults)'}"
             )
         else:
             logger.warning(
@@ -845,17 +845,17 @@ async def _setup_bot_menu(bot):
 
     bot_commands = [
         # ── Funding Rate ─────────────────────────────────────────────────────
-        BotCommand("top10",     "🔥 Top 10 SHORT + LONG in tempo reale"),
+        BotCommand("top10",     "🔥 Top 10 SHORT + LONG funding rates"),
         BotCommand("storico",   "📅 Storico funding — /storico SYM [7g]"),
         BotCommand("backtest",  "🧪 Simula P&L 30gg — /backtest SYM|top10|watchlist"),
         # ── Account ──────────────────────────────────────────────────────────
-        BotCommand("saldo",     "💼 Saldo e equity Bybit"),
+        BotCommand("saldo",     "💼 Balance and equity"),
         BotCommand("posizioni", "📂 Posizioni aperte con PnL%"),
         BotCommand("rischio",   "⚠️ Analisi rischio e distanza liquidazione"),
         BotCommand("summary",   "📊 Riepilogo rapido portafoglio"),
         # ── Auto-Trading ─────────────────────────────────────────────────────
         BotCommand("trading",   "🤖 Statistiche auto-trader"),
-        BotCommand("aperte",    "📂 Posizioni aperte dall'auto-trader"),
+        BotCommand("aperte",    "📂 Open positions from auto-trader"),
         # ── Watchlist & Alert ─────────────────────────────────────────────────
         BotCommand("watchlist", "👁 Stato watchlist completo"),
         BotCommand("watch",     "➕ Aggiungi simboli — /watch BTC ETH SOL"),
