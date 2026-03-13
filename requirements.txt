@@ -2,3 +2,9 @@ python-telegram-bot[job-queue]==20.7
 aiohttp
 python-dotenv
 pybit
+
+# SaaS — database
+supabase>=2.0.0
+
+# SaaS — encryption AES-256-GCM
+cryptography>=42.0.0
