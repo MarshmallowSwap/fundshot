@@ -358,14 +358,27 @@ async def oi_spike_job(context):
 
     bot: Bot = context.bot
     try:
-        # Filtra solo simboli con funding significativo dalla cache
-        # Evita di chiamare 544 API — tipicamente 20-30 simboli
+        # Simboli prioritari — sempre monitorati indipendentemente dal funding
+        PRIORITY_SYMBOLS = {
+            "BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT",
+            "XRPUSDT", "DOGEUSDT", "ADAUSDT", "TRXUSDT", "AVAXUSDT",
+        }
+
+        # Filtra simboli con funding significativo dalla cache
         MIN_FUNDING_FOR_OI = 0.003  # 0.3% minimo
-        candidates = [
-            {"symbol": sym}
-            for sym, rate in _funding_cache.items()
+        funding_candidates = {
+            sym for sym, rate in _funding_cache.items()
             if abs(rate) >= MIN_FUNDING_FOR_OI
-        ]
+        }
+
+        # Unione: prioritari + funding significativo
+        all_symbols = PRIORITY_SYMBOLS | funding_candidates
+        candidates = [{"symbol": sym} for sym in all_symbols]
+        logger.info(
+            "oi_spike_job: %d simboli (%d prioritari + %d funding >= 0.3%%)",
+            len(candidates), len(PRIORITY_SYMBOLS & all_symbols),
+            len(funding_candidates - PRIORITY_SYMBOLS)
+        )
 
         if not candidates:
             logger.debug("oi_spike_job: nessun candidato con funding >= 0.3%%")
