@@ -23,6 +23,7 @@ DEFAULT_CONFIG = {
         "next_funding": True,
         "pump_dump":    False,
         "level_change": False,
+        "oi_spike":     True,   # OI spike >= 3% in 5min
         "liquidation":  True,
         "multi_pos":    False,
     },

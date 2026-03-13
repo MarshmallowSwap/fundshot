@@ -331,6 +331,16 @@ async def funding_job(context):
         elif sym in _monitoring and not lvl:
             _mon_remove(sym, "funding rientrato")
 
+    # ── OI Spike check su tutti i ticker ─────────────────────────────────────
+    if _bot_alert_enabled("oi_spike"):
+        try:
+            oi_alerts = oi_monitor.check_oi_spikes(tickers)
+            for sym, msg, chg in oi_alerts:
+                await send_alert(bot, msg, symbol=sym, rate=_funding_cache.get(sym, 0) * 100)
+                bot_data["alerts_sent"] = bot_data.get("alerts_sent", 0) + 1
+        except Exception as e_oi:
+            logger.warning("OI spike check error: %s", e_oi)
+
     _fj_running = False
 
 

@@ -526,12 +526,17 @@ class FundingTrader:
         if len(self.positions) >= CONFIG["max_positions"]:
             return False, f"max posizioni raggiunte ({CONFIG['max_positions']})"
 
-        # 7. OI in crescita
+        # 7. OI — crescita + direzione coerente con il segnale
         oi_data = self.bybit.get_open_interest(symbol)
         if not oi_data:
             return False, "OI non disponibile"
-        if oi_data["change_5m"] < CONFIG["min_oi_change_5m"]:
-            return False, f"OI insufficiente ({oi_data['change_5m']:.2f}%)"
+        oi_chg = oi_data["change_5m"]
+        # OI deve essere positivo (nuove posizioni entrano nel mercato)
+        if oi_chg < CONFIG["min_oi_change_5m"]:
+            return False, f"OI insufficiente o in calo ({oi_chg:.2f}%)"
+        # Direzione: funding negativo → LONG candidato, funding positivo → SHORT candidato
+        # In entrambi i casi OI ▲ = nuovi soldi coerenti col segnale ✅
+        # OI ▼ = chiusura posizioni = segnale in esaurimento ❌ (già catturato sopra)
 
         return True, "ok"
 
