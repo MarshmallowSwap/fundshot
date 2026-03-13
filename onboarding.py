@@ -84,16 +84,25 @@ def _kb_exchanges(configured: list) -> InlineKeyboardMarkup:
         enabled = ex in SUPPORTED_EXCHANGES
         already = ex in configured
         if already:
-            label = f"✅ {meta['emoji']} {meta['name']} (configured)"
-            cb    = f"onb_ex_{ex}"
+            # Due bottoni affiancati: riconfigura | rimuovi
+            buttons.append([
+                InlineKeyboardButton(
+                    f"✅ {meta['emoji']} {meta['name']}",
+                    callback_data=f"onb_ex_{ex}",
+                ),
+                InlineKeyboardButton("🗑", callback_data=f"onb_del_{ex}"),
+            ])
         elif enabled:
-            label = f"{meta['emoji']} {meta['name']}"
-            cb    = f"onb_ex_{ex}"
+            buttons.append([InlineKeyboardButton(
+                f"{meta['emoji']} {meta['name']}",
+                callback_data=f"onb_ex_{ex}",
+            )])
         else:
-            label = f"🔜 {meta['name']} (coming soon)"
-            cb    = "onb_coming_soon"
-        buttons.append([InlineKeyboardButton(label, callback_data=cb)])
-    buttons.append([InlineKeyboardButton("⬅️ Back", callback_data="onb_back_main")])
+            buttons.append([InlineKeyboardButton(
+                f"🔜 {meta['name']} (coming soon)",
+                callback_data="onb_coming_soon",
+            )])
+    buttons.append([InlineKeyboardButton("❌ Close", callback_data="onb_close")])
     return InlineKeyboardMarkup(buttons)
 
 
@@ -125,27 +134,27 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
                     f"{meta.get('emoji','')} *{meta.get('name', ex.capitalize())}* "
                     f"({env_label}) — `{_mask(cred.api_key)}`"
                 )
-        text = (
+        header = (
             "🤖 *FundShot Bot* — Active ✅\n\n"
             f"👤 Chat ID: `{chat_id}`\n\n"
             "*Configured exchanges:*\n" + "\n".join(lines) + "\n\n"
-            "Use /help to see all commands.\n"
-            "Want to add another exchange or manage keys?"
+            "Select an exchange to add or remove:"
         )
     else:
-        text = (
+        header = (
             "🤖 *Welcome to FundShot!*\n\n"
             "Monitor 500+ perpetual pairs across multiple exchanges, "
             "receive smart funding rate alerts and automate your strategy.\n\n"
-            "To get started, connect your exchange API keys:"
+            "🏦 *Choose the exchange to configure:*"
         )
 
+    # Apre direttamente la scelta exchange
     await update.message.reply_text(
-        text,
+        header,
         parse_mode="Markdown",
-        reply_markup=_kb_main(configured),
+        reply_markup=_kb_exchanges(configured),
     )
-    return ST_MAIN
+    return ST_CHOOSE_EXCHANGE
 
 
 # ── Main callback ─────────────────────────────────────────────────────────────
@@ -168,7 +177,7 @@ async def main_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
 
     if data == "onb_coming_soon":
         await query.answer("🚧 Coming soon!", show_alert=True)
-        return ST_MAIN
+        return ST_CHOOSE_EXCHANGE
 
     if data.startswith("onb_del_"):
         ex      = data.replace("onb_del_", "")
@@ -178,13 +187,17 @@ async def main_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
             await delete_credentials(user.id, ex)
             active = [e for e in user.active_exchanges if e != ex]
             await update_user_exchanges(user.id, active)
+            configured = active
+        else:
+            configured = []
         meta = EXCHANGE_META.get(ex, {})
         await query.edit_message_text(
-            f"🗑 *{meta.get('name', ex.capitalize())}* credentials removed.\n"
-            "Use /start to reconfigure.",
+            f"🗑 *{meta.get('name', ex.capitalize())}* credentials removed.\n\n"
+            "🏦 *Choose the exchange to configure:*",
             parse_mode="Markdown",
+            reply_markup=_kb_exchanges(configured),
         )
-        return ConversationHandler.END
+        return ST_CHOOSE_EXCHANGE
 
     if data == "onb_close":
         await query.edit_message_text("✅ Setup closed. Use /start to reopen.")
@@ -195,13 +208,13 @@ async def main_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
         user       = await get_user(chat_id)
         configured = user.active_exchanges if user else []
         await query.edit_message_text(
-            "🤖 *FundShot Bot — Setup*\n\nWhat would you like to do?",
+            "🏦 *Choose the exchange to configure:*",
             parse_mode="Markdown",
-            reply_markup=_kb_main(configured),
+            reply_markup=_kb_exchanges(configured),
         )
-        return ST_MAIN
+        return ST_CHOOSE_EXCHANGE
 
-    return ST_MAIN
+    return ST_CHOOSE_EXCHANGE
 
 
 # ── Exchange choice ───────────────────────────────────────────────────────────
@@ -216,11 +229,11 @@ async def exchange_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         user       = await get_user(chat_id)
         configured = user.active_exchanges if user else []
         await query.edit_message_text(
-            "🤖 *FundShot Bot — Setup*\n\nWhat would you like to do?",
+            "🏦 *Choose the exchange to configure:*",
             parse_mode="Markdown",
-            reply_markup=_kb_main(configured),
+            reply_markup=_kb_exchanges(configured),
         )
-        return ST_MAIN
+        return ST_CHOOSE_EXCHANGE
 
     if data.startswith("onb_ex_"):
         exchange = data.replace("onb_ex_", "")
