@@ -209,15 +209,16 @@ class TradeResult:
 # ─────────────────────────────────────────────
 
 class BybitTrader:
-    def __init__(self, api_key: str, api_secret: str, testnet: bool = True):
+    def __init__(self, api_key: str, api_secret: str, testnet: bool = True, demo: bool = False):
         self.api_key    = api_key
         self.api_secret = api_secret
         self.base_url   = (
-            "https://api-testnet.bybit.com" if testnet
-            else "https://api.bybit.com"
+            "https://api-demo.bybit.com" if demo else ("https://api-testnet.bybit.com" if testnet
+            else "https://api.bybit.com")
         )
         self.testnet = testnet
-        logger.info(f"BybitTrader init — {'TESTNET' if testnet else 'MAINNET'}")
+        self.demo = demo
+        logger.info(f"BybitTrader init — {'DEMO' if demo else ('TESTNET' if testnet else 'MAINNET')}")
 
     def _sign(self, params: str) -> tuple[str, str]:
         ts = str(int(time.time() * 1000))

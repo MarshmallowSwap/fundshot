@@ -118,7 +118,7 @@ log.info(f"Config loaded Ã¢ÂÂ api_key={'SET' if _config.get('api_key') e
 #  BYBIT API HELPER  (usa le chiavi dal config)
 # Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 def bybit_base():
-    return 'https://api-testnet.bybit.com' if _config.get('testnet') else 'https://api.bybit.com'
+    return 'https://api-demo.bybit.com' if _config.get('demo') else 'https://api.bybit.com'
 
 def bybit_get(path, params=None):
     """Chiama Bybit API (senza auth per endpoint pubblici)."""
@@ -180,6 +180,60 @@ def cache_set(key, value):
 #  REQUEST HANDLER
 # Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 class ProxyHandler(BaseHTTPRequestHandler):
+
+    def do_POST(self):
+        if self.path == "/api/config":
+            self._handle_config_update()
+            return
+        self.send_error(404, "Not Found")
+
+    def do_OPTIONS(self):
+        self.send_response(200)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.end_headers()
+
+    def _handle_config_update(self):
+        import json, os, signal
+        CONFIG_PATH = os.path.expanduser("~/.funding_king_config.json")
+        try:
+            length  = int(self.headers.get("Content-Length", 0))
+            raw     = self.rfile.read(length)
+            payload = json.loads(raw)
+        except Exception as e:
+            self._json_response(400, {"ok": False, "error": str(e)}); return
+        try:
+            with open(CONFIG_PATH) as f:
+                existing = json.load(f)
+        except Exception:
+            existing = {}
+        existing.update(payload)
+        existing["_updated_from_dashboard"] = True
+        try:
+            with open(CONFIG_PATH, "w") as f:
+                json.dump(existing, f, indent=2)
+        except Exception as e:
+            self._json_response(500, {"ok": False, "error": str(e)}); return
+        reloaded = False
+        try:
+            import subprocess
+            subprocess.Popen(["systemctl", "reload-or-restart", "funding-king-bot"])
+            reloaded = True
+        except Exception:
+            pass
+        self._json_response(200, {"ok": True, "config_path": CONFIG_PATH, "reloaded": reloaded})
+
+    def _json_response(self, code, data):
+        import json
+        body = json.dumps(data).encode()
+        self.send_response(code)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.end_headers()
+        self.wfile.write(body)
+
 
     def log_message(self, fmt, *args):
         log.info(f"{self.client_address[0]} Ã¢ÂÂ {fmt % args}")
@@ -309,13 +363,11 @@ class ProxyHandler(BaseHTTPRequestHandler):
         elif p == '/api/close-by-mm':
             # DISABLED: trading disabled
             self._json({'ok': False, 'msg': 'Trading disabilitato'}); return
-            if False:
             self._json({'ok': False, 'msg': 'unavail'})
 
         elif p == '/api/close-by-pnl':
             # DISABLED: trading disabled
             self._json({'ok': False, 'msg': 'Trading disabilitato'}); return
-            if False:
             self._json({'ok': False, 'msg': 'unavail'})
 
         elif p == '/api/stats':
@@ -424,7 +476,23 @@ class ProxyHandler(BaseHTTPRequestHandler):
             log.info("Alert config updated")
             self._json({'ok': True, 'msg': 'Config salvata', 'config': ac})
 
-        elif p == '/api/close-all':
+        elif p == "/api/auto-trading":
+            import re, subprocess
+            enabled = bool(body.get("enabled", False))
+            env_path = "/root/funding-king-bot/.env"
+            try:
+                with open(env_path, 'r') as f:
+                    env_content = f.read()
+                val = 'true' if enabled else 'false'
+                env_content = re.sub(r'AUTO_TRADING=\S+', f'AUTO_TRADING={val}', env_content)
+                with open(env_path, 'w') as f:
+                    f.write(env_content)
+                subprocess.Popen(['systemctl', 'restart', 'funding-king-bot'])
+                self._json({"ok": True, "auto_trading": val, "msg": f"AUTO_TRADING={val}, bot riavviato"})
+            except Exception as e:
+                self._json({"ok": False, "msg": str(e)})
+
+        elif p == "/api/close-all":
             # DISABLED: trading disabled, alert-only mode
             self._json({'ok': False, 'msg': 'Trading disabilitato - modalita solo alert'})
 
@@ -482,3 +550,22 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         log.info("Proxy stopped.")
         server.server_close()
+
+# ── PATCH: toggle AUTO_TRADING via dashboard ──
+def _set_auto_trading(enabled: bool):
+    import re, subprocess, os
+    env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
+    try:
+        with open(env_path, 'r') as f:
+            content = f.read()
+        val = 'true' if enabled else 'false'
+        if 'AUTO_TRADING=' in content:
+            content = re.sub(r'AUTO_TRADING=\S+', f'AUTO_TRADING={val}', content)
+        else:
+            content += f'\nAUTO_TRADING={val}\n'
+        with open(env_path, 'w') as f:
+            f.write(content)
+        subprocess.Popen(['systemctl', 'restart', 'funding-king-bot'])
+        return True, val
+    except Exception as e:
+        return False, str(e)

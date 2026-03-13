@@ -1,3 +1,4 @@
+import os
 """
 bybit_client.py — Funding King Bot
 Client Bybit basato su pybit (HMAC automatico, retry, rate-limit).
@@ -25,25 +26,25 @@ EXCLUDED_AUTO_INTERVAL = {
 _session: Optional[HTTP] = None
 
 
-def _make_session(testnet: bool = False) -> HTTP:
+def _make_session(testnet: bool = False, demo: bool = False) -> HTTP:
     api_key    = os.getenv("BYBIT_API_KEY", "")
     api_secret = os.getenv("BYBIT_API_SECRET", "")
     if api_key and api_secret:
-        return HTTP(testnet=testnet, api_key=api_key, api_secret=api_secret)
+        return HTTP(testnet=testnet, demo=demo, api_key=api_key, api_secret=api_secret)
     return HTTP(testnet=testnet)
 
 
 def get_session(force_new: bool = False) -> HTTP:
     global _session
     if _session is None or force_new:
-        _session = _make_session()
+        _session = _make_session(testnet=os.getenv("TRADING_TESTNET","false").lower()=="true", demo=os.getenv("TRADING_DEMO","false").lower()=="true")
     return _session
 
 
 def reload_session():
     """Ricrea la sessione dopo cambio credenziali."""
     global _session
-    _session = _make_session()
+    _session = _make_session(testnet=os.getenv("TRADING_TESTNET","false").lower()=="true", demo=os.getenv("TRADING_DEMO","false").lower()=="true")
     logger.info("Sessione Bybit ricreata.")
 
 

@@ -1,5 +1,5 @@
 """
-commands.py â Funding King Bot
+commands.py — Funding King Bot
 Tutti i command handler Telegram + setup wizard.
 """
 
@@ -32,21 +32,21 @@ import session_manager
 
 logger = logging.getLogger(__name__)
 
-# ââ ConversationHandler states ââââââââââââââââââââââââââââââââââââââââââââââââ
+# ── ConversationHandler states ────────────────────────────────────────────────
 MENU, WAITING_API_KEY, WAITING_API_SECRET = range(3)
 
 
 def is_watched(symbol: str) -> bool:
-    """Proxy verso watchlist_manager â usato da bot.py."""
+    """Proxy verso watchlist_manager — usato da bot.py."""
     return wm.is_watched(symbol)
 
 
-# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-# /start â Setup Wizard
-# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+# ══════════════════════════════════════════════════════════════════════════════
+# /start — Setup Wizard
+# ══════════════════════════════════════════════════════════════════════════════
 
 def _has_credentials(chat_id: int | str | None = None) -> bool:
-    """Verifica credenziali: per-utente se chat_id Ã¨ fornito, globale come fallback."""
+    """Verifica credenziali: per-utente se chat_id è fornito, globale come fallback."""
     if chat_id is not None:
         return user_store.has_credentials(chat_id)
     # Fallback legacy: controlla variabili d'ambiente globali
@@ -55,9 +55,9 @@ def _has_credentials(chat_id: int | str | None = None) -> bool:
 
 def _build_menu_keyboard():
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("ð Imposta API Key", callback_data="set_api_key")],
-        [InlineKeyboardButton("ð Imposta API Secret", callback_data="set_api_secret")],
-        [InlineKeyboardButton("â Conferma e Avvia", callback_data="confirm_start")],
+        [InlineKeyboardButton("🔑 Imposta API Key", callback_data="set_api_key")],
+        [InlineKeyboardButton("🔒 Imposta API Secret", callback_data="set_api_secret")],
+        [InlineKeyboardButton("✅ Conferma e Avvia", callback_data="confirm_start")],
     ])
 
 
@@ -67,7 +67,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     if _has_credentials(chat_id):
         key_masked = _mask(user_store.get_api_key(chat_id))
         await update.message.reply_text(
-            "ð¤ *Funding King Bot* â Attivo â\n\n"
+            "🤖 *Funding King Bot* — Attivo ✅\n\n"
             f"Chat ID: `{chat_id}`\n"
             f"API Key: `{key_masked}`\n\n"
             "Usa /help per vedere tutti i comandi.\n"
@@ -79,10 +79,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     key    = _mask(user_store.get_api_key(chat_id))
     secret = _mask(user_store.get_api_secret(chat_id))
     text = (
-        "ð¤ *Funding King Bot â Setup*\n\n"
-        f"Chat ID: `{chat_id}` â (rilevato automaticamente)\n"
-        f"API Key: `{key or 'â ï¸ non impostata'}`\n"
-        f"API Secret: `{secret or 'â ï¸ non impostato'}`\n\n"
+        "🤖 *Funding King Bot — Setup*\n\n"
+        f"Chat ID: `{chat_id}` ✅ (rilevato automaticamente)\n"
+        f"API Key: `{key or '⚠️ non impostata'}`\n"
+        f"API Secret: `{secret or '⚠️ non impostato'}`\n\n"
         "Seleziona cosa configurare:"
     )
     await update.message.reply_text(text, parse_mode="Markdown", reply_markup=_build_menu_keyboard())
@@ -97,14 +97,14 @@ async def menu_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
 
     if data == "set_api_key":
         await query.edit_message_text(
-            "ð Invia la tua *Bybit API Key* (il messaggio verrÃ  eliminato automaticamente):",
+            "🔑 Invia la tua *Bybit API Key* (il messaggio verrà eliminato automaticamente):",
             parse_mode="Markdown",
         )
         return WAITING_API_KEY
 
     if data == "set_api_secret":
         await query.edit_message_text(
-            "ð Invia il tuo *Bybit API Secret* (il messaggio verrÃ  eliminato automaticamente):",
+            "🔒 Invia il tuo *Bybit API Secret* (il messaggio verrà eliminato automaticamente):",
             parse_mode="Markdown",
         )
         return WAITING_API_SECRET
@@ -113,7 +113,7 @@ async def menu_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
         chat_id = query.from_user.id
         if not _has_credentials(chat_id):
             await query.edit_message_text(
-                "â ï¸ Configura prima API Key e API Secret.",
+                "⚠️ Configura prima API Key e API Secret.",
                 reply_markup=_build_menu_keyboard(),
             )
             return MENU
@@ -122,11 +122,11 @@ async def menu_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
         try:
             sess = session_manager.get_session(chat_id)
             test = await sess.test_connection()
-            conn_status = "â Connessione Bybit OK" if test.get("ok") else f"â ï¸ {test.get('error','errore')}"
+            conn_status = "✅ Connessione Bybit OK" if test.get("ok") else f"⚠️ {test.get('error','errore')}"
         except Exception as e:
-            conn_status = f"â ï¸ Errore test: {e}"
+            conn_status = f"⚠️ Errore test: {e}"
         await query.edit_message_text(
-            "â *Configurazione completata!*\n\n"
+            "✅ *Configurazione completata!*\n\n"
             f"API Key: `{_mask(user_store.get_api_key(chat_id))}`\n"
             f"API Secret: `{_mask(user_store.get_api_secret(chat_id))}`\n\n"
             f"{conn_status}\n\n"
@@ -149,7 +149,7 @@ async def receive_api_key(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     user_store.set_key(chat_id, "api_key", value)
     session_manager.reload_session(chat_id)
     await update.message.reply_text(
-        f"â API Key salvata: `{_mask(value)}`",
+        f"✅ API Key salvata: `{_mask(value)}`",
         parse_mode="Markdown",
         reply_markup=_build_menu_keyboard(),
     )
@@ -167,7 +167,7 @@ async def receive_api_secret(update: Update, context: ContextTypes.DEFAULT_TYPE)
     user_store.set_key(chat_id, "api_secret", value)
     session_manager.reload_session(chat_id)
     await update.message.reply_text(
-        f"â API Secret salvato: `{_mask(value)}`",
+        f"✅ API Secret salvato: `{_mask(value)}`",
         parse_mode="Markdown",
         reply_markup=_build_menu_keyboard(),
     )
@@ -208,27 +208,25 @@ async def deletekeys_callback(update: Update, context: ContextTypes.DEFAULT_TYPE
         await query.edit_message_text("Annullato. Credenziali al sicuro.")
 
 
-# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+# ══════════════════════════════════════════════════════════════════════════════
 # /help
-# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+# ══════════════════════════════════════════════════════════════════════════════
 
 async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = (
         "🤖 *FUNDING KING BOT — Comandi disponibili*\n\n"
         "━━━━━━━━━━━━━━━━━━━━━\n"
         "📊 *FUNDING RATE*\n"
-        "/funding\_top — Top 10 funding positivi (SHORT)\n"
-        "/funding\_bottom — Top 10 funding negativi (LONG)\n"
+        "/funding\\_top — Top 10 funding positivi (SHORT)\n"
+        "/funding\\_bottom — Top 10 funding negativi (LONG)\n"
         "/top10 — Classifica 10 SHORT + 10 LONG in tempo reale\n"
         "/storico `<SIMBOLO>` — Ultimi 8 cicli\n"
         "/storico7g `<SIMBOLO>` — Storico 7 giorni con grafici\n"
         "/backtest `<SYM|top10|watchlist>` — Simula P&L 30 giorni\n\n"
         "━━━━━━━━━━━━━━━━━━━━━\n"
-        "💼 *ACCOUNT (sola lettura)*\n"
+        "💼 *ACCOUNT*\n"
         "/saldo — Saldo wallet Bybit\n"
-        "/posizioni — Posizioni aperte con PnL%\n"
-        "/rischio — Analisi rischio posizioni aperte\n"
-        "/summary — Riepilogo rapido wallet + posizioni\n\n"
+        "/posizioni — Posizioni aperte con PnL%\n\n"
         "━━━━━━━━━━━━━━━━━━━━━\n"
         "🎯 *WATCHLIST & NOTIFICHE*\n"
         "/watchlist — Stato completo watchlist\n"
@@ -243,21 +241,21 @@ async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "/start — Setup / configurazione credenziali\n"
         "/status — Stato bot e credenziali\n"
         "/test — Test connessione Bybit\n"
-        "/analytics — Posizioni aperte + storico alert\n"
         "/help — Questo messaggio\n\n"
         "━━━━━━━━━━━━━━━━━━━━━\n"
-        "🔔 *Modalità: ALERT ONLY*\n"
-        "Il bot monitora i funding rate e invia notifiche.\n"
-        "Nessuna operazione di trading viene eseguita.\n\n"
-        "📡 *Alert automatici ogni 60s:*\n"
+        "🔔 *Alert automatici ogni 60s:*\n"
         "🔴 HARD ≥ ±2% | 🔥 EXTREME ≥ ±1.5%\n"
         "🚨 HIGH ≥ ±1% | ℹ️ CHIUSURA ≥ ±0.23%\n"
         "✅ RIENTRO ≤ ±0.75% | ⏰ Prossimo funding\n"
-        "📈 PUMP/📉 DUMP ≥ ±5% in 1H\n"
-        "🧨 Liquidazioni ≥ $100k"
+        "🚀 PUMP/💥 DUMP ≥ ±5% in 1H\n"
+        "💧 Liquidazioni ≥ $100k"
     )
     await update.message.reply_text(text, parse_mode="Markdown")
 
+
+# ══════════════════════════════════════════════════════════════════════════════
+# /status
+# ══════════════════════════════════════════════════════════════════════════════
 
 async def status_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     bot_data = context.bot_data
@@ -282,36 +280,39 @@ async def status_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     key = os.getenv("BYBIT_API_KEY", "")
     secret = os.getenv("BYBIT_API_SECRET", "")
-    tok = os.getenv("TELEGRAM_TOKEN", "")
+    token = os.getenv("TELEGRAM_TOKEN", "")
     chat_id = os.getenv("CHAT_ID", "—")
 
     text = (
         "🤖 *FUNDING KING BOT — Status*\n\n"
         "━━━━━━━━━━━━━━━━━━━━━\n"
         "🔌 *Connessioni*\n"
-        f"  Telegram: {'✅' if tok else '❌'}\n"
+        f"  Telegram: {'✅' if token else '❌'}\n"
         f"  Bybit API: {'✅' if has_creds else '❌ Credenziali mancanti'}\n\n"
         "🔑 *Credenziali*\n"
-        f"  Token: `{_mask(tok)}`\n"
+        f"  Token: `{_mask(token)}`\n"
         f"  Chat ID: `{chat_id}`\n"
         f"  API Key: `{_mask(key) if key else '⚠️ non impostata'}`\n"
         f"  API Secret: `{_mask(secret) if secret else '⚠️ non impostato'}`\n\n"
         "⚙️ *Bot*\n"
         f"  Stato: {'✅ Attivo' if monitoring else '⏸ In attesa'}\n"
-        "  Modalità: 🔔 *ALERT ONLY*\n"
         f"  Simboli monitorati: {symbols_count}\n"
         f"  Uptime: {uptime_str}\n"
         f"  Alert inviati: {alerts_sent}\n\n"
         "🕐 *Ultimo ciclo*\n"
         f"  {last_cycle}\n\n"
-        "📡 *Simboli in alert ora*\n"
+        "📊 *Simboli in alert ora*\n"
         f"{alert_list}"
     )
     await update.message.reply_text(text, parse_mode="Markdown")
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+# /test
+# ══════════════════════════════════════════════════════════════════════════════
+
 async def test_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("ð Avvio test connessione Bybit...")
+    await update.message.reply_text("🔍 Avvio test connessione Bybit...")
     results = await bc.test_connection()
 
     p = results.get("public", {})
@@ -321,19 +322,19 @@ async def test_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     total_ms = sum(r.get("latency_ms", 0) for r in results.values() if r.get("latency_ms", 0) > 0)
 
     pub_line = (
-        f"â OK â {p['latency_ms']} ms â {p.get('symbols', '?')} simboli"
+        f"✅ OK — {p['latency_ms']} ms — {p.get('symbols', '?')} simboli"
         if p.get("ok") else
-        f"â FAIL â {p.get('error', '?')} ({p.get('latency_ms', '?')} ms)"
+        f"❌ FAIL — {p.get('error', '?')} ({p.get('latency_ms', '?')} ms)"
     )
     auth_line = (
-        f"â OK â {a['latency_ms']} ms â Equity: ${a.get('equity', 0):,.2f}"
+        f"✅ OK — {a['latency_ms']} ms — Equity: ${a.get('equity', 0):,.2f}"
         if a.get("ok") else
-        f"â FAIL â {a.get('error', '?')} ({a.get('latency_ms', '?')} ms)"
+        f"❌ FAIL — {a.get('error', '?')} ({a.get('latency_ms', '?')} ms)"
     )
     pos_line = (
-        f"â OK â {pos['latency_ms']} ms â {pos.get('open', 0)} posizioni aperte"
+        f"✅ OK — {pos['latency_ms']} ms — {pos.get('open', 0)} posizioni aperte"
         if pos.get("ok") else
-        f"â FAIL â {pos.get('error', '?')}"
+        f"❌ FAIL — {pos.get('error', '?')}"
     )
     # Aggiungi dettaglio per-categoria se ci sono errori
     detail = pos.get("detail", {})
@@ -343,30 +344,30 @@ async def test_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
             code = d.get("retCode", "?")
             msg  = d.get("retMsg", d.get("error", ""))
             nz   = d.get("nonzero", 0)
-            icon = "â" if code == 0 else "â ï¸"
+            icon = "✅" if code == 0 else "⚠️"
             detail_lines.append(f"   {icon} [{lbl}] code={code} pos={nz} {msg[:40] if msg else ''}")
     pos_detail_str = "\n" + "\n".join(detail_lines) if detail_lines else ""
 
     all_ok = p.get("ok") and a.get("ok") and pos.get("ok")
-    summary = "â Tutti i test superati" if all_ok else "â ï¸ Alcuni test falliti"
+    summary = "✅ Tutti i test superati" if all_ok else "⚠️ Alcuni test falliti"
 
     text = (
-        f"ð§ *TEST CONNESSIONE BYBIT*\n\n"
-        f"1ï¸â£ API Pubblica\n   {pub_line}\n\n"
-        f"2ï¸â£ API Autenticata\n   {auth_line}\n\n"
-        f"3ï¸â£ Posizioni\n   {pos_line}{pos_detail_str}\n\n"
-        f"â± Tempo totale: {total_ms} ms\n"
+        f"🔧 *TEST CONNESSIONE BYBIT*\n\n"
+        f"1️⃣ API Pubblica\n   {pub_line}\n\n"
+        f"2️⃣ API Autenticata\n   {auth_line}\n\n"
+        f"3️⃣ Posizioni\n   {pos_line}{pos_detail_str}\n\n"
+        f"⏱ Tempo totale: {total_ms} ms\n"
         f"{summary}"
     )
     await update.message.reply_text(text, parse_mode="Markdown")
 
 
-# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+# ══════════════════════════════════════════════════════════════════════════════
 # /funding_top & /funding_bottom
-# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+# ══════════════════════════════════════════════════════════════════════════════
 
 async def funding_top(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("ð Recupero funding positivi...")
+    await update.message.reply_text("📊 Recupero funding positivi...")
     tickers = await bc.get_funding_tickers()
     tickers_sorted = sorted(
         tickers,
@@ -378,17 +379,17 @@ async def funding_top(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Nessun dato disponibile.")
         return
 
-    lines = ["ð *TOP 10 FUNDING POSITIVI (SHORT)*\n"]
+    lines = ["📈 *TOP 10 FUNDING POSITIVI (SHORT)*\n"]
     for i, t in enumerate(tickers_sorted, 1):
         rate = float(t.get("fundingRate", 0)) * 100
         interval = t.get("fundingIntervalHour", "?")
-        lines.append(f"{i}. `{t['symbol']}` â *{rate:+.4f}%* ogni {interval}H")
+        lines.append(f"{i}. `{t['symbol']}` → *{rate:+.4f}%* ogni {interval}H")
 
     await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
 
 
 async def funding_bottom(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("ð Recupero funding negativi...")
+    await update.message.reply_text("📊 Recupero funding negativi...")
     tickers = await bc.get_funding_tickers()
     tickers_sorted = sorted(
         tickers,
@@ -399,18 +400,18 @@ async def funding_bottom(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Nessun dato disponibile.")
         return
 
-    lines = ["ð *TOP 10 FUNDING NEGATIVI (LONG)*\n"]
+    lines = ["📉 *TOP 10 FUNDING NEGATIVI (LONG)*\n"]
     for i, t in enumerate(tickers_sorted, 1):
         rate = float(t.get("fundingRate", 0)) * 100
         interval = t.get("fundingIntervalHour", "?")
-        lines.append(f"{i}. `{t['symbol']}` â *{rate:+.4f}%* ogni {interval}H")
+        lines.append(f"{i}. `{t['symbol']}` → *{rate:+.4f}%* ogni {interval}H")
 
     await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
 
 
-# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+# ══════════════════════════════════════════════════════════════════════════════
 # /storico <SIMBOLO>
-# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+# ══════════════════════════════════════════════════════════════════════════════
 
 async def storico(update: Update, context: ContextTypes.DEFAULT_TYPE):
     args = context.args
@@ -418,30 +419,30 @@ async def storico(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Uso: /storico BTCUSDT")
         return
     symbol = args[0].upper()
-    await update.message.reply_text(f"ð Storico funding {symbol}...")
+    await update.message.reply_text(f"📊 Storico funding {symbol}...")
 
     history = await bc.get_funding_history(symbol, limit=8)
     if not history:
         await update.message.reply_text(f"Nessun dato per {symbol}.")
         return
 
-    lines = [f"ð *STORICO FUNDING â {symbol}*\n"]
+    lines = [f"📅 *STORICO FUNDING — {symbol}*\n"]
     for entry in history:
         rate = float(entry.get("fundingRate", 0)) * 100
         ts = int(entry.get("fundingRateTimestamp", 0)) // 1000
         dt = datetime.fromtimestamp(ts, tz=TZ_IT).strftime("%d/%m %H:%M")
-        emoji = "ð¢" if rate >= 0 else "ð´"
-        lines.append(f"{emoji} {dt} â *{rate:+.4f}%*")
+        emoji = "🟢" if rate >= 0 else "🔴"
+        lines.append(f"{emoji} {dt} → *{rate:+.4f}%*")
 
     await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
 
 
-# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-# /storico7g <SIMBOLO> â Storico 7 giorni con mini-chart e statistiche
-# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+# ══════════════════════════════════════════════════════════════════════════════
+# /storico7g <SIMBOLO> — Storico 7 giorni con mini-chart e statistiche
+# ══════════════════════════════════════════════════════════════════════════════
 
 # Blocchi unicode per il mini-chart (8 livelli: da quasi zero a massimo)
-_BARS = " ââââââââ"
+_BARS = " ▁▂▃▄▅▆▇█"
 
 
 def _spark(values: list[float]) -> str:
@@ -459,17 +460,17 @@ def _spark(values: list[float]) -> str:
 
 
 def _trend_emoji(rates: list[float]) -> str:
-    """Freccia di tendenza basata sul confronto prima metÃ  vs seconda metÃ ."""
+    """Freccia di tendenza basata sul confronto prima metà vs seconda metà."""
     if len(rates) < 4:
-        return "â¡ï¸"
+        return "➡️"
     mid   = len(rates) // 2
     first = sum(abs(r) for r in rates[:mid]) / mid
     last  = sum(abs(r) for r in rates[mid:]) / (len(rates) - mid)
     if last > first * 1.1:
-        return "ð"
+        return "📈"
     if last < first * 0.9:
-        return "ð"
-    return "â¡ï¸"
+        return "📉"
+    return "➡️"
 
 
 async def storico7g(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -482,24 +483,24 @@ async def storico7g(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     symbol = args[0].upper()
-    await update.message.reply_text(f"ð Recupero storico 7 giorni â *{symbol}*...", parse_mode="Markdown")
+    await update.message.reply_text(f"📅 Recupero storico 7 giorni — *{symbol}*...", parse_mode="Markdown")
 
     history = await bc.get_funding_history_7d(symbol)
     if not history:
         await update.message.reply_text(
-            f"â Nessun dato trovato per `{symbol}`.\n"
+            f"❌ Nessun dato trovato per `{symbol}`.\n"
             "Controlla che il simbolo sia corretto (es. `BTCUSDT`).",
             parse_mode="Markdown",
         )
         return
 
-    # Ordina dal meno recente al piÃ¹ recente per il chart
+    # Ordina dal meno recente al più recente per il chart
     entries = sorted(history, key=lambda e: int(e.get("fundingRateTimestamp", 0)))
     rates   = [float(e.get("fundingRate", 0)) * 100 for e in entries]
     abs_rates = [abs(r) for r in rates]
     timestamps = [int(e.get("fundingRateTimestamp", 0)) // 1000 for e in entries]
 
-    # ââ Statistiche globali âââââââââââââââââââââââââââââââââââââââââââââââââââ
+    # ── Statistiche globali ───────────────────────────────────────────────────
     avg_rate  = sum(rates) / len(rates)
     avg_abs   = sum(abs_rates) / len(abs_rates)
     max_rate  = max(rates)
@@ -508,7 +509,7 @@ async def storico7g(update: Update, context: ContextTypes.DEFAULT_TYPE):
     min_idx   = rates.index(min_rate)
     max_dt    = datetime.fromtimestamp(timestamps[max_idx], tz=TZ_IT).strftime("%d/%m %H:%M")
     min_dt    = datetime.fromtimestamp(timestamps[min_idx], tz=TZ_IT).strftime("%d/%m %H:%M")
-    last_rate = rates[-1]  # piÃ¹ recente
+    last_rate = rates[-1]  # più recente
     trend     = _trend_emoji(rates)
 
     # Conta cicli positivi vs negativi
@@ -516,7 +517,7 @@ async def storico7g(update: Update, context: ContextTypes.DEFAULT_TYPE):
     neg_count = sum(1 for r in rates if r < 0)
     neu_count = len(rates) - pos_count - neg_count
 
-    # ââ Mini-chart (max 40 caratteri) âââââââââââââââââââââââââââââââââââââââââ
+    # ── Mini-chart (max 40 caratteri) ─────────────────────────────────────────
     # Raggruppa se ci sono troppi punti
     chart_values = abs_rates
     if len(chart_values) > 40:
@@ -525,7 +526,7 @@ async def storico7g(update: Update, context: ContextTypes.DEFAULT_TYPE):
         chart_values = [chart_values[int(i * step)] for i in range(40)]
     spark = _spark(chart_values)
 
-    # ââ Media per giorno ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+    # ── Media per giorno ──────────────────────────────────────────────────────
     from collections import defaultdict
     daily: dict[str, list[float]] = defaultdict(list)
     for rate, ts in zip(rates, timestamps):
@@ -538,15 +539,15 @@ async def storico7g(update: Update, context: ContextTypes.DEFAULT_TYPE):
         day_avg   = sum(day_rates) / len(day_rates)
         day_max   = max(day_rates)
         day_min   = min(day_rates)
-        emoji = "ð¢" if day_avg > 0.01 else ("ð´" if day_avg < -0.01 else "âª")
+        emoji = "🟢" if day_avg > 0.01 else ("🔴" if day_avg < -0.01 else "⚪")
         # Barra visiva proporzionale (max 10 caratteri)
         bar_len = min(10, max(1, int(abs(day_avg) / max(avg_abs, 0.001) * 10)))
-        bar = ("â" * bar_len).ljust(10)
+        bar = ("█" * bar_len).ljust(10)
         daily_lines.append(
             f"  {day}  {emoji} `{day_avg:+.4f}%`  |{bar}|  ({len(day_rates)} cicli)"
         )
 
-    # ââ Intervallo del simbolo ââââââââââââââââââââââââââââââââââââââââââââââââ
+    # ── Intervallo del simbolo ────────────────────────────────────────────────
     # Calcola intervallo medio dai timestamp
     if len(timestamps) >= 2:
         diffs = [(timestamps[i+1] - timestamps[i]) / 3600 for i in range(len(timestamps)-1)]
@@ -562,119 +563,119 @@ async def storico7g(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         interval_str = "?"
 
-    # ââ Composizione messaggio ââââââââââââââââââââââââââââââââââââââââââââââââ
+    # ── Composizione messaggio ────────────────────────────────────────────────
     lines = [
-        f"ð *STORICO 7 GIORNI â {symbol}* {trend}",
+        f"📅 *STORICO 7 GIORNI — {symbol}* {trend}",
         "",
         f"*Andamento funding (valore assoluto):*",
         f"`{spark}`",
-        f"  â max    â min",
+        f"  ↑ max    ↓ min",
         "",
-        "ð *Statistiche globali:*",
+        "📊 *Statistiche globali:*",
         f"  Media (signed):  `{avg_rate:+.4f}%`",
         f"  Media (assoluta):`{avg_abs:+.4f}%`",
         f"  Max:  `{max_rate:+.4f}%`  ({max_dt})",
         f"  Min:  `{min_rate:+.4f}%`  ({min_dt})",
         f"  Attuale (ultimo): `{last_rate:+.4f}%`",
         "",
-        f"  ð¢ Positivi: {pos_count}  ð´ Negativi: {neg_count}  âª Neutri: {neu_count}",
+        f"  🟢 Positivi: {pos_count}  🔴 Negativi: {neg_count}  ⚪ Neutri: {neu_count}",
         "",
-        "ð *Media giornaliera:*",
+        "📆 *Media giornaliera:*",
     ] + daily_lines + [
         "",
-        f"â± Intervallo: {interval_str}  |  Cicli analizzati: {len(rates)}",
+        f"⏱ Intervallo: {interval_str}  |  Cicli analizzati: {len(rates)}",
     ]
 
     # Telegram ha limite 4096 caratteri per messaggio
     msg = "\n".join(lines)
     if len(msg) > 4000:
         # Invia in due parti
-        split = lines.index("ð *Media giornaliera:*")
+        split = lines.index("📆 *Media giornaliera:*")
         await update.message.reply_text("\n".join(lines[:split]), parse_mode="Markdown")
         await update.message.reply_text("\n".join(lines[split:]), parse_mode="Markdown")
     else:
         await update.message.reply_text(msg, parse_mode="Markdown")
 
 
-# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+# ══════════════════════════════════════════════════════════════════════════════
 # /saldo
-# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+# ══════════════════════════════════════════════════════════════════════════════
 
 async def saldo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not _has_credentials():
-        await update.message.reply_text("â ï¸ Configura le credenziali con /start.")
+        await update.message.reply_text("⚠️ Configura le credenziali con /start.")
         return
-    await update.message.reply_text("ð¼ Recupero saldo...")
+    await update.message.reply_text("💼 Recupero saldo...")
 
     wallet = await bc.get_wallet_balance()
     if not wallet:
-        await update.message.reply_text("â Impossibile recuperare il saldo. Controlla le API key con /test.")
+        await update.message.reply_text("❌ Impossibile recuperare il saldo. Controlla le API key con /test.")
         return
 
-    pnl_emoji = "â" if wallet["totalPerpUPL"] >= 0 else "â"
+    pnl_emoji = "✅" if wallet["totalPerpUPL"] >= 0 else "❌"
     lines = [
-        "ð¼ *SALDO ACCOUNT â Bybit*\n",
+        "💼 *SALDO ACCOUNT — Bybit*\n",
         f"Equity totale:      `${wallet['totalEquity']:>12,.2f}`",
         f"Wallet balance:     `${wallet['totalWalletBalance']:>12,.2f}`",
         f"Margine disponibile:`${wallet['totalAvailableBalance']:>12,.2f}`",
         f"Margine impegnato:  `${wallet['totalInitialMargin']:>12,.2f}`",
         f"PnL aperto:         `${wallet['totalPerpUPL']:>+12,.2f}` {pnl_emoji}",
         "",
-        "ðª *Saldi per coin:*",
+        "🪙 *Saldi per coin:*",
     ]
     for c in wallet["coins"]:
-        lines.append(f"  {c['coin']}: `{c['walletBalance']:,.4f}` (â ${c['usdValue']:,.2f})")
+        lines.append(f"  {c['coin']}: `{c['walletBalance']:,.4f}` (≈ ${c['usdValue']:,.2f})")
 
     await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
 
 
-# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+# ══════════════════════════════════════════════════════════════════════════════
 # /posizioni
-# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+# ══════════════════════════════════════════════════════════════════════════════
 
 async def posizioni(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not _has_credentials():
-        await update.message.reply_text("â ï¸ Configura le credenziali con /start.")
+        await update.message.reply_text("⚠️ Configura le credenziali con /start.")
         return
-    await update.message.reply_text("ð Recupero posizioni...")
+    await update.message.reply_text("📋 Recupero posizioni...")
 
     positions = await bc.get_positions()
     if not positions:
         # Esegui diagnostica veloce per capire il motivo
         diag = await bc.test_positions_api()
-        diag_lines = ["ð­ *Nessuna posizione aperta trovata.*"]
+        diag_lines = ["📭 *Nessuna posizione aperta trovata.*"]
         diag_lines.append("")
-        diag_lines.append("ð *Diagnostica API:*")
+        diag_lines.append("🔍 *Diagnostica API:*")
         all_ok = True
         for lbl, d in diag.items():
             if isinstance(d, dict):
                 code = d.get("retCode", "?")
                 msg  = d.get("retMsg", d.get("error", ""))
                 nz   = d.get("nonzero", 0)
-                icon = "â" if code == 0 else "â ï¸"
+                icon = "✅" if code == 0 else "⚠️"
                 if code != 0:
                     all_ok = False
-                diag_lines.append(f"  {icon} `{lbl}` â code={code}, pos={nz}")
+                diag_lines.append(f"  {icon} `{lbl}` — code={code}, pos={nz}")
                 if code != 0 and msg:
                     diag_lines.append(f"     _{msg[:60]}_")
         if all_ok:
             diag_lines.append("")
-            diag_lines.append("â¹ï¸ L'API risponde correttamente â le posizioni sono realmente vuote su questo account.")
-            diag_lines.append("ð¡ Se hai posizioni aperte, verifica che le API Key appartengano all'account corretto.")
+            diag_lines.append("ℹ️ L'API risponde correttamente — le posizioni sono realmente vuote su questo account.")
+            diag_lines.append("💡 Se hai posizioni aperte, verifica che le API Key appartengano all'account corretto.")
         await update.message.reply_text("\n".join(diag_lines), parse_mode="Markdown")
         return
 
-    lines = ["ð *POSIZIONI APERTE â Bybit*\n"]
+    lines = ["📋 *POSIZIONI APERTE — Bybit*\n"]
     total_pnl = 0.0
 
     for i, p in enumerate(positions, 1):
-        side_emoji = "ð¢" if p["side"] == "Buy" else "ð´"
+        side_emoji = "🟢" if p["side"] == "Buy" else "🔴"
         direction = "LONG" if p["side"] == "Buy" else "SHORT"
         pnl = p["unrealisedPnl"]
         pnl_pct = p["pnlPct"]
         total_pnl += pnl
-        pnl_emoji = "â" if pnl >= 0 else "â"
-        status = "â ï¸ Liquidazione!" if p["positionStatus"] == "Liq" else ""
+        pnl_emoji = "✅" if pnl >= 0 else "❌"
+        status = "⚠️ Liquidazione!" if p["positionStatus"] == "Liq" else ""
 
         block = [
             f"{i}) *{p['symbol']}* {side_emoji} {direction} x{p['leverage']}",
@@ -691,16 +692,16 @@ async def posizioni(update: Update, context: ContextTypes.DEFAULT_TYPE):
         block.append("")
         lines.extend(block)
 
-    total_emoji = "â" if total_pnl >= 0 else "â"
-    lines.append(f"âââââââââââââââââââââ")
+    total_emoji = "✅" if total_pnl >= 0 else "❌"
+    lines.append(f"─────────────────────")
     lines.append(f"Totale PnL aperto: `{total_pnl:+,.2f} $` {total_emoji}")
 
     await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
 
 
-# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+# ══════════════════════════════════════════════════════════════════════════════
 # Watchlist persistente: /watch /unwatch /mute /unmute /watchlist /alerts
-# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+# ══════════════════════════════════════════════════════════════════════════════
 
 # Cache simboli validi Bybit (aggiornata al primo uso)
 _known_symbols: set[str] = set()
@@ -732,24 +733,24 @@ async def watch_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if valid:
         added = wm.add_symbols(valid)
         wl    = wm.get_watchlist()
-        lines = [f"â *Watchlist aggiornata* ({len(wl)} simboli)\n"]
+        lines = [f"✅ *Watchlist aggiornata* ({len(wl)} simboli)\n"]
         for s in sorted(wl):
             alert_state = al._state.get(s, {}).get("level", "none")
-            badge = " ð´" if alert_state != "none" else ""
+            badge = " 🔴" if alert_state != "none" else ""
             custom = wm.get_all_custom_thresholds().get(s)
-            custom_tag = " âï¸" if custom else ""
-            muted = "ð" if s in wm.get_muted() else ""
-            lines.append(f"  â¢ `{s}`{badge}{custom_tag}{muted}")
+            custom_tag = " ⚙️" if custom else ""
+            muted = "🔇" if s in wm.get_muted() else ""
+            lines.append(f"  • `{s}`{badge}{custom_tag}{muted}")
     else:
         lines = []
 
     if unknown:
-        lines.append(f"\nâ ï¸ Non trovati su Bybit: `{'`, `'.join(unknown)}`")
+        lines.append(f"\n⚠️ Non trovati su Bybit: `{'`, `'.join(unknown)}`")
 
     if not valid and not unknown:
-        lines = ["â ï¸ Nessun simbolo valido specificato."]
+        lines = ["⚠️ Nessun simbolo valido specificato."]
 
-    lines.append("\n_âï¸ = soglie custom  ð´ = in alert  ð = silenziato_")
+    lines.append("\n_⚙️ = soglie custom  🔴 = in alert  🔇 = silenziato_")
     await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
 
 
@@ -765,7 +766,7 @@ async def unwatch_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if context.args[0].lower() == "all":
         wm.clear_watchlist()
         await update.message.reply_text(
-            "â Watchlist svuotata. Il bot monitora ora *tutti* i simboli.",
+            "✅ Watchlist svuotata. Il bot monitora ora *tutti* i simboli.",
             parse_mode="Markdown",
         )
         return
@@ -777,15 +778,15 @@ async def unwatch_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     lines = []
     if removed:
-        lines.append(f"â Rimossi: `{'`, `'.join(removed)}`")
+        lines.append(f"✅ Rimossi: `{'`, `'.join(removed)}`")
     if not_found:
-        lines.append(f"â ï¸ Non erano in watchlist: `{'`, `'.join(not_found)}`")
+        lines.append(f"⚠️ Non erano in watchlist: `{'`, `'.join(not_found)}`")
 
     wl = wm.get_watchlist()
     if wl:
         lines.append(f"\nWatchlist: {', '.join(f'`{s}`' for s in sorted(wl))}")
     else:
-        lines.append("\nWatchlist vuota â monitor *tutti* i simboli.")
+        lines.append("\nWatchlist vuota — monitor *tutti* i simboli.")
 
     await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
 
@@ -794,9 +795,9 @@ async def mute_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
         muted = wm.get_muted()
         msg = (
-            f"ð *Simboli silenziati:* {', '.join(f'`{s}`' for s in sorted(muted))}"
+            f"🔇 *Simboli silenziati:* {', '.join(f'`{s}`' for s in sorted(muted))}"
             if muted else
-            "ð *Nessun simbolo silenziato.*\n*Uso:* `/mute BTCUSDT`"
+            "🔇 *Nessun simbolo silenziato.*\n*Uso:* `/mute BTCUSDT`"
         )
         await update.message.reply_text(msg, parse_mode="Markdown")
         return
@@ -807,9 +808,9 @@ async def mute_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     lines = []
     if added:
-        lines.append(f"ð Silenziati: `{'`, `'.join(added)}`")
+        lines.append(f"🔇 Silenziati: `{'`, `'.join(added)}`")
     if unknown:
-        lines.append(f"â ï¸ Non trovati: `{'`, `'.join(unknown)}`")
+        lines.append(f"⚠️ Non trovati: `{'`, `'.join(unknown)}`")
     await update.message.reply_text("\n".join(lines) or "Nessun simbolo modificato.", parse_mode="Markdown")
 
 
@@ -822,9 +823,9 @@ async def unmute_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     removed = wm.unmute_symbols(symbols)
     lines   = []
     if removed:
-        lines.append(f"ð Riattivati: `{'`, `'.join(removed)}`")
+        lines.append(f"🔔 Riattivati: `{'`, `'.join(removed)}`")
     else:
-        lines.append("â ï¸ Nessuno di questi simboli era silenziato.")
+        lines.append("⚠️ Nessuno di questi simboli era silenziato.")
     await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
 
 
@@ -841,14 +842,14 @@ async def watchlist_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         for s in sorted(wl):
             alert_state = al._state.get(s, {}).get("level", "none")
             badges = []
-            if s in muted:                    badges.append("ð")
-            if alert_state != "none":         badges.append(f"ð´{alert_state.upper()}")
-            if s in custom:                   badges.append("âï¸")
+            if s in muted:                    badges.append("🔇")
+            if alert_state != "none":         badges.append(f"🔴{alert_state.upper()}")
+            if s in custom:                   badges.append("⚙️")
             badge_str = "  " + " ".join(badges) if badges else ""
-            wl_lines.append(f"  â¢ `{s}`{badge_str}")
+            wl_lines.append(f"  • `{s}`{badge_str}")
         wl_section = "\n".join(wl_lines)
     else:
-        wl_section = "  _(tutti i simboli Bybit â nessun filtro)_"
+        wl_section = "  _(tutti i simboli Bybit — nessun filtro)_"
 
     # Sezione muted
     muted_section = (
@@ -862,24 +863,24 @@ async def watchlist_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         custom_lines = []
         for sym, levels in sorted(custom.items()):
             parts = [f"{lvl}: {val}%" for lvl, val in sorted(levels.items())]
-            custom_lines.append(f"  `{sym}` â {', '.join(parts)}")
+            custom_lines.append(f"  `{sym}` — {', '.join(parts)}")
         custom_section = "\n".join(custom_lines)
     else:
         custom_section = "  _(usa soglie globali per tutti)_"
 
     text = (
-        f"ð¯ *WATCHLIST â ModalitÃ : {mode}*\n\n"
-        f"ð¡ *Simboli monitorati:*\n{wl_section}\n\n"
-        f"ð *Silenziati:*\n{muted_section}\n\n"
-        f"âï¸ *Soglie custom:*\n{custom_section}\n\n"
+        f"🎯 *WATCHLIST — Modalità: {mode}*\n\n"
+        f"📡 *Simboli monitorati:*\n{wl_section}\n\n"
+        f"🔇 *Silenziati:*\n{muted_section}\n\n"
+        f"⚙️ *Soglie custom:*\n{custom_section}\n\n"
         f"_Usa /watch, /unwatch, /mute, /unmute, /alerts_"
     )
     await update.message.reply_text(text, parse_mode="Markdown")
 
 
-# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-# /alerts â Gestione soglie custom per simbolo
-# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+# ══════════════════════════════════════════════════════════════════════════════
+# /alerts — Gestione soglie custom per simbolo
+# ══════════════════════════════════════════════════════════════════════════════
 
 _LEVEL_NAMES = {
     "hard": "HARD (default 2.00%)",
@@ -893,10 +894,10 @@ _LEVEL_NAMES = {
 async def alerts_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     Uso:
-      /alerts                          â mostra tutte le soglie custom
-      /alerts BTCUSDT                  â mostra soglie per il simbolo
-      /alerts BTCUSDT high 1.5         â imposta HIGH a 1.5% per BTC
-      /alerts BTCUSDT reset            â riporta BTC ai default globali
+      /alerts                          — mostra tutte le soglie custom
+      /alerts BTCUSDT                  — mostra soglie per il simbolo
+      /alerts BTCUSDT high 1.5         — imposta HIGH a 1.5% per BTC
+      /alerts BTCUSDT reset            — riporta BTC ai default globali
     """
     args = context.args
 
@@ -905,25 +906,25 @@ async def alerts_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         custom = wm.get_all_custom_thresholds()
         if not custom:
             await update.message.reply_text(
-                "â¹ï¸ *Nessuna soglia custom impostata.*\n\n"
+                "ℹ️ *Nessuna soglia custom impostata.*\n\n"
                 "Tutti i simboli usano le soglie globali:\n"
-                "  ð´ HARD: 2.00%\n"
-                "  ð¥ EXTREME: 1.50%\n"
-                "  ð¨ HIGH: 1.00%\n"
-                "  â¹ï¸ CHIUSURA: 0.23%\n"
-                "  â RIENTRO: 0.75%\n\n"
+                "  🔴 HARD: 2.00%\n"
+                "  🔥 EXTREME: 1.50%\n"
+                "  🚨 HIGH: 1.00%\n"
+                "  ℹ️ CHIUSURA: 0.23%\n"
+                "  ✅ RIENTRO: 0.75%\n\n"
                 "*Uso:* `/alerts BTCUSDT high 1.5`\n"
                 "*Reset:* `/alerts BTCUSDT reset`",
                 parse_mode="Markdown",
             )
             return
 
-        lines = ["âï¸ *SOGLIE CUSTOM ATTIVE*\n"]
+        lines = ["⚙️ *SOGLIE CUSTOM ATTIVE*\n"]
         for sym, levels in sorted(custom.items()):
             lines.append(f"*{sym}*")
             for lvl, val in sorted(levels.items()):
                 default = {"hard": 2.0, "extreme": 1.5, "high": 1.0, "close_tip": 0.23, "rientro": 0.75}.get(lvl, 0)
-                arrow = "â" if val > default else "â"
+                arrow = "↑" if val > default else "↓"
                 lines.append(f"  {lvl}: `{val}%` {arrow} _(default: {default}%)_")
         lines.append("\n_/alerts SIMBOLO reset per tornare ai default_")
         await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
@@ -937,7 +938,7 @@ async def alerts_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if len(args) == 2 and args[1].lower() == "reset":
         wm.remove_custom_thresholds(symbol)
         await update.message.reply_text(
-            f"â Soglie di `{symbol}` ripristinate ai valori globali.",
+            f"✅ Soglie di `{symbol}` ripristinate ai valori globali.",
             parse_mode="Markdown",
         )
         return
@@ -946,10 +947,10 @@ async def alerts_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if len(args) == 1:
         custom = wm.get_all_custom_thresholds().get(symbol, {})
         defaults = {"hard": 2.0, "extreme": 1.5, "high": 1.0, "close_tip": 0.23, "rientro": 0.75}
-        lines = [f"âï¸ *Soglie per {symbol}*\n"]
+        lines = [f"⚙️ *Soglie per {symbol}*\n"]
         for lvl, default in defaults.items():
             val = custom.get(lvl, default)
-            tag = " _âï¸ custom_" if lvl in custom else " _default_"
+            tag = " _⚙️ custom_" if lvl in custom else " _default_"
             lines.append(f"  {lvl}: `{val}%`{tag}")
         lines.append(f"\n*Uso:* `/alerts {symbol} high 1.5`")
         await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
@@ -962,14 +963,14 @@ async def alerts_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
             value = float(args[2].replace(",", "."))
         except ValueError:
             await update.message.reply_text(
-                f"â Valore non valido: `{args[2]}`\nUsa un numero (es. 1.5)",
+                f"❌ Valore non valido: `{args[2]}`\nUsa un numero (es. 1.5)",
                 parse_mode="Markdown",
             )
             return
 
         if value <= 0 or value > 10:
             await update.message.reply_text(
-                "â Il valore deve essere tra 0 e 10.",
+                "❌ Il valore deve essere tra 0 e 10.",
                 parse_mode="Markdown",
             )
             return
@@ -978,33 +979,33 @@ async def alerts_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not ok:
             levels_str = ", ".join(f"`{l}`" for l in _LEVEL_NAMES)
             await update.message.reply_text(
-                f"â Livello `{level}` non valido.\nLivelli disponibili: {levels_str}",
+                f"❌ Livello `{level}` non valido.\nLivelli disponibili: {levels_str}",
                 parse_mode="Markdown",
             )
             return
 
         default = {"hard": 2.0, "extreme": 1.5, "high": 1.0, "close_tip": 0.23, "rientro": 0.75}.get(level, 0)
-        arrow = "â piÃ¹ restrittivo" if value > default else "â piÃ¹ sensibile"
+        arrow = "↑ più restrittivo" if value > default else "↓ più sensibile"
         await update.message.reply_text(
-            f"â Soglia custom impostata:\n"
-            f"  `{symbol}` â {level}: `{value}%` ({arrow}, default: {default}%)",
+            f"✅ Soglia custom impostata:\n"
+            f"  `{symbol}` — {level}: `{value}%` ({arrow}, default: {default}%)",
             parse_mode="Markdown",
         )
         return
 
     await update.message.reply_text(
         "*Uso:*\n"
-        "`/alerts` â riepilogo globale\n"
-        "`/alerts BTCUSDT` â soglie del simbolo\n"
-        "`/alerts BTCUSDT high 1.5` â imposta soglia\n"
-        "`/alerts BTCUSDT reset` â ripristina default",
+        "`/alerts` — riepilogo globale\n"
+        "`/alerts BTCUSDT` — soglie del simbolo\n"
+        "`/alerts BTCUSDT high 1.5` — imposta soglia\n"
+        "`/alerts BTCUSDT reset` — ripristina default",
         parse_mode="Markdown",
     )
 
 
-# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+# ══════════════════════════════════════════════════════════════════════════════
 # Helper privati
-# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+# ══════════════════════════════════════════════════════════════════════════════
 
 def _mask(value: str) -> str:
     if not value or len(value) < 8:
@@ -1032,42 +1033,42 @@ def _set_env(key: str, value: str):
         f.writelines(lines)
 
 
-# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-# /top10 â Classifica unificata in tempo reale
-# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+# ══════════════════════════════════════════════════════════════════════════════
+# /top10 — Classifica unificata in tempo reale
+# ══════════════════════════════════════════════════════════════════════════════
 
 # Numero di simboli per lato (SHORT / LONG)
 _TOP_N = 10
 
-# Barra proporzionale (max 12 â)
+# Barra proporzionale (max 12 █)
 _BAR_MAX = 12
 
 
 def _rate_bar(rate_pct: float, max_abs: float) -> str:
-    """Genera una barra â proporzionale al rate rispetto al massimo della lista."""
+    """Genera una barra █ proporzionale al rate rispetto al massimo della lista."""
     if max_abs == 0:
-        return "â"
+        return "▏"
     length = max(1, int(abs(rate_pct) / max_abs * _BAR_MAX))
-    return "â" * length
+    return "█" * length
 
 
 def _level_badge(abs_rate: float) -> str:
     """Restituisce il badge di livello in base alle soglie fisse."""
     if abs_rate >= 2.00:
-        return "ð´HARD"
+        return "🔴HARD"
     if abs_rate >= 1.50:
-        return "ð¥EXT"
+        return "🔥EXT"
     if abs_rate >= 1.00:
-        return "ð¨HIGH"
+        return "🚨HIGH"
     if abs_rate >= 0.23:
-        return "â¹ï¸CHI"
-    return "âOK"
+        return "ℹ️CHI"
+    return "✅OK"
 
 
 def _settlement_label(next_ts_ms: int) -> str:
     """Restituisce il tempo mancante al prossimo settlement in formato leggibile."""
     if not next_ts_ms:
-        return "â"
+        return "—"
     import time
     minutes_left = (next_ts_ms - int(time.time() * 1000)) / 60000
     if minutes_left < 0:
@@ -1081,14 +1082,14 @@ def _settlement_label(next_ts_ms: int) -> str:
 
 async def top10(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
-    /top10 â Classifica dei 10 simboli con funding rate piÃ¹ estremi
+    /top10 — Classifica dei 10 simboli con funding rate più estremi
     per lato SHORT (positivi) e LONG (negativi), in tempo reale.
     """
-    msg = await update.message.reply_text("â³ Recupero dati in tempo reale...")
+    msg = await update.message.reply_text("⏳ Recupero dati in tempo reale...")
 
     tickers = await bc.get_funding_tickers()
     if not tickers:
-        await msg.edit_text("â Impossibile recuperare i dati da Bybit. Riprova.")
+        await msg.edit_text("❌ Impossibile recuperare i dati da Bybit. Riprova.")
         return
 
     # Parsing e ordinamento
@@ -1111,9 +1112,9 @@ async def top10(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except (ValueError, KeyError):
             continue
 
-    # Top 10 SHORT (rate piÃ¹ positivi)
+    # Top 10 SHORT (rate più positivi)
     shorts = sorted(parsed, key=lambda x: x["rate"], reverse=True)[:_TOP_N]
-    # Top 10 LONG  (rate piÃ¹ negativi)
+    # Top 10 LONG  (rate più negativi)
     longs  = sorted(parsed, key=lambda x: x["rate"])[:_TOP_N]
 
     max_short = abs(shorts[0]["rate"]) if shorts else 1
@@ -1121,12 +1122,12 @@ async def top10(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     now_dt = datetime.now(TZ_IT).strftime("%H:%M %Z")
 
-    # ââ Sezione SHORT âââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+    # ── Sezione SHORT ─────────────────────────────────────────────────────────
     short_lines = [
-        f"â¡ *TOP {_TOP_N} SHORT* (funding positivo)",
+        f"⚡ *TOP {_TOP_N} SHORT* (funding positivo)",
         f"_Aggiornato: {now_dt}_",
         "`#   Simbolo        Rate      Lvl   Next  24H`",
-        "`âââââââââââââââââââââââââââââââââââââââââââââ`",
+        "`─────────────────────────────────────────────`",
     ]
     for i, t in enumerate(shorts, 1):
         bar      = _rate_bar(t["rate"], max_short)
@@ -1136,15 +1137,15 @@ async def top10(update: Update, context: ContextTypes.DEFAULT_TYPE):
         interval = f"{t['interval_h']}H"
         short_lines.append(
             f"`{i:>2}.` *{t['symbol']:<12}* `{t['rate']:+.4f}%`\n"
-            f"     `{bar:<12}` {badge} Â· {interval} Â· {settle} Â· {p24h}"
+            f"     `{bar:<12}` {badge} · {interval} · {settle} · {p24h}"
         )
 
-    # ââ Sezione LONG ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+    # ── Sezione LONG ──────────────────────────────────────────────────────────
     long_lines = [
         "",
-        f"â¡ *TOP {_TOP_N} LONG* (funding negativo)",
+        f"⚡ *TOP {_TOP_N} LONG* (funding negativo)",
         "`#   Simbolo        Rate      Lvl   Next  24H`",
-        "`âââââââââââââââââââââââââââââââââââââââââââââ`",
+        "`─────────────────────────────────────────────`",
     ]
     for i, t in enumerate(longs, 1):
         bar      = _rate_bar(t["rate"], max_long)
@@ -1154,10 +1155,10 @@ async def top10(update: Update, context: ContextTypes.DEFAULT_TYPE):
         interval = f"{t['interval_h']}H"
         long_lines.append(
             f"`{i:>2}.` *{t['symbol']:<12}* `{t['rate']:+.4f}%`\n"
-            f"     `{bar:<12}` {badge} Â· {interval} Â· {settle} Â· {p24h}"
+            f"     `{bar:<12}` {badge} · {interval} · {settle} · {p24h}"
         )
 
-    # ââ Footer statistiche ââââââââââââââââââââââââââââââââââââââââââââââââââââ
+    # ── Footer statistiche ────────────────────────────────────────────────────
     total_sym   = len(parsed)
     extreme_sym = sum(1 for t in parsed if abs(t["rate"]) >= 1.0)
     hard_sym    = sum(1 for t in parsed if abs(t["rate"]) >= 2.0)
@@ -1165,15 +1166,15 @@ async def top10(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     footer = [
         "",
-        "âââââââââââââââââââââââââââââ",
-        f"ð *Mercato* â {total_sym} simboli monitorati",
-        f"   ð¨ â¥1%: {extreme_sym}   ð´ â¥2%: {hard_sym}   Media: {avg_abs:.4f}%",
+        "─────────────────────────────",
+        f"📊 *Mercato* — {total_sym} simboli monitorati",
+        f"   🚨 ≥1%: {extreme_sym}   🔴 ≥2%: {hard_sym}   Media: {avg_abs:.4f}%",
     ]
 
-    # ââ Invio ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+    # ── Invio ────────────────────────────────────────────────────────────────
     full_msg = "\n".join(short_lines + long_lines + footer)
 
-    # Telegram: max 4096 char â se supera split in 2
+    # Telegram: max 4096 char — se supera split in 2
     if len(full_msg) > 4000:
         part1 = "\n".join(short_lines + footer)
         part2 = "\n".join(long_lines[1:] + footer)  # [1:] salta riga vuota iniziale
@@ -1183,15 +1184,15 @@ async def top10(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await msg.edit_text(full_msg, parse_mode="Markdown")
 
 
-# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+# ══════════════════════════════════════════════════════════════════════════════
 # BACKTEST
-# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+# ══════════════════════════════════════════════════════════════════════════════
 
 async def backtest_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
-    /backtest <SYMBOL>         â Report completo su un simbolo (30gg)
-    /backtest top10            â Classifica top 10 simboli piÃ¹ volatili
-    /backtest watchlist        â Analizza tutti i simboli nella watchlist
+    /backtest <SYMBOL>         — Report completo su un simbolo (30gg)
+    /backtest top10            — Classifica top 10 simboli più volatili
+    /backtest watchlist        — Analizza tutti i simboli nella watchlist
 
     Esempi:
       /backtest SOLUSDT
@@ -1202,11 +1203,11 @@ async def backtest_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if not args:
         await update.message.reply_text(
-            "ð *BACKTEST â Uso corretto:*\n"
-            "âââââââââââââââââââââ\n"
-            "`/backtest SOLUSDT`       â Singolo simbolo\n"
-            "`/backtest top10`         â Top 10 piÃ¹ volatili\n"
-            "`/backtest watchlist`     â Tua watchlist\n\n"
+            "📊 *BACKTEST — Uso corretto:*\n"
+            "━━━━━━━━━━━━━━━━━━━━━\n"
+            "`/backtest SOLUSDT`       — Singolo simbolo\n"
+            "`/backtest top10`         — Top 10 più volatili\n"
+            "`/backtest watchlist`     — Tua watchlist\n\n"
             "_Simula profitti/perdite basati sugli alert del bot negli ultimi 30 giorni._\n"
             "_Include fee taker (0.055%) + slippage (0.02%) per lato._",
             parse_mode="Markdown",
@@ -1215,18 +1216,18 @@ async def backtest_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     subcmd = args[0].upper()
 
-    # ââ /backtest top10 âââââââââââââââââââââââââââââââââââââââââââââââââââ
+    # ── /backtest top10 ───────────────────────────────────────────────────
     if subcmd == "TOP10":
         wait_msg = await update.message.reply_text(
-            "â³ *Backtest top 10 simboliâ¦*\n"
-            "_Recupero dati 30gg da Bybit (puÃ² richiedere 30-60 secondi)_",
+            "⏳ *Backtest top 10 simboli…*\n"
+            "_Recupero dati 30gg da Bybit (può richiedere 30-60 secondi)_",
             parse_mode="Markdown",
         )
         try:
-            # Prendi i 10 simboli con funding rate assoluto piÃ¹ alto
+            # Prendi i 10 simboli con funding rate assoluto più alto
             tickers = await bc.get_funding_tickers()
             if not tickers:
-                await wait_msg.edit_text("â Impossibile recuperare i ticker da Bybit.")
+                await wait_msg.edit_text("❌ Impossibile recuperare i ticker da Bybit.")
                 return
 
             top_symbols = sorted(
@@ -1249,23 +1250,23 @@ async def backtest_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         except Exception as exc:
             logger.error("backtest top10: %s", exc)
-            await wait_msg.edit_text(f"â Errore durante il backtest: {exc}")
+            await wait_msg.edit_text(f"❌ Errore durante il backtest: {exc}")
         return
 
-    # ââ /backtest watchlist âââââââââââââââââââââââââââââââââââââââââââââââ
+    # ── /backtest watchlist ───────────────────────────────────────────────
     if subcmd == "WATCHLIST":
         symbols = list(wm.get_watchlist())
         if not symbols:
             await update.message.reply_text(
-                "â ï¸ La tua watchlist Ã¨ vuota.\n"
+                "⚠️ La tua watchlist è vuota.\n"
                 "Aggiungi simboli con `/watch BTCUSDT SOLUSDT`",
                 parse_mode="Markdown",
             )
             return
 
         wait_msg = await update.message.reply_text(
-            f"â³ *Backtest watchlist ({len(symbols)} simboli)â¦*\n"
-            f"_Recupero dati 30gg da Bybitâ¦_",
+            f"⏳ *Backtest watchlist ({len(symbols)} simboli)…*\n"
+            f"_Recupero dati 30gg da Bybit…_",
             parse_mode="Markdown",
         )
         try:
@@ -1281,18 +1282,18 @@ async def backtest_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         except Exception as exc:
             logger.error("backtest watchlist: %s", exc)
-            await wait_msg.edit_text(f"â Errore durante il backtest: {exc}")
+            await wait_msg.edit_text(f"❌ Errore durante il backtest: {exc}")
         return
 
-    # ââ /backtest SYMBOL ââââââââââââââââââââââââââââââââââââââââââââââââââ
+    # ── /backtest SYMBOL ──────────────────────────────────────────────────
     symbol = subcmd
     # Normalizza (aggiunge USDT se non presente)
     if not symbol.endswith("USDT") and not symbol.endswith("USDC"):
         symbol = symbol + "USDT"
 
     wait_msg = await update.message.reply_text(
-        f"â³ *Backtest {symbol}â¦*\n"
-        f"_Recupero {bt.DAYS_BACK} giorni di funding rate da Bybitâ¦_",
+        f"⏳ *Backtest {symbol}…*\n"
+        f"_Recupero {bt.DAYS_BACK} giorni di funding rate da Bybit…_",
         parse_mode="Markdown",
     )
 
@@ -1300,7 +1301,7 @@ async def backtest_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         entries = await bt.fetch_30d(symbol)
         if not entries:
             await wait_msg.edit_text(
-                f"â Nessun dato trovato per `{symbol}`.\n"
+                f"❌ Nessun dato trovato per `{symbol}`.\n"
                 f"Verifica che il simbolo esista su Bybit.",
                 parse_mode="Markdown",
             )
@@ -1318,17 +1319,17 @@ async def backtest_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     except Exception as exc:
         logger.error("backtest %s: %s", symbol, exc)
-        await wait_msg.edit_text(f"â Errore durante il backtest di {symbol}: {exc}")
+        await wait_msg.edit_text(f"❌ Errore durante il backtest di {symbol}: {exc}")
 
 
-# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+# ══════════════════════════════════════════════════════════════════════════════
 # Registrazione handlers
-# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+# ══════════════════════════════════════════════════════════════════════════════
 
 
-# âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+# ─────────────────────────────────────────────────────────────────────────────
 # /profitto_funding
-# âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+# ─────────────────────────────────────────────────────────────────────────────
 
 async def profitto_funding(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
@@ -1338,13 +1339,13 @@ async def profitto_funding(update: Update, context: ContextTypes.DEFAULT_TYPE):
     posizione aperta, mostra:
       - Rate dell'ultimo ciclo di funding
       - Guadagno/costo dell'ultimo ciclo
-      - Totale guadagno/costo da quando la posizione Ã¨ aperta
+      - Totale guadagno/costo da quando la posizione è aperta
     """
     if not _has_credentials(update.effective_chat.id):
-        await update.message.reply_text("â ï¸ Configura prima le tue API Key con /start")
+        await update.message.reply_text("⚠️ Configura prima le tue API Key con /start")
         return
 
-    await update.message.reply_text("ð¹ Recupero guadagni funding...")
+    await update.message.reply_text("💹 Recupero guadagni funding...")
 
     # Recupera posizioni aperte per arricchire il riepilogo
     try:
@@ -1358,29 +1359,29 @@ async def profitto_funding(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 
-# âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-# /rischio â Analisi rischio posizioni aperte
-# âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+# ═══════════════════════════════════════════════════════════════════════════════
+# /rischio — Analisi rischio posizioni aperte
+# ═══════════════════════════════════════════════════════════════════════════════
 async def rischio(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Analisi del rischio per ogni posizione aperta: distanza liquidazione, leverage, PnL%."""
     if not _has_credentials(update.effective_chat.id):
-        await update.message.reply_text("â ï¸ Configura prima le tue API Key con /start")
+        await update.message.reply_text("⚠️ Configura prima le tue API Key con /start")
         return
-    await update.message.reply_text("â ï¸ Analisi rischio in corso...")
+    await update.message.reply_text("⚠️ Analisi rischio in corso...")
     try:
         positions = await bc.get_positions()
     except Exception as e:
-        await update.message.reply_text(f"â Errore: {e}")
+        await update.message.reply_text(f"❌ Errore: {e}")
         return
     if not positions:
-        await update.message.reply_text("ð­ Nessuna posizione aperta.")
+        await update.message.reply_text("📭 Nessuna posizione aperta.")
         return
 
-    lines = ["â ï¸ *ANALISI RISCHIO POSIZIONI*", ""]
+    lines = ["⚠️ *ANALISI RISCHIO POSIZIONI*", ""]
     for p in positions:
         sym        = p.get("symbol", "")
         side_raw   = p.get("side", "Buy")
-        side       = "ð¢ LONG" if side_raw == "Buy" else "ð´ SHORT"
+        side       = "🟢 LONG" if side_raw == "Buy" else "🔴 SHORT"
         mark       = float(p.get("markPrice", 0))
         liq        = float(p.get("liqPrice", 0) or 0)
         lev        = float(p.get("leverage", 1) or 1)
@@ -1396,13 +1397,13 @@ async def rischio(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 dist_pct = (liq - mark) / mark * 100
             dist_pct = max(dist_pct, 0)
             if dist_pct < 5:
-                risk_emoji = "ð´ CRITICO"
+                risk_emoji = "🔴 CRITICO"
             elif dist_pct < 10:
-                risk_emoji = "ð  ALTO"
+                risk_emoji = "🟠 ALTO"
             elif dist_pct < 20:
-                risk_emoji = "ð¡ MEDIO"
+                risk_emoji = "🟡 MEDIO"
             else:
-                risk_emoji = "ð¢ BASSO"
+                risk_emoji = "🟢 BASSO"
             dist_str = f"{dist_pct:.1f}% ({risk_emoji})"
         else:
             dist_str = "N/D"
@@ -1418,20 +1419,20 @@ async def rischio(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
 
 
-# âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-# /summary â Riepilogo rapido portafoglio
-# âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+# ═══════════════════════════════════════════════════════════════════════════════
+# /summary — Riepilogo rapido portafoglio
+# ═══════════════════════════════════════════════════════════════════════════════
 async def summary(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Riepilogo rapido: wallet + posizioni aperte."""
     if not _has_credentials(update.effective_chat.id):
-        await update.message.reply_text("â ï¸ Configura prima le tue API Key con /start")
+        await update.message.reply_text("⚠️ Configura prima le tue API Key con /start")
         return
-    await update.message.reply_text("ð Calcolo summary...")
+    await update.message.reply_text("📊 Calcolo summary...")
     try:
         wallet    = await bc.get_wallet()
         positions = await bc.get_positions()
     except Exception as e:
-        await update.message.reply_text(f"â Errore: {e}")
+        await update.message.reply_text(f"❌ Errore: {e}")
         return
 
     equity  = wallet.get("equity", 0)
@@ -1449,32 +1450,32 @@ async def summary(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     now_it = datetime.now(TZ_IT).strftime("%d/%m/%Y %H:%M")
     lines = [
-        f"ð *SUMMARY PORTAFOGLIO â {now_it}*", "",
-        f"ð¼ Equity: `{equity:.2f} USDT`",
-        f"ðµ Disponibile: `{avail:.2f} USDT`",
-        f"ð Unrealised PnL: `{upnl:+.2f} USDT`",
-        f"ð° Realised PnL: `{rpnl:+.2f} USDT`",
-        f"ð Margine usato: `{margin:.2f} USDT`",
+        f"📊 *SUMMARY PORTAFOGLIO — {now_it}*", "",
+        f"💼 Equity: `{equity:.2f} USDT`",
+        f"💵 Disponibile: `{avail:.2f} USDT`",
+        f"📈 Unrealised PnL: `{upnl:+.2f} USDT`",
+        f"💰 Realised PnL: `{rpnl:+.2f} USDT`",
+        f"🔐 Margine usato: `{margin:.2f} USDT`",
         "",
-        f"ð Posizioni: `{len(positions)}` (ð¢ {n_long} LONG | ð´ {n_short} SHORT)",
-        f"ð PnL totale aperte: `{tot_upnl:+.2f} USDT`",
+        f"📂 Posizioni: `{len(positions)}` (🟢 {n_long} LONG | 🔴 {n_short} SHORT)",
+        f"📊 PnL totale aperte: `{tot_upnl:+.2f} USDT`",
     ]
     if best_sym:
         b_pnl = float(best_sym.get("unrealisedPnl", 0))
-        lines.append(f"ð Migliore: {best_sym.get('symbol')} `{b_pnl:+.2f} USDT`")
+        lines.append(f"🏆 Migliore: {best_sym.get('symbol')} `{b_pnl:+.2f} USDT`")
     if worst_sym:
         w_pnl = float(worst_sym.get("unrealisedPnl", 0))
-        lines.append(f"ð Peggiore: {worst_sym.get('symbol')} `{w_pnl:+.2f} USDT`")
+        lines.append(f"📉 Peggiore: {worst_sym.get('symbol')} `{w_pnl:+.2f} USDT`")
 
     await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
 
 
-# âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-# /newlistings â Nuovi listing con funding elevato
-# âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+# ═══════════════════════════════════════════════════════════════════════════════
+# /newlistings — Nuovi listing con funding elevato
+# ═══════════════════════════════════════════════════════════════════════════════
 async def newlistings(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Mostra nuovi listing (ultimi 30gg) con funding rate elevato."""
-    await update.message.reply_text("ð Recupero nuovi listing...")
+    await update.message.reply_text("🆕 Recupero nuovi listing...")
     try:
         tickers = await bc.get_funding_tickers()
         # Ordina per funding rate assoluto decrescente e prendi i top 20
@@ -1483,18 +1484,18 @@ async def newlistings(update: Update, context: ContextTypes.DEFAULT_TYPE):
                   "markPrice": t.get("lastPrice", 0), "price24hPcnt": float(t.get("price24hPcnt",0))*100,
                   "daysAgo": 0} for t in items]
     except Exception as e:
-        await update.message.reply_text(f"â Errore: {e}")
+        await update.message.reply_text(f"❌ Errore: {e}")
         return
 
     if not items:
-        await update.message.reply_text("ð­ Nessun nuovo listing trovato.")
+        await update.message.reply_text("📭 Nessun nuovo listing trovato.")
         return
 
     # Filtra per funding rate notevole o mostra tutti
     notable = [i for i in items if abs(float(i.get("fundingRate", 0))) >= 0.5]
     show = notable if notable else items[:10]
 
-    lines = [f"ð *NUOVI LISTING ({len(items)} totali, ultimi 30gg)*", ""]
+    lines = [f"🆕 *NUOVI LISTING ({len(items)} totali, ultimi 30gg)*", ""]
     for item in show[:15]:
         sym  = item.get("symbol", "")
         fr   = float(item.get("fundingRate", 0))
@@ -1502,96 +1503,89 @@ async def newlistings(update: Update, context: ContextTypes.DEFAULT_TYPE):
         mp   = float(item.get("markPrice", 0))
         pct  = float(item.get("price24hPcnt", 0))
         sign = "+" if fr >= 0 else ""
-        fr_badge = "ð¥" if abs(fr) >= 2.0 else "â¡" if abs(fr) >= 1.0 else "ð"
+        fr_badge = "🔥" if abs(fr) >= 2.0 else "⚡" if abs(fr) >= 1.0 else "📊"
         lines.append(
-            f"{fr_badge} *{sym}* â {days:.0f}gg fa\n"
+            f"{fr_badge} *{sym}* — {days:.0f}gg fa\n"
             f"  FR: `{sign}{fr:.4f}%` | Price: `{mp:.4f}` ({pct:+.2f}%)"
         )
     await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
 
 
-# âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-# /analytics â Metriche avanzate funding
-# âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+# ═══════════════════════════════════════════════════════════════════════════════
+# /analytics — Metriche avanzate funding
+# ═══════════════════════════════════════════════════════════════════════════════
 async def analytics_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Mostra posizioni aperte e storico alert recenti."""
-    await update.message.reply_text("📊 Carico dati...")
+    """Mostra analytics avanzate: win-rate per livello, Sharpe, Sortino, drawdown."""
+    await update.message.reply_text("📈 Calcolo analytics...")
     try:
-        # ── Posizioni aperte ──────────────────────────────────────────────
-        pos_data = await bc.get_positions()
-        positions = pos_data if isinstance(pos_data, list) else []
-
-        if positions:
-            pos_lines = []
-            total_upnl = 0.0
-            for p in positions:
-                sym   = p.get("symbol", "?")
-                side  = p.get("side", "?")
-                size  = p.get("size", 0)
-                upnl  = float(p.get("unrealisedPnl", 0))
-                pct   = float(p.get("unrealisedPnlPcnt", 0)) * 100
-                total_upnl += upnl
-                icon  = "🟢" if upnl >= 0 else "🔴"
-                pos_lines.append(
-                    f"  {icon} {sym} {side} {size} | uPnL: {upnl:+.2f}$ ({pct:+.2f}%)"
-                )
-            pos_text = "\n".join(pos_lines)
-            upnl_icon = "🟢" if total_upnl >= 0 else "🔴"
-            pos_section = (
-                f"📂 *Posizioni aperte ({len(positions)})*\n"
-                f"{pos_text}\n"
-                f"  {upnl_icon} uPnL totale: {total_upnl:+.2f}$"
-            )
-        else:
-            pos_section = "📂 *Posizioni aperte*\n  Nessuna posizione aperta"
-
-        # ── Alert recenti ─────────────────────────────────────────────────
-        active_alerts = al.get_all_states()
-        if active_alerts:
-            alert_lines = [
-                f"  • {sym} — {d['level'].upper()}"
-                for sym, d in list(active_alerts.items())[:15]
-            ]
-            alert_section = "📡 *Alert attivi ora*\n" + "\n".join(alert_lines)
-        else:
-            alert_section = "📡 *Alert attivi ora*\n  Nessuno"
-
-        text = (
-            "📊 *ANALYTICS — Posizioni & Alert*\n\n"
-            "━━━━━━━━━━━━━━━━━━━━━\n"
-            f"{pos_section}\n\n"
-            "━━━━━━━━━━━━━━━━━━━━━\n"
-            f"{alert_section}\n\n"
-            "🔔 _Modalità: ALERT ONLY — nessun trading attivo_"
-        )
-        await update.message.reply_text(text, parse_mode="Markdown")
-
+        tickers = await bc.get_funding_tickers()
+        data = {"ok": True, "total_records": len(tickers)}
     except Exception as e:
-        await update.message.reply_text(f"❌ Errore: {e}")
+        await update.message.reply_text(f"❌ Errore fetch dati: {e}")
+        return
+    if not tickers:
+        await update.message.reply_text("❌ Nessun dato disponibile")
+        return
+
+    total   = data.get("total_records", 0)
+    t_gain  = data.get("total_gain", 0)
+    wr      = data.get("win_rate", 0)
+    sharpe  = data.get("sharpe", 0)
+    sortino = data.get("sortino", 0)
+    dd      = data.get("max_drawdown", 0)
+    avg_g   = data.get("avg_gain", 0)
+    by_lvl  = data.get("by_level", {})
+
+    lines = [
+        "📈 *ANALYTICS AVANZATI — FUNDING KING*", "",
+        f"📊 Cicli registrati: `{total}`",
+        f"💰 Gain totale: `{t_gain:+.4f} USDT`",
+        f"✅ Win Rate globale: `{wr:.1f}%`",
+        f"📉 Max Drawdown: `{dd:.4f} USDT`",
+        f"📐 Sharpe Ratio: `{sharpe:.3f}`",
+        f"📐 Sortino Ratio: `{sortino:.3f}`",
+        f"📊 Avg Gain/ciclo: `{avg_g:+.4f} USDT`",
+        "",
+        "*Win Rate per livello:*",
+    ]
+
+    level_order = [("jackpot", "💎"), ("extreme", "🔥"), ("hard", "⚡"), ("high", "📊")]
+    for lvl, emoji in level_order:
+        d = by_lvl.get(lvl, {})
+        if d.get("count", 0) > 0:
+            lines.append(
+                f"  {emoji} {lvl.upper()}: `{d.get('win_rate', 0):.1f}%` "
+                f"({d.get('count', 0)} cicli | avg `{d.get('avg_gain', 0):+.4f}`)"
+            )
+
+    await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
 
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# /alert_config — Configura soglie alert
+# ═══════════════════════════════════════════════════════════════════════════════
 async def alert_config(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Mostra e permette di configurare le soglie di alert."""
     import alert_logic as _al
 
     lines = [
-        "âï¸ *CONFIGURAZIONE SOGLIE ALERT*", "",
+        "⚙️ *CONFIGURAZIONE SOGLIE ALERT*", "",
         "*Soglie globali:*",
-        f"  ð JACKPOT:  `> {_al.THR_JACKPOT:.2f}%`",
-        f"  ð¥ EXTREME:  `> {_al.THR_EXTREME:.2f}%`",
-        f"  â¡ HARD:     `> {_al.THR_HARD:.2f}%`",
-        f"  ð HIGH:     `> {_al.THR_HIGH:.2f}%`",
-        f"  â¬ï¸ CLOSE_TIP: `> {_al.THR_CLOSE_TIP:.2f}%`",
-        f"  â¬ï¸ RIENTRO:  `< {_al.RESET_THRESHOLD:.2f}%`",
+        f"  💎 JACKPOT:  `> {_al.THR_JACKPOT:.2f}%`",
+        f"  🔥 EXTREME:  `> {_al.THR_EXTREME:.2f}%`",
+        f"  ⚡ HARD:     `> {_al.THR_HARD:.2f}%`",
+        f"  📊 HIGH:     `> {_al.THR_HIGH:.2f}%`",
+        f"  ⬆️ CLOSE_TIP: `> {_al.THR_CLOSE_TIP:.2f}%`",
+        f"  ⬇️ RIENTRO:  `< {_al.RESET_THRESHOLD:.2f}%`",
         "",
         "Per modificare le soglie usa i parametri nel file .env:",
         "`THR_JACKPOT`, `THR_EXTREME`, `THR_HARD`, `THR_HIGH`",
         "",
         "*Alert liquidazione imminente:*",
-        "  ð´ Attivo quando distanza < 15% dal prezzo di liq.",
+        "  🔴 Attivo quando distanza < 15% dal prezzo di liq.",
         "",
         "*Per aggiungere soglie custom per simbolo:*",
-        "  `/alerts BTCUSDT` â mostra soglie correnti",
+        "  `/alerts BTCUSDT` — mostra soglie correnti",
     ]
 
     try:
@@ -1600,7 +1594,7 @@ async def alert_config(update: Update, context: ContextTypes.DEFAULT_TYPE):
         custom = _al.get_custom_thresholds() if hasattr(_al, 'get_custom_thresholds') else {}
         if custom:
             for sym, thr in list(custom.items())[:10]:
-                lines.append(f"  â¢ {sym}: `{thr:.2f}%`")
+                lines.append(f"  • {sym}: `{thr:.2f}%`")
         else:
             lines.append("  Nessuna soglia custom impostata")
     except:
@@ -1611,31 +1605,158 @@ async def alert_config(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 
-# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-# PARAMETRI DI RISCHIO â configurabili da /settings
-# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+# ══════════════════════════════════════════════════════════
+# PARAMETRI DI RISCHIO — configurabili da /settings
+# ══════════════════════════════════════════════════════════
 _risk_params = {
     "max_leverage":       10.0,   # leva massima consentita per trade
     "max_positions":      10,     # numero massimo posizioni simultanee
     "max_pct_per_trade":  5.0,    # % massima del capitale per singolo trade
 }
+
+async def rischio_settings(update, context):
+    """Mostra e modifica i parametri di rischio.
+    Uso:
+      /rischio_settings                      → mostra parametri
+      /rischio_settings max_leverage 15      → imposta leva max a 15x
+      /rischio_settings max_positions 8      → max 8 posizioni simultanee
+      /rischio_settings max_pct_per_trade 3  → max 3% capitale per trade
+    """
+    args = context.args
+
+    if not args:
+        r = _risk_params
+        lines = [
+            "⚙️ *PARAMETRI DI RISCHIO*\n",
+            f"  📊 Leverage massimo:      `{r['max_leverage']:.0f}x`",
+            f"  📂 Max posizioni simult.: `{r['max_positions']}`",
+            f"  💰 Max % capitale/trade:  `{r['max_pct_per_trade']:.1f}%`",
+            "",
+            "_Usa: /rischio\_settings <param> <valore>_",
+            "_Es:  /rischio\_settings max\_leverage 15_",
+        ]
+        await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
+        return
+
+    if len(args) < 2:
+        await update.message.reply_text("Uso: /rischio_settings <parametro> <valore>")
+        return
+
+    param = args[0].lower()
+    try:
+        value = float(args[1])
+    except ValueError:
+        await update.message.reply_text("❌ Valore non valido.")
+        return
+
+    valid = {"max_leverage", "max_positions", "max_pct_per_trade"}
+    if param not in valid:
+        await update.message.reply_text(
+            f"❌ Parametro sconosciuto: `{param}`\n"
+            f"Disponibili: max\_leverage, max\_positions, max\_pct\_per\_trade",
+            parse_mode="Markdown"
+        )
+        return
+
+    old = _risk_params[param]
+    if param == "max_positions":
+        _risk_params[param] = int(value)
+    else:
+        _risk_params[param] = value
+
+    await update.message.reply_text(
+        f"✅ *{param}* aggiornato\n"
+        f"  {old} → `{_risk_params[param]}`",
+        parse_mode="Markdown"
+    )
+
+
 def get_risk_params() -> dict:
     """Restituisce i parametri di rischio correnti."""
     return dict(_risk_params)
+
+
+
+
+# ───────────────────────────────────────────────────────────────────────────
+# CHIUSURA POSIZIONI — by Maintenance Margin e by PnL
+# ───────────────────────────────────────────────────────────────────────────
+
+async def cmd_chiudi_mm(update, context):
+    """Chiude posizioni con MM% sotto la soglia (/chiudi_mm [soglia%])"""
+    from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+    args = context.args
+    threshold = 15.0
+    if args:
+        try:
+            threshold = float(args[0])
+        except ValueError:
+            await update.message.reply_text("❌ Uso: /chiudi_mm [soglia%]\nEs: /chiudi_mm 10")
+            return
+    msg = await update.message.reply_text(
+        f"⏳ Chiusura posizioni con MM < {threshold}%…"
+    )
+    result = await close_positions_by_mm(threshold)
+    if not result["closed"] and not result["errors"]:
+        await msg.edit_text(f"✅ Nessuna posizione con MM < {threshold}%")
+        return
+    lines = [f"🔴 Chiusura posizioni MM < {threshold}%"]
+    for r in result["closed"]:
+        lines.append(f"  ✅ {r['symbol']} {r['side']} — MM {r['mm_pct']:.1f}%")
+    for e in result["errors"]:
+        lines.append(f"  ❌ {e['symbol']}: {e['error']}")
+    await msg.edit_text("\n".join(lines))
+
+
+async def cmd_chiudi_pnl(update, context):
+    """Chiude posizioni in base al PnL totale (/chiudi_pnl [soglia_negativa] [soglia_positiva])"""
+    args = context.args
+    neg_threshold = -5.0   # chiudi se PnL totale < -5 USDT
+    pos_threshold = None   # opzionale: chiudi se PnL totale > X USDT
+    if len(args) >= 1:
+        try:
+            neg_threshold = float(args[0])
+        except ValueError:
+            await update.message.reply_text(
+                "❌ Uso: /chiudi_pnl [soglia_neg] [soglia_pos]\nEs: /chiudi_pnl -10 50"
+            )
+            return
+    if len(args) >= 2:
+        try:
+            pos_threshold = float(args[1])
+        except ValueError:
+            pass
+    msg = await update.message.reply_text(
+        f"⏳ Analisi PnL posizioni (neg < {neg_threshold}, pos > {pos_threshold})…"
+    )
+    result = await close_positions_by_pnl(neg_threshold, pos_threshold)
+    if not result["closed"] and not result["errors"] and not result.get("summary"):
+        await msg.edit_text("✅ Nessuna posizione fuori soglia")
+        return
+    lines = [f"📊 Chiusura posizioni per PnL"]
+    total_pnl = result.get("total_pnl", 0)
+    lines.append(f"PnL totale portfolio: {total_pnl:+.2f} USDT")
+    for r in result["closed"]:
+        lines.append(f"  ✅ {r['symbol']} {r['side']} PnL {r['pnl']:+.2f} USDT")
+    for e in result["errors"]:
+        lines.append(f"  ❌ {e['symbol']}: {e['error']}")
+    await msg.edit_text("\n".join(lines))
+
+
 async def deletekeys_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Elimina le credenziali Bybit dell'utente dal bot."""
     chat_id = update.effective_chat.id
     if user_store.delete(chat_id):
         session_manager.remove_session(chat_id)
         await update.message.reply_text(
-            "ðï¸ *Credenziali eliminate.*\n\n"
+            "🗑️ *Credenziali eliminate.*\n\n"
             "Le tue API Key e Secret sono state rimosse.\n"
             "Usa /start per configurarne di nuove.",
             parse_mode="Markdown",
         )
     else:
         await update.message.reply_text(
-            "â¹ï¸ Nessuna credenziale trovata per questo account.",
+            "ℹ️ Nessuna credenziale trovata per questo account.",
         )
 
 

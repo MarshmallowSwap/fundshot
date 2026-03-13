@@ -59,7 +59,8 @@ JOB_INTERVAL = int(os.getenv("JOB_INTERVAL", 60))
 
 # Abilita/disabilita auto-trading via env (default OFF per sicurezza)
 TRADING_ENABLED = os.getenv("AUTO_TRADING", "false").lower() == "true"
-TRADING_TESTNET = os.getenv("TRADING_TESTNET", "true").lower() == "true"
+TRADING_TESTNET = os.getenv("TRADING_TESTNET", "false").lower() == "true"
+TRADING_DEMO = os.getenv("TRADING_DEMO", "false").lower() == "true"
 
 
 # ── Helper: invia messaggio Telegram ─────────────────────────────────────────
@@ -375,7 +376,7 @@ async def cmd_stats(update, context):
     if open_lines:
         msg += "\n" + "\n".join(open_lines)
 
-    env_label = "🧪 TESTNET" if TRADING_TESTNET else "🔴 MAINNET"
+    env_label = "🎮 DEMO" if TRADING_DEMO else ("🧪 TESTNET" if TRADING_TESTNET else "🔴 MAINNET")
     msg += f"\n━━━━━━━━━━━━━━━━━━\n⚡ Ambiente: `{env_label}`"
 
     await update.message.reply_text(msg, parse_mode="Markdown")
@@ -551,6 +552,7 @@ async def post_init(app):
                 api_key    = api_key,
                 api_secret = api_secret,
                 testnet    = TRADING_TESTNET,
+                demo       = TRADING_DEMO,
             )
 
             async def _tg_send(chat_id, msg):
@@ -566,7 +568,7 @@ async def post_init(app):
 
             _funding_trader = FundingTrader(_bybit_trader, _tg_send)
 
-            env_label = "🧪 TESTNET" if TRADING_TESTNET else "🔴 MAINNET"
+            env_label = "🎮 DEMO" if TRADING_DEMO else ("🧪 TESTNET" if TRADING_TESTNET else "🔴 MAINNET")
             logger.info(
                 "🤖 Auto-trader attivo — %s | size=%.0f USDT | leva=%dx | maxpos=%d",
                 env_label,
