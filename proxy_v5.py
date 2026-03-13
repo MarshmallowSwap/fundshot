@@ -436,6 +436,43 @@ class ProxyHandler(BaseHTTPRequestHandler):
             if changed:
                 save_config(_config)
                 log.info(f"Config updated Ã¢ÂÂ key={'SET' if _config['api_key'] else 'EMPTY'} testnet={_config['testnet']}")
+            # Scrivi trader_config.json con parametri MM/trading
+            try:
+                import json as _json
+                tc_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'trader_config.json')
+                mm = body.get('mm', {})
+                g  = body.get('guardian', {})
+                ef = body.get('ef', {})
+                tp = body.get('tp', {})
+                tc = {
+                    'enabled':           True,
+                    'size_usdt':         float(mm.get('size', 50)),
+                    'leverage':          float(mm.get('leva', 2)),
+                    'max_positions':     int(mm.get('maxpos', 2)),
+                    'sl_pct':            float(mm.get('sl', 1.2)),
+                    'risk_pct':          float(mm.get('risk', 1.0)),
+                    'min_funding_abs':   float(ef.get('minrate', 0.003)),
+                    'min_persistence':   int(ef.get('persist', 1)),
+                    'mins_before_reset': int(ef.get('minreset', 10)),
+                    'min_oi_change_5m':  float(ef.get('oi', 0.5)),
+                    'guardian': {
+                        'max_drawdown':  float(g.get('maxdd', 10)),
+                        'max_daily_loss':float(g.get('maxdaily', 100)),
+                        'max_cons_loss': int(g.get('maxloss', 3)),
+                        'cooldown_min':  int(g.get('cooldown', 30)),
+                    },
+                    'tp_levels': tp if tp else {
+                        'jackpot': [3.0, 1.5, 8.0],
+                        'hard':    [2.0, 1.2, 6.0],
+                        'extreme': [1.5, 1.0, 4.0],
+                        'high':    [0.8, 0.5, 2.5],
+                    }
+                }
+                with open(tc_path, 'w') as tf:
+                    _json.dump(tc, tf, indent=2)
+                log.info(f"trader_config.json salvato leva={tc['leverage']}x size={tc['size_usdt']}USDT")
+            except Exception as _e:
+                log.warning(f"trader_config.json error: {_e}")
             self._json({'ok': True, 'msg': 'Config salvata', 'key_set': bool(_config.get('api_key'))})
 
         elif p == '/api/mode':
