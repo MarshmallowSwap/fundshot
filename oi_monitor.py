@@ -62,31 +62,80 @@ def _fetch_funding(symbol: str) -> float | None:
 
 def _get_suggestion(oi_chg: float, funding_pct: float | None) -> str:
     """
-    Genera suggerimento LONG/SHORT/NEUTRO basato su OI + funding.
-    
-    Logica:
-    - OI ▲ spike + funding negativo → chi è short paga → LONG favorito
-    - OI ▲ spike + funding positivo → chi è long paga  → SHORT favorito
-    - OI ▲ spike + funding neutro   → pressione generica, direzione incerta
-    - OI ▼ crollo                   → chiusura massiccia, evitare posizioni
-    """
-    if oi_chg <= OI_DROP_THRESHOLD:
-        return "⚠️ Chiusura massiccia — evita nuove posizioni"
+    Genera azione consigliata basata su OI + funding.
 
+    OI ▲ = nuove posizioni entrano → trend in accelerazione
+      + funding negativo → short pagano → APRI LONG
+      + funding positivo → long pagano  → APRI SHORT
+      + funding neutro   → spike speculativo, nessuna direzione chiara
+
+    OI ▼ = posizioni si chiudono → trend in esaurimento
+      + funding negativo → long escono → CHIUDI LONG se aperta
+      + funding positivo → short escono → CHIUDI SHORT se aperta
+      + funding neutro   → mercato si svuota, esci da posizioni
+    """
     if funding_pct is None:
-        return "📊 OI in forte crescita — monitora direzione"
+        if oi_chg >= OI_SPIKE_THRESHOLD:
+            return "📊 OI in forte crescita — funding non disponibile, monitora direzione"
+        else:
+            return "⚠️ OI in forte calo — funding non disponibile, riduci esposizione"
 
     abs_f = abs(funding_pct)
+    strength = "forte" if abs_f >= 0.5 else "moderato" if abs_f >= 0.1 else "debole"
 
-    # Soglie: anche funding piccolo indica già una direzione chiara
-    if funding_pct < -0.01:
-        strength = "forte" if abs_f >= 0.5 else "moderato" if abs_f >= 0.1 else "debole"
-        return f"🟢 Consiglio: *LONG* — short pagano funding ({funding_pct:+.4f}%), segnale {strength}"
-    elif funding_pct > 0.01:
-        strength = "forte" if abs_f >= 0.5 else "moderato" if abs_f >= 0.1 else "debole"
-        return f"🔴 Consiglio: *SHORT* — long pagano funding ({funding_pct:+.4f}%), segnale {strength}"
+    # OI IN SALITA — apri posizione
+    if oi_chg >= OI_SPIKE_THRESHOLD:
+        if funding_pct < -0.01:
+            return (
+                f"🟢 *APRI LONG*
+"
+                f"Short pagano funding ({funding_pct:+.4f}%), nuove posizioni long entrano
+"
+                f"Segnale: {strength}"
+            )
+        elif funding_pct > 0.01:
+            return (
+                f"🔴 *APRI SHORT*
+"
+                f"Long pagano funding ({funding_pct:+.4f}%), nuove posizioni short entrano
+"
+                f"Segnale: {strength}"
+            )
+        else:
+            return (
+                f"⚪ *ATTENZIONE* — spike speculativo
+"
+                f"Funding neutro ({funding_pct:+.4f}%), nessuna direzione chiara
+"
+                f"Evita nuove posizioni"
+            )
+
+    # OI IN CALO — chiudi posizione
     else:
-        return f"⚪ Funding neutro ({funding_pct:+.4f}%) — OI spike speculativo, cautela"
+        if funding_pct < -0.01:
+            return (
+                f"🟡 *CHIUDI LONG* (se aperta)
+"
+                f"Momentum in esaurimento — long escono dal mercato
+"
+                f"Funding ancora negativo ({funding_pct:+.4f}%) ma OI cala"
+            )
+        elif funding_pct > 0.01:
+            return (
+                f"🟡 *CHIUDI SHORT* (se aperta)
+"
+                f"Momentum in esaurimento — short escono dal mercato
+"
+                f"Funding ancora positivo ({funding_pct:+.4f}%) ma OI cala"
+            )
+        else:
+            return (
+                f"⚠️ *ESCI DA POSIZIONI*
+"
+                f"Mercato si svuota — funding neutro ({funding_pct:+.4f}%), OI in calo
+"
+                f"Volatilità in diminuzione"
+            )
 
 
 def format_oi_spike_alert(symbol: str, oi_chg: float, funding_pct: float | None) -> str:
