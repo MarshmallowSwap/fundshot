@@ -367,16 +367,17 @@ class BybitTrader:
         """
         self.set_leverage(symbol, CONFIG["leverage"])
 
-        # Nozionale in USDT = size * leverage
-        notional_usdt = CONFIG["size_usdt"] * CONFIG["leverage"]
+        # qty = margine in USDT (Bybit applica la leva configurata)
+        # marketUnit: quoteCoin → qty è in USDT di margine, NON nozionale
+        margin_usdt = CONFIG["size_usdt"]
 
         body = {
             "category":       CONFIG["category"],
             "symbol":         symbol,
             "side":           side,
             "orderType":      "Market",
-            "qty":            str(round(notional_usdt, 2)),
-            "marketUnit":     "quoteCoin",   # specifica in USDT, Bybit calcola la qty
+            "qty":            str(round(margin_usdt, 2)),
+            "marketUnit":     "quoteCoin",   # specifica margine in USDT, Bybit applica leva
             "stopLoss":       str(round(sl_price, 6)),
             "takeProfit":     str(round(tp_price, 6)),
             "slTriggerBy":    "MarkPrice",
@@ -388,7 +389,7 @@ class BybitTrader:
         r = self._post("/v5/order/create", body)
         if r.get("retCode") == 0:
             return r["result"]["orderId"]
-        logger.error(f"place_order error: {r.get('retMsg')} | {symbol} {side} {notional_usdt}USDT")
+        logger.error(f"place_order error: {r.get('retMsg')} | {symbol} {side} margin={margin_usdt}USDT leva={CONFIG['leverage']}x")
         return None
 
     def close_position(self, symbol: str, side: str, qty: float) -> bool:
