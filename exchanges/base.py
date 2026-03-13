@@ -163,3 +163,37 @@ class ExchangeClient(ABC):
     def __repr__(self) -> str:
         env = "testnet" if self.testnet else ("demo" if self.demo else "live")
         return f"{self.__class__.__name__}({env})"
+
+
+    # ── METODI EXTRA (con default) ────────────────────────────────────────────
+
+    async def get_open_interest(self, symbol: str) -> Optional[dict]:
+        """
+        OI corrente e variazione 5m/10m.
+        Restituisce: { 'oi': float, 'change_5m': float, 'change_10m': float }
+        Default: None (exchange che non lo supportano ritornano None).
+        """
+        return None
+
+    async def calc_qty(
+        self, symbol: str, size_usdt: float, leverage: int
+    ) -> Optional[float]:
+        """
+        Calcola la qty da ordinare rispettando minOrderQty e qtyStep.
+        Usa get_mark_price + get_instrument_info.
+        """
+        import math
+        price = await self.get_mark_price(symbol)
+        if not price:
+            return None
+        info = await self.get_instrument_info(symbol)
+        if not info:
+            return None
+        step  = info.qty_step  or 0.001
+        min_q = info.min_order_qty or 0.001
+        notional = size_usdt * leverage
+        raw_qty  = notional / price
+        decimals = max(0, -int(math.floor(math.log10(step)))) if step < 1 else 0
+        qty = round(math.floor(raw_qty / step) * step, decimals)
+        qty = max(qty, min_q)
+        return qty

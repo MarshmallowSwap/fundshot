@@ -45,6 +45,7 @@ import funding_tracker as ft
 # ── SaaS multi-tenant ─────────────────────────────────────────────────────────
 import onboarding
 from user_registry import registry as _registry
+from trading_manager import trading_manager as _trading_manager
 
 # ── Auto-trading ──────────────────────────────────────────────────────────────
 from trader import CONFIG as TRADER_CONFIG, load_config, BybitTrader, FundingTrader
@@ -165,6 +166,7 @@ async def _check_liq_and_level(bot: Bot, symbol: str, mark_price: float,
 
 # ── Funding rate getter per FundingTrader ─────────────────────────────────────
 _funding_cache: dict[str, float] = {}   # aggiornato ogni ciclo del funding_job
+_funding_cache_tickers: dict[str, object] = {}  # FundingTicker per symbol — per TradingManager
 
 async def _get_funding_rate(symbol: str) -> float | None:
     """Ritorna il funding rate corrente dalla cache (aggiornata ogni 60s)."""
@@ -229,6 +231,26 @@ async def funding_job(context):
         logger.warning("Nessun ticker ricevuto.")
         _fj_running = False
         return
+
+    # ── Aggiorna cache tickers per TradingManager multi-tenant ───────────────
+    # bc.get_funding_tickers() restituisce dict — wrappa in FundingTicker se disponibile
+    try:
+        from exchanges.bybit import BybitClient as _BC
+        from exchanges.models import FundingTicker as _FT
+        for _t in tickers:
+            _sym = _t.get("symbol","")
+            if _sym:
+                _funding_cache_tickers[_sym] = _FT(
+                    symbol=_sym,
+                    funding_rate=float(_t.get("fundingRate",0)),
+                    next_funding_time=int(_t.get("nextFundingTime",0)),
+                    funding_interval_h=float(_t.get("fundingIntervalHour",8)),
+                    last_price=float(_t.get("lastPrice",0)),
+                    price_24h_pct=float(_t.get("price24hPcnt",0)),
+                    exchange="bybit",
+                )
+    except Exception as _e_ft:
+        logger.debug("cache tickers FundingTicker: %s", _e_ft)
 
     # Pre-carica posizioni UNA SOLA VOLTA (evita N chiamate API nel loop)
     try:
@@ -458,54 +480,58 @@ _tj_running = False   # lock anti-sovrapposizione
 
 async def trading_job(context):
     """
-    Job auto-trading: valuta segnali di funding e gestisce posizioni aperte.
-    Viene eseguito ogni 60s, subito dopo funding_job (offset +5s).
-    Attivo solo se AUTO_TRADING=true nel .env e TRADER_CONFIG abilitato.
+    Job auto-trading multi-tenant.
+    Esegue FundingTrader per ogni utente registrato su Supabase.
+    Mantiene retrocompatibilità con il trader legacy single-tenant.
     """
     global _tj_running
     if not TRADING_ENABLED:
         return
-    if _funding_trader is None:
-        return
     if _tj_running:
-        logger.warning("⚠️ trading_job: job precedente ancora in esecuzione, skip")
+        logger.warning("⚠️ trading_job: precedente ancora in esecuzione, skip")
         return
     _tj_running = True
 
     bot: Bot = context.bot
-    owner_chat_id = os.getenv("CHAT_ID", CHAT_ID)
+
+    # Helper send per il manager multi-tenant
+    async def _send(chat_id, text):
+        try:
+            await bot.send_message(chat_id=chat_id, text=text, parse_mode="Markdown")
+        except Exception as e:
+            logger.error("trading send error %s: %s", chat_id, e)
 
     try:
-        # 1. Monitora posizioni aperte (trailing, TP, SL)
+        # ── Multi-tenant: usa tickers cachati dal funding_job ──────────────
+        tickers = list(_funding_cache_tickers.values()) if _funding_cache_tickers else []
+        if tickers and _registry.all_clients():
+            await _trading_manager.trading_job(
+                registry=_registry,
+                tickers=tickers,
+                send_fn=_send,
+                auto_trading=True,
+            )
+            return
+
+        # ── Fallback legacy: trader single-tenant ─────────────────────────
+        if _funding_trader is None:
+            return
+        owner_chat_id = os.getenv("CHAT_ID", CHAT_ID)
         if _funding_trader.positions:
             await _funding_trader.monitor_positions(owner_chat_id)
-
-        # 2. Valuta nuovi segnali sui simboli in monitoraggio attivo
-        symbols_to_check = list(_monitoring.keys())
-
-        for symbol in symbols_to_check:
+        for symbol in list(_monitoring.keys()):
             try:
                 funding_rate = _funding_cache.get(symbol)
                 if funding_rate is None:
                     continue
-
-                # Aggiorna persistenza
                 _funding_trader.update_persistence(symbol, funding_rate)
-
-                # Controlla funding exit su posizioni aperte
                 await _funding_trader.check_funding_exit(symbol, funding_rate, owner_chat_id)
-
-                # Cerca nuove aperture
                 ok, reason = await _funding_trader.should_open(symbol, funding_rate)
                 if ok:
                     await _funding_trader.open_trade(symbol, funding_rate, owner_chat_id)
                     context.bot_data["trades_opened"] = context.bot_data.get("trades_opened", 0) + 1
-                    _mon_remove(symbol, "trade aperto")
-                else:
-                    logger.info("trading_job %s: skip — %s", symbol, reason)
-
             except Exception as e:
-                logger.error("trading_job symbol %s: %s", symbol, e)
+                logger.error("trading_job legacy %s: %s", symbol, e)
 
     except Exception as e:
         logger.error("trading_job outer: %s", e)

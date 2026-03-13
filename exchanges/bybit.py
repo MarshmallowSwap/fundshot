@@ -472,3 +472,31 @@ class BybitClient(ExchangeClient):
             results["positions"] = {"ok": False, "error": "Skipped (auth failed)"}
 
         return results
+
+    async def get_open_interest(self, symbol: str) -> dict | None:
+        """OI corrente e variazioni 5m/10m per un simbolo."""
+        import requests as _req
+        try:
+            r = _req.get(
+                "https://api.bybit.com/v5/market/open-interest",
+                params={"category": "linear", "symbol": symbol,
+                        "intervalTime": "5min", "limit": 3},
+                timeout=10,
+            )
+            data = r.json()
+            if data.get("retCode") != 0:
+                return None
+            items = data["result"]["list"]
+            if len(items) < 3:
+                return None
+            curr  = float(items[0]["openInterest"])
+            prev  = float(items[1]["openInterest"])
+            prev2 = float(items[2]["openInterest"])
+            return {
+                "oi":         curr,
+                "change_5m":  (curr - prev)  / prev  * 100 if prev  else 0,
+                "change_10m": (curr - prev2) / prev2 * 100 if prev2 else 0,
+            }
+        except Exception as e:
+            logger.error("get_open_interest %s: %s", symbol, e)
+            return None
