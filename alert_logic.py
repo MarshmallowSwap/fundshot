@@ -1,5 +1,5 @@
 """
-alert_logic.py — Funding King Bot
+alert_logic.py — FundShot Bot
 Soglie ibride (fisse + dinamiche), anti-spam Opzione A, previsione intervallo.
 
 MODIFICHE RISPETTO ALL'ORIGINALE:

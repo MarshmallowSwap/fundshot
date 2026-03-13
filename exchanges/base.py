@@ -1,5 +1,5 @@
 """
-exchanges/base.py — Funding King SaaS
+exchanges/base.py — FundShot SaaS
 Interfaccia astratta comune a tutti gli exchange.
 Ogni implementazione (Bybit, Binance, OKX, Hyperliquid) eredita da questa.
 """

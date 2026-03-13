@@ -1,5 +1,5 @@
 """
-backtester.py — Funding King Bot
+backtester.py — FundShot Bot
 Motore di backtesting: simula profitti/perdite degli alert degli ultimi 30 giorni.
 
 Strategia simulata:

@@ -1,5 +1,5 @@
 """
-db/supabase_client.py — Funding King SaaS
+db/supabase_client.py — FundShot SaaS
 Gestione utenti multi-tenant su Supabase.
 
 Tabelle gestite:

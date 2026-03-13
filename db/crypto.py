@@ -1,5 +1,5 @@
 """
-db/crypto.py — Funding King SaaS
+db/crypto.py — FundShot SaaS
 Encryption/decryption AES-256-GCM per API key degli utenti.
 
 Le API key non vengono mai salvate in chiaro.

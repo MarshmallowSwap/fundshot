@@ -1,5 +1,5 @@
 """
-user_store.py — Funding King Bot
+user_store.py — FundShot Bot
 Gestione credenziali per-utente (multi-user support).
 """
 import json, os, logging

@@ -1,5 +1,5 @@
 """
-trader.py — Modulo trading automatico per Funding King Bot
+trader.py — Modulo trading automatico per FundShot Bot
 Strategia: Mean Reversion su funding estremo
 TP: Dinamico a scaglioni ottimizzato per massimizzare il guadagno per trade
 

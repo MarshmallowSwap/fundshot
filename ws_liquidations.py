@@ -1,5 +1,5 @@
 """
-ws_liquidations.py — Funding King Bot
+ws_liquidations.py — FundShot Bot
 Monitoraggio liquidazioni grandi via WebSocket pubblico Bybit.
 """
 

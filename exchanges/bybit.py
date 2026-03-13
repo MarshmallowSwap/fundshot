@@ -1,5 +1,5 @@
 """
-exchanges/bybit.py — Funding King SaaS
+exchanges/bybit.py — FundShot SaaS
 Implementazione Bybit di ExchangeClient.
 Migrazione completa di bybit_client.py con interfaccia astratta.
 """

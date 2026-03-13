@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-alert_config_manager.py — Gestione configurazione alert per Funding King Bot
+alert_config_manager.py — Gestione configurazione alert per FundShot Bot
 Legge/scrive alert_config.json nella stessa directory del bot.
 Usato da alert_logic.py e bot.py per decidere quali alert inviare.
 """

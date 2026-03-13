@@ -1,5 +1,5 @@
 """
-trading_manager.py — Funding King SaaS
+trading_manager.py — FundShot SaaS
 Gestisce un FundingTrader indipendente per ogni utente/exchange.
 
 Ogni FundingTrader opera con il suo ExchangeClient (API key proprie)

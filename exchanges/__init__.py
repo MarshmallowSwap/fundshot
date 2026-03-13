@@ -1,5 +1,5 @@
 """
-exchanges/ — Funding King SaaS
+exchanges/ — FundShot SaaS
 Exchange clients multi-tenant.
 """
 

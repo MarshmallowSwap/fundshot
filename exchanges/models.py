@@ -1,5 +1,5 @@
 """
-exchanges/models.py — Funding King SaaS
+exchanges/models.py — FundShot SaaS
 Dataclass condivisi tra tutti gli exchange client.
 """
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-dashboard_api.py -- Funding King Dashboard Backend
+dashboard_api.py -- FundShot Dashboard Backend
 Flask API che accetta X-API-Key e X-API-Secret header per ogni richiesta.
-Avvio: source /root/funding-king-bot/venv/bin/activate && python3 dashboard_api.py
+Avvio: source /root/fundshot/venv/bin/activate && python3 dashboard_api.py
 """
 import json
 import os
@@ -71,7 +71,7 @@ def bybit_public_get(path, params, testnet=False):
 
 @app.route("/api/ping", methods=["GET", "OPTIONS"])
 def ping():
-    return jsonify({"ok": True, "message": "Funding King API online"})
+    return jsonify({"ok": True, "message": "FundShot API online"})
 
 
 @app.route("/api/wallet", methods=["GET", "OPTIONS"])
@@ -169,7 +169,7 @@ def analytics():
     if request.method == "OPTIONS":
         return jsonify({}), 200
     try:
-        gf = "/root/funding-king-bot/funding_gains.json"
+        gf = "/root/fundshot/funding_gains.json"
         d = json.load(open(gf)) if os.path.exists(gf) else {}
         tg = sum(v.get("total_gain_usdt", 0) for v in d.values())
         tc = sum(len(v.get("cycles", [])) for v in d.values())
@@ -187,7 +187,7 @@ def status():
     if request.method == "OPTIONS":
         return jsonify({}), 200
     try:
-        r = subprocess.run(["systemctl", "is-active", "funding-king-bot"],
+        r = subprocess.run(["systemctl", "is-active", "fundshot"],
                            capture_output=True, text=True, timeout=5)
         return jsonify({"ok": True, "bot_active": r.stdout.strip() == "active", "api_version": "v1.0"})
     except Exception:

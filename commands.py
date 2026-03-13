@@ -1,5 +1,5 @@
 """
-commands.py — Funding King Bot
+commands.py — FundShot Bot
 Tutti i command handler Telegram + setup wizard.
 """
 
@@ -67,7 +67,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     if _has_credentials(chat_id):
         key_masked = _mask(user_store.get_api_key(chat_id))
         await update.message.reply_text(
-            "🤖 *Funding King Bot* — Attivo ✅\n\n"
+            "🤖 *FundShot Bot* — Attivo ✅\n\n"
             f"Chat ID: `{chat_id}`\n"
             f"API Key: `{key_masked}`\n\n"
             "Usa /help per vedere tutti i comandi.\n"
@@ -79,7 +79,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     key    = _mask(user_store.get_api_key(chat_id))
     secret = _mask(user_store.get_api_secret(chat_id))
     text = (
-        "🤖 *Funding King Bot — Setup*\n\n"
+        "🤖 *FundShot Bot — Setup*\n\n"
         f"Chat ID: `{chat_id}` ✅ (rilevato automaticamente)\n"
         f"API Key: `{key or '⚠️ non impostata'}`\n"
         f"API Secret: `{secret or '⚠️ non impostato'}`\n\n"

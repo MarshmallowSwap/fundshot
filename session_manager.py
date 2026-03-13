@@ -1,5 +1,5 @@
 """
-session_manager.py — Funding King Bot
+session_manager.py — FundShot Bot
 Sessioni Bybit HTTP per-utente.
 """
 import logging

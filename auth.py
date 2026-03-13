@@ -1,5 +1,5 @@
 """
-auth.py — Funding King SaaS
+auth.py — FundShot SaaS
 Autenticazione via Telegram Login Widget.
 
 Flusso:

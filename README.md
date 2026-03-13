@@ -27,8 +27,8 @@ Bot Telegram per monitorare i funding rate delle coppie **Perpetual USDT** su By
 
 ### 1. Clona la repository
 ```bash
-git clone https://github.com/MarshmallowSwap/funding-king-bot.git
-cd funding-king-bot
+git clone https://github.com/MarshmallowSwap/fundshot.git
+cd fundshot
 ```
 
 ### 2. Crea l'ambiente virtuale
@@ -60,7 +60,7 @@ python3 bot.py
 
 ## Struttura file
 ```
-funding-king-bot/
+fundshot/
 ├── bot.py           # Entry point, job queue, handlers
 ├── bybit_client.py  # Client Bybit v5 con HMAC signing corretto
 ├── alert_logic.py   # Soglie, stati e logica anti-spam

@@ -1,5 +1,5 @@
 """
-onboarding.py — Funding King SaaS
+onboarding.py — FundShot SaaS
 Wizard Telegram per registrazione utente multi-tenant.
 
 Flusso:
@@ -106,7 +106,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     if has_bybit:
         env_label = "Demo" if cred.environment == "demo" else "💰 Live"
         text = (
-            "👑 *Funding King Bot* — Attivo ✅\n\n"
+            "👑 *FundShot Bot* — Attivo ✅\n\n"
             f"👤 Chat ID: `{chat_id}`\n"
             f"🏦 Bybit ({env_label}): `{_mask(cred.api_key)}`\n\n"
             "Usa /help per vedere tutti i comandi.\n"
@@ -114,7 +114,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         )
     else:
         text = (
-            "👑 *Funding King Bot — Benvenuto!*\n\n"
+            "👑 *FundShot Bot — Benvenuto!*\n\n"
             "Monitora 500+ coppie perpetual, ricevi alert intelligenti "
             "e automatizza il trading sul funding rate.\n\n"
             "Per iniziare, configura le tue API key:"
@@ -170,7 +170,7 @@ async def main_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
         user = await get_user(chat_id)
         cred = await get_credentials(user.id, "bybit") if user else None
         await query.edit_message_text(
-            "👑 *Funding King Bot — Setup*\n\nCosa vuoi fare?",
+            "👑 *FundShot Bot — Setup*\n\nCosa vuoi fare?",
             parse_mode="Markdown",
             reply_markup=_kb_main(cred is not None),
         )
@@ -188,7 +188,7 @@ async def exchange_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
     if data == "onb_back_main":
         await query.edit_message_text(
-            "👑 *Funding King Bot — Setup*\n\nCosa vuoi fare?",
+            "👑 *FundShot Bot — Setup*\n\nCosa vuoi fare?",
             parse_mode="Markdown",
             reply_markup=_kb_main(),
         )

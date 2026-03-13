@@ -1,6 +1,6 @@
 import re, shutil, os
 
-BOT_DIR = '/root/funding-king-bot'
+BOT_DIR = '/root/fundshot'
 
 # ══════════════════════════════════════════════════════════════
 # 1. PATCH proxy_v5.py — aggiungi endpoint trading/switch e guardian
@@ -88,7 +88,7 @@ PROXY_NEW_ENDPOINTS = '''
 if 'BOT_PATH' not in proxy:
     proxy = proxy.replace(
         "PORT        = 8080",
-        "PORT        = 8080\nBOT_PATH    = '/root/funding-king-bot'"
+        "PORT        = 8080\nBOT_PATH    = '/root/fundshot'"
     )
 
 # Aggiungi import re se manca

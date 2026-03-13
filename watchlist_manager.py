@@ -1,5 +1,5 @@
 """
-watchlist_manager.py — Funding King Bot
+watchlist_manager.py — FundShot Bot
 Gestione persistente della watchlist, simboli silenziati e soglie custom per simbolo.
 I dati sono salvati in watchlist.json nella stessa directory del bot.
 """

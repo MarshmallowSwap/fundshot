@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-proxy_v6.py — Funding King SaaS Proxy
+proxy_v6.py — FundShot SaaS Proxy
 Aggiunge autenticazione JWT via Telegram Login Widget.
 
 Nuovi endpoint rispetto a v5:
@@ -200,7 +200,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
             self._json({
                 "ok":      True,
                 "version": "6.0",
-                "msg":     "Funding King SaaS proxy running",
+                "msg":     "FundShot SaaS proxy running",
                 "uptime":  round(time.time() - _start_time, 0),
             })
             return
@@ -234,7 +234,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
 
         if p == "/api/monitoring":
             try:
-                mon_file = "/tmp/fk_monitoring.json"
+                mon_file = "/tmp/fs_monitoring.json"
                 data     = json.load(open(mon_file)) if os.path.exists(mon_file) else {}
                 self._json({"ok": True, "monitoring": data})
             except Exception as e:
@@ -243,7 +243,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
 
         if p == "/api/results":
             try:
-                data = json.load(open("/tmp/fk_results.json"))
+                data = json.load(open("/tmp/fs_results.json"))
             except Exception:
                 data = []
             self._json({"ok": True, "results": data})
@@ -251,7 +251,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
 
         if p == "/api/oi":
             try:
-                data = json.load(open("/tmp/fk_oi.json")) if os.path.exists("/tmp/fk_oi.json") else {}
+                data = json.load(open("/tmp/fs_oi.json")) if os.path.exists("/tmp/fs_oi.json") else {}
                 self._json({"ok": True, "oi": data})
             except Exception as e:
                 self._json({"ok": False, "error": str(e)})
@@ -413,7 +413,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
 
 # ── Avvio server ───────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    log.info("🚀 Funding King Proxy v6 — porta %d", PORT)
+    log.info("🚀 FundShot Proxy v6 — porta %d", PORT)
     server = HTTPServer(("0.0.0.0", PORT), ProxyHandler)
     try:
         server.serve_forever()

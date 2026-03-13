@@ -17,7 +17,7 @@ DO_POST_CODE = '''
 
     def _handle_config_update(self):
         import json, os, signal
-        CONFIG_PATH = os.path.expanduser("~/.funding_king_config.json")
+        CONFIG_PATH = os.path.expanduser("~/.fundshot_config.json")
         try:
             length  = int(self.headers.get("Content-Length", 0))
             raw     = self.rfile.read(length)
@@ -39,7 +39,7 @@ DO_POST_CODE = '''
         reloaded = False
         try:
             import subprocess
-            subprocess.Popen(["systemctl", "reload-or-restart", "funding-king-bot"])
+            subprocess.Popen(["systemctl", "reload-or-restart", "fundshot"])
             reloaded = True
         except Exception:
             pass

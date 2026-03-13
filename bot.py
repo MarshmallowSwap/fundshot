@@ -1,5 +1,5 @@
 """
-bot.py — Funding King Bot
+bot.py — FundShot Bot
 Entry point principale: avvio bot Telegram, job di monitoraggio funding,
 WebSocket liquidazioni, auto-trading (FundingTrader).
 """
@@ -175,7 +175,7 @@ async def _get_funding_rate(symbol: str) -> float | None:
 # ── Monitoring pre-trade: simboli candidati all'apertura ──────────────────────
 import time as _time
 _monitoring: dict = {}   # {symbol: {rate, level, since, direction}}
-_MON_FILE = '/tmp/fk_monitoring.json'
+_MON_FILE = '/tmp/fs_monitoring.json'
 
 def _mon_save():
     try:
@@ -464,7 +464,7 @@ async def oi_spike_job(context):
 
         # Scrivi snapshot su file per il proxy
         try:
-            with open('/tmp/fk_oi.json', 'w') as _f:
+            with open('/tmp/fs_oi.json', 'w') as _f:
                 _json.dump(oi_snapshot, _f)
         except Exception as _fe:
             logger.debug("fk_oi.json write error: %s", _fe)
@@ -947,7 +947,7 @@ def main():
     app.add_handler(CommandHandler("posizioni_trader", cmd_posizioni_trader))
 
     logger.info(
-        "🚀 Funding King Bot avviato — interval=%ds | soglie=%s | trading=%s",
+        "🚀 FundShot Bot avviato — interval=%ds | soglie=%s | trading=%s",
         JOB_INTERVAL,
         "ibride" if os.getenv("USE_DYNAMIC_THRESHOLDS", "false").lower() == "true" else "fisse",
         "ON (%s)" % ("testnet" if TRADING_TESTNET else "mainnet") if TRADING_ENABLED else "OFF",

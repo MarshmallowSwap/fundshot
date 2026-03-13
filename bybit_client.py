@@ -1,6 +1,6 @@
 import os
 """
-bybit_client.py — Funding King Bot
+bybit_client.py — FundShot Bot
 Client Bybit basato su pybit (HMAC automatico, retry, rate-limit).
 """
 

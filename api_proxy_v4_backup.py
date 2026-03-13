@@ -1,7 +1,7 @@
 import asyncio
 #!/usr/bin/env python3
 """
-Mini proxy HTTP per Funding King Bot dashboard — v4
+Mini proxy HTTP per FundShot Bot dashboard — v4
 Endpoint:
   GET /api/status       → health check
   GET /api/wallet       → wallet UNIFIED (equity, avail, upnl, margin, realisedPnl)
@@ -240,7 +240,7 @@ def get_vol_spikes(threshold_pct=200):
 def compute_analytics():
     """Legge funding_gains.json e calcola metriche avanzate."""
     import math
-    gains_path = '/root/funding-king-bot/funding_gains.json'
+    gains_path = '/root/fundshot/funding_gains.json'
     try:
         with open(gains_path) as f:
             gains = json.load(f)
@@ -374,7 +374,7 @@ class Handler(BaseHTTPRequestHandler):
             if path == '/api/alert-config':
                 body = self._read_body()
                 new_cfg = json.loads(body.decode('utf-8'))
-                cfg_path = '/root/funding-king-bot/alert_config.json'
+                cfg_path = '/root/fundshot/alert_config.json'
                 # Carica config esistente (o default)
                 if os.path.exists(cfg_path):
                     with open(cfg_path) as _f:
@@ -453,7 +453,7 @@ class Handler(BaseHTTPRequestHandler):
                         'close_tip': 0.75, 'warn_tip': 0.25, 'rientro': 0.20
                     }
                 }
-                cfg_path = '/root/funding-king-bot/alert_config.json'
+                cfg_path = '/root/fundshot/alert_config.json'
                 with open(cfg_path, 'w') as _f:
                     json.dump(default_cfg, _f, indent=2)
                 out = {'ok': True, 'msg': 'Config ripristinata ai default', 'config': default_cfg}
@@ -582,7 +582,7 @@ class Handler(BaseHTTPRequestHandler):
             elif path == '/api/alert-config':
                 # GET: restituisce configurazione alert corrente
                 try:
-                    cfg_path = '/root/funding-king-bot/alert_config.json'
+                    cfg_path = '/root/fundshot/alert_config.json'
                     if os.path.exists(cfg_path):
                         with open(cfg_path) as _f:
                             cfg = json.load(_f)

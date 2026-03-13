@@ -1,5 +1,5 @@
 """
-user_registry.py — Funding King SaaS
+user_registry.py — FundShot SaaS
 Registry multi-tenant: mantiene in memoria un ExchangeClient
 per ogni utente attivo, caricato da Supabase.
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-proxy_v5.py Ã¢ÂÂ Funding King Proxy
+proxy_v5.py Ã¢ÂÂ FundShot Proxy
 Aggiunge tutti gli endpoint mancanti al proxy v4 esistente.
 Copia questo file sul server e riavvia con:
     pkill -f proxy && python3 proxy_v5.py &
@@ -39,8 +39,8 @@ from urllib.error import URLError, HTTPError
 #  CONFIG
 # Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 PORT        = 8080
-CONFIG_FILE = os.path.expanduser('~/.funding_king_config.json')
-STATE_FILE  = os.path.expanduser('~/.funding_king_state.json')
+CONFIG_FILE = os.path.expanduser('~/.fundshot_config.json')
+STATE_FILE  = os.path.expanduser('~/.fundshot_state.json')
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 log = logging.getLogger('proxy_v5')
@@ -125,7 +125,7 @@ def bybit_get(path, params=None):
     url = bybit_base() + path
     if params:
         url += '?' + '&'.join(f'{k}={v}' for k,v in params.items())
-    req = Request(url, headers={'User-Agent': 'FundingKing/5.0'})
+    req = Request(url, headers={'User-Agent': 'FundShot/5.0'})
     with urlopen(req, timeout=10) as r:
         return json.loads(r.read())
 
@@ -198,7 +198,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
 
     def _handle_config_update(self):
         import json, os, signal
-        CONFIG_PATH = os.path.expanduser("~/.funding_king_config.json")
+        CONFIG_PATH = os.path.expanduser("~/.fundshot_config.json")
         try:
             length  = int(self.headers.get("Content-Length", 0))
             raw     = self.rfile.read(length)
@@ -220,7 +220,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
         reloaded = False
         try:
             import subprocess
-            subprocess.Popen(["systemctl", "reload-or-restart", "funding-king-bot"])
+            subprocess.Popen(["systemctl", "reload-or-restart", "fundshot"])
             reloaded = True
         except Exception:
             pass
@@ -336,7 +336,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
         elif p == '/api/monitoring':
             try:
                 import os as _os, json as _json
-                mon_file = '/tmp/fk_monitoring.json'
+                mon_file = '/tmp/fs_monitoring.json'
                 data = _json.load(open(mon_file)) if _os.path.exists(mon_file) else {}
                 self._json({'ok': True, 'monitoring': data})
             except Exception as e:
@@ -346,7 +346,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
         elif p == '/api/results':
             import json as _jj
             try:
-                with open('/tmp/fk_results.json') as f:
+                with open('/tmp/fs_results.json') as f:
                     data = _jj.load(f)
             except Exception:
                 data = []
@@ -396,7 +396,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
         elif p == '/api/oi':
             try:
                 import os as _os, json as _json
-                oi_file = '/tmp/fk_oi.json'
+                oi_file = '/tmp/fs_oi.json'
                 data = _json.load(open(oi_file)) if _os.path.exists(oi_file) else {}
                 self._json({'ok': True, 'oi': data})
             except Exception as e:
@@ -587,7 +587,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
         elif p == "/api/auto-trading":
             import re, subprocess
             enabled = bool(body.get("enabled", False))
-            env_path = "/root/funding-king-bot/.env"
+            env_path = "/root/fundshot/.env"
             try:
                 with open(env_path, 'r') as f:
                     env_content = f.read()
@@ -595,7 +595,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
                 env_content = re.sub(r'AUTO_TRADING=\S+', f'AUTO_TRADING={val}', env_content)
                 with open(env_path, 'w') as f:
                     f.write(env_content)
-                subprocess.Popen(['systemctl', 'restart', 'funding-king-bot'])
+                subprocess.Popen(['systemctl', 'restart', 'fundshot'])
                 self._json({"ok": True, "auto_trading": val, "msg": f"AUTO_TRADING={val}, bot riavviato"})
             except Exception as e:
                 self._json({"ok": False, "msg": str(e)})
@@ -649,7 +649,7 @@ _start_time = time.time()
 
 if __name__ == '__main__':
     server = HTTPServer(('0.0.0.0', PORT), ProxyHandler)
-    log.info(f"Ã°ÂÂ¥Â Funding King Proxy v5 running on :{PORT}")
+    log.info(f"Ã°ÂÂ¥Â FundShot Proxy v5 running on :{PORT}")
     log.info(f"   Config file: {CONFIG_FILE}")
     log.info(f"   API key: {'SET (' + _config['api_key'][:8] + 'Ã¢ÂÂ¦)' if _config.get('api_key') else 'NOT SET'}")
     log.info(f"   Mode: {_config.get('mode','alert')} | Testnet: {_config.get('testnet',False)}")
@@ -673,7 +673,7 @@ def _set_auto_trading(enabled: bool):
             content += f'\nAUTO_TRADING={val}\n'
         with open(env_path, 'w') as f:
             f.write(content)
-        subprocess.Popen(['systemctl', 'restart', 'funding-king-bot'])
+        subprocess.Popen(['systemctl', 'restart', 'fundshot'])
         return True, val
     except Exception as e:
         return False, str(e)
