@@ -597,6 +597,22 @@ nav {
   <div class="card">
     <div id="fund-tbl"><div class="loading"><div class="spin"></div>Caricamento...</div></div>
   </div>
+
+  <!-- OI CARD -->
+  <div class="card" style="margin-top:16px">
+    <div class="ch">
+      <div>
+        <div class="ct">📊 Open Interest</div>
+        <div style="font-size:11px;color:var(--text-muted)">Variazione OI 5min — aggiornato ogni 5 min</div>
+      </div>
+      <span id="oi-spike-count" style="background:var(--red2);color:#fff;padding:2px 10px;border-radius:20px;font-size:12px;font-weight:700;display:none">⚡ SPIKE</span>
+    </div>
+    <div id="oi-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;padding:14px 0 4px">
+      <div style="color:var(--text-muted);font-size:13px;grid-column:1/-1;text-align:center;padding:8px">
+        Caricamento...
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- ═══════════════════════════════════════════ -->
@@ -636,22 +652,6 @@ nav {
     <div id="mon-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;padding:14px 0 4px">
       <div style="color:var(--text-muted);font-size:13px;grid-column:1/-1;text-align:center;padding:8px">
         Nessun simbolo in monitoraggio
-      </div>
-    </div>
-  </div>
-
-  <!-- OI CARD -->
-  <div class="card" style="margin-bottom:16px">
-    <div class="ch">
-      <div>
-        <div class="ct">📊 Open Interest</div>
-        <div style="font-size:11px;color:var(--text-muted)">Variazione OI 5min — aggiornato ogni 5 min</div>
-      </div>
-      <span id="oi-spike-count" style="background:var(--red2);color:#fff;padding:2px 10px;border-radius:20px;font-size:12px;font-weight:700;display:none">⚡ SPIKE</span>
-    </div>
-    <div id="oi-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;padding:14px 0 4px">
-      <div style="color:var(--text-muted);font-size:13px;grid-column:1/-1;text-align:center;padding:8px">
-        Caricamento...
       </div>
     </div>
   </div>
@@ -2659,7 +2659,7 @@ let _secs = 60;
 function startCountdown(){
   setInterval(()=>{
     _secs--;
-    if(_secs<=0){ _secs=60; loadPublic(); if(document.getElementById('page-positions').classList.contains('active')) { loadPositions(); fetchMonitoring().then(updateMonitoringCard); fetchOI().then(updateOICard); } }
+    if(_secs<=0){ _secs=60; loadPublic(); fetchOI().then(updateOICard); if(document.getElementById('page-positions').classList.contains('active')) { loadPositions(); fetchMonitoring().then(updateMonitoringCard); } }
     qs('countdown').textContent=_secs+'s';
     qs('rfill').style.width=(_secs/60*100)+'%';
   },1000);
