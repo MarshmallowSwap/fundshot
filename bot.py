@@ -214,6 +214,101 @@ def _mon_remove(symbol: str, reason: str = ''):
 _prev_rates: dict[str, float] = {}
 _fj_running = False   # lock anti-sovrapposizione
 
+async def _process_exchange_tickers(
+    bot: Bot,
+    bot_data: dict,
+    tickers: list,          # list[FundingTicker] dal client exchange
+    exchange: str,          # "bybit" | "binance" | "okx"
+    positions_all: list,    # posizioni pre-fetchate per questo exchange
+    target_chat_ids: list,  # chat_id degli utenti con questo exchange configurato
+):
+    """
+    Processa i ticker di un singolo exchange: alert funding, level change,
+    pre-settlement, liquidazione. Invia alert solo agli utenti di quell'exchange.
+    """
+    from exchanges.models import FundingTicker as _FT
+
+    for ticker in tickers:
+        # FundingTicker dataclass
+        symbol       = ticker.symbol
+        rate_raw     = ticker.funding_rate          # già float
+        rate_pct     = rate_raw * 100
+        interval_h   = ticker.funding_interval_h
+        next_ts      = ticker.next_funding_time
+        last_price   = ticker.last_price
+        pct_24h      = ticker.price_24h_pct * 100 if abs(ticker.price_24h_pct) < 1 else ticker.price_24h_pct
+
+        if not commands.is_watched(symbol):
+            continue
+
+        # Cache funding per TradingManager (solo Bybit per ora)
+        if exchange == "bybit":
+            _funding_cache[symbol] = rate_raw
+            _funding_cache_tickers[symbol] = ticker
+
+        al.update_rate_history(symbol, rate_pct)
+
+        # Costruisce kwargs per send_alert con exchange badge
+        ex_kwargs = {"exchange": exchange}
+
+        # 1. Alert funding rate
+        alert_text = al.process_funding(symbol, rate_pct, interval_h, last_price=last_price, pct_24h=pct_24h)
+        if alert_text:
+            for cid in target_chat_ids:
+                await send_alert(bot, alert_text, target_chat_id=cid, symbol=symbol, rate=rate_pct, **ex_kwargs)
+            bot_data["alerts_sent"] = bot_data.get("alerts_sent", 0) + 1
+
+        # 1b. Alert cambio livello
+        if _bot_alert_enabled("level_change"):
+            level_alert = al.check_level_change(
+                symbol, al.classify(symbol, rate_pct),
+                rate_pct=rate_pct, last_price=last_price, pct_24h=pct_24h,
+            )
+            if level_alert:
+                for cid in target_chat_ids:
+                    await send_alert(bot, level_alert, target_chat_id=cid, symbol=symbol, rate=rate_pct, **ex_kwargs)
+                bot_data["alerts_sent"] = bot_data.get("alerts_sent", 0) + 1
+
+        # 2. Alert pre-settlement
+        if next_ts:
+            next_text = al.process_next_funding(symbol, rate_pct, interval_h, next_ts, last_price=last_price, pct_24h=pct_24h)
+            if next_text:
+                for cid in target_chat_ids:
+                    await send_alert(bot, next_text, target_chat_id=cid, symbol=symbol, rate=rate_pct, **ex_kwargs)
+                bot_data["alerts_sent"] = bot_data.get("alerts_sent", 0) + 1
+
+        # 3. Alert liquidazione (solo Bybit per ora — posizioni pre-fetchate)
+        if exchange == "bybit":
+            try:
+                pos_liq = next((p for p in positions_all if p.get("symbol") == symbol), None)
+                if pos_liq and float(pos_liq.get("size", 0)) > 0 and _bot_alert_enabled("liquidation"):
+                    await _check_liq_and_level(
+                        bot, symbol,
+                        float(pos_liq.get("markPrice", 0)),
+                        float(pos_liq.get("liqPrice", 0) or 0),
+                        pos_liq.get("side", "Buy"),
+                        rate_pct, bot_data,
+                    )
+            except Exception as e_liq:
+                logger.debug("liq_check %s: %s", symbol, e_liq)
+
+    # Aggiorna _monitoring
+    open_symbols = set(_funding_trader.positions.keys()) if _funding_trader else set()
+    for ticker in tickers:
+        sym   = ticker.symbol
+        r_raw = ticker.funding_rate
+        abs_r = abs(r_raw * 100)
+        lvl   = None
+        if abs_r >= 2.00:   lvl = "hard"
+        elif abs_r >= 1.50: lvl = "extreme"
+        elif abs_r >= 1.00: lvl = "high"
+        elif abs_r >= 0.50: lvl = "soft"
+        if lvl and sym not in open_symbols:
+            _mon_add(sym, r_raw, lvl)
+        elif sym in _monitoring and not lvl and exchange == "bybit":
+            _mon_remove(sym, "funding rientrato")
+
+
 async def funding_job(context):
     global _fj_running
     if _fj_running:
@@ -223,158 +318,80 @@ async def funding_job(context):
     bot: Bot = context.bot
     bot_data = context.bot_data
 
+    bot_data["monitoring"] = True
+    bot_data["last_cycle"] = datetime.now(TZ_IT).strftime("%d/%m/%Y %H:%M:%S %Z")
+
     try:
-        tickers = await bc.get_funding_tickers()
-    except Exception as e:
-        logger.error("funding_job: errore fetch tickers: %s", e)
-        _fj_running = False
-        return
+        # ── Raggruppa utenti per exchange ────────────────────────────────────
+        # { exchange → [chat_id, ...] }
+        from collections import defaultdict
+        exchange_users: dict[str, list] = defaultdict(list)
+        for uc in _registry.all_clients():
+            exchange_users[uc.exchange].append(str(uc.chat_id))
 
-    bot_data["symbols_count"] = len(tickers)
-    bot_data["monitoring"]    = True
-    bot_data["last_cycle"]    = datetime.now(TZ_IT).strftime("%d/%m/%Y %H:%M:%S %Z")
+        # Fallback: se registry vuoto usa owner con Bybit
+        if not exchange_users:
+            owner_id = os.getenv("CHAT_ID", CHAT_ID)
+            if owner_id:
+                exchange_users["bybit"].append(owner_id)
 
-    if not tickers:
-        logger.warning("Nessun ticker ricevuto.")
-        _fj_running = False
-        return
+        total_tickers = 0
 
-    # ── Aggiorna cache tickers per TradingManager multi-tenant ───────────────
-    # bc.get_funding_tickers() restituisce dict — wrappa in FundingTicker se disponibile
-    try:
-        from exchanges.bybit import BybitClient as _BC
-        from exchanges.models import FundingTicker as _FT
-        for _t in tickers:
-            _sym = _t.get("symbol","")
-            if _sym:
-                _funding_cache_tickers[_sym] = _FT(
-                    symbol=_sym,
-                    funding_rate=float(_t.get("fundingRate",0)),
-                    next_funding_time=int(_t.get("nextFundingTime",0)),
-                    funding_interval_h=float(_t.get("fundingIntervalHour",8)),
-                    last_price=float(_t.get("lastPrice",0)),
-                    price_24h_pct=float(_t.get("price24hPcnt",0)),
-                    exchange="bybit",
-                )
-    except Exception as _e_ft:
-        logger.debug("cache tickers FundingTicker: %s", _e_ft)
-
-    # Pre-carica posizioni UNA SOLA VOLTA (evita N chiamate API nel loop)
-    try:
-        positions_all = await bc.get_positions()
-    except Exception as _e_pos:
-        logger.warning("funding_job: errore pre-fetch posizioni: %s", _e_pos)
-        positions_all = []
-
-    for ticker in tickers:
-        symbol = ticker.get("symbol", "")
-        if not commands.is_watched(symbol):
-            continue
-
-        rate_raw        = float(ticker.get("fundingRate", 0))
-        rate_pct        = rate_raw * 100
-        interval_h      = ticker.get("fundingIntervalHour", 8)
-        next_funding_ts = int(ticker.get("nextFundingTime", 0))
-        last_price      = float(ticker.get("lastPrice", 0))
-        pct_24h         = float(ticker.get("price24hPcnt", 0)) * 100
-
-        # ── Aggiorna cache funding (usata da FundingTrader) ──────────────────
-        _funding_cache[symbol] = rate_raw
-
-        # ── Aggiorna storico rolling (per soglie dinamiche) ──────────────────
-        al.update_rate_history(symbol, rate_pct)
-
-        # 1. Alert funding rate
-        alert_text = al.process_funding(symbol, rate_pct, interval_h, last_price=last_price, pct_24h=pct_24h)
-        if alert_text:
-            await send_alert(bot, alert_text, symbol=symbol, rate=rate_pct)
-            bot_data["alerts_sent"] = bot_data.get("alerts_sent", 0) + 1
-
-        # 1b. Alert cambio livello funding
-        if _bot_alert_enabled("level_change"):
-            level_alert = al.check_level_change(symbol, al.classify(symbol, rate_pct), rate_pct=rate_pct, last_price=last_price, pct_24h=pct_24h)
-            if level_alert:
-                await send_alert(bot, level_alert, symbol=symbol, rate=rate_pct)
-                bot_data["alerts_sent"] = bot_data.get("alerts_sent", 0) + 1
-
-        # 2. Alert prossimo funding (entro X minuti)
-        if next_funding_ts:
-            next_text = al.process_next_funding(symbol, rate_pct, interval_h, next_funding_ts, last_price=last_price, pct_24h=pct_24h)
-            if next_text:
-                await send_alert(bot, next_text, symbol=symbol, rate=rate_pct)
-                bot_data["alerts_sent"] = bot_data.get("alerts_sent", 0) + 1
-
-        # 3. Tracking guadagno funding: rileva reset ciclo (rate quasi zero)
-        RESET_THR = al.RESET_THRESHOLD
-        HIGH_THR  = 0.50
-        prev_rate = _prev_rates.get(symbol, 0.0)
-        _prev_rates[symbol] = rate_pct
-
-        if abs(rate_pct) <= RESET_THR and abs(prev_rate) >= HIGH_THR and al.is_funded(symbol):
+        # ── Per ogni exchange attivo → fetch tickers → process alert ─────────
+        for exchange, chat_ids in exchange_users.items():
             try:
-                positions = await bc.get_positions()
-                pos = next((p for p in positions if p["symbol"] == symbol), None)
-                if pos:
-                    size       = float(pos.get("size", 0))
-                    mark_price = float(pos.get("markPrice", 0))
-                    side       = pos.get("side", "Buy")
-                    level      = al.classify(symbol, prev_rate) if abs(prev_rate) > 0 else "high"
-                    if level == "none":
-                        level = "high"
-                    if size > 0 and mark_price > 0:
-                        gain = ft.record_cycle(
-                            symbol=symbol,
-                            rate_pct=prev_rate,
-                            mark_price=mark_price,
-                            size=size,
-                            side=side,
-                            level=level,
-                        )
-                        sign     = "+" if gain >= 0 else ""
-                        gain_dir = "ricevuto" if gain >= 0 else "pagato"
-                        msg = (
-                            f"💰 *FUNDING REGISTRATO — {symbol}*\n"
-                            f"Cycle rate: {'+' if prev_rate>=0 else ''}{prev_rate:.4f}%\n"
-                            f"Position: {'SHORT' if side=='Sell' else 'LONG'} {size}\n"
-                            f"Gain {gain_dir}: `{sign}{gain:.4f} USDT`"
-                        )
-                        await send_alert(bot, msg)
-            except Exception as e:
-                logger.warning("funding_tracker: errore calcolo gain %s: %s", symbol, e)
+                # Prendi un client qualsiasi per questo exchange (tutti hanno stessi tickers pubblici)
+                uc_list = [uc for uc in _registry.all_clients() if uc.exchange == exchange]
+                if not uc_list:
+                    # Fallback legacy per Bybit
+                    if exchange == "bybit":
+                        raw = await bc.get_funding_tickers()
+                        from exchanges.models import FundingTicker as _FT
+                        tickers = [
+                            _FT(
+                                symbol=t.get("symbol",""),
+                                funding_rate=float(t.get("fundingRate",0)),
+                                next_funding_time=int(t.get("nextFundingTime",0)),
+                                funding_interval_h=float(t.get("fundingIntervalHour",8)),
+                                last_price=float(t.get("lastPrice",0)),
+                                price_24h_pct=float(t.get("price24hPcnt",0)),
+                                exchange="bybit",
+                            )
+                            for t in raw if t.get("symbol","").endswith("USDT")
+                        ]
+                    else:
+                        continue
+                else:
+                    tickers = await uc_list[0].client.get_funding_tickers()
 
-        # 4. Alert liquidazione imminente
-        try:
-            pos_liq = next((p for p in positions_all if p.get("symbol") == symbol), None)
-            if pos_liq and float(pos_liq.get("size", 0)) > 0:
-                if _bot_alert_enabled("liquidation"):
-                    await _check_liq_and_level(
-                        bot, symbol,
-                        float(pos_liq.get("markPrice", 0)),
-                        float(pos_liq.get("liqPrice", 0) or 0),
-                        pos_liq.get("side", "Buy"),
-                        rate_pct, bot_data,
-                    )
-        except Exception as e_liq:
-            logger.debug("liq_check %s: %s", symbol, e_liq)
+                if not tickers:
+                    logger.warning("funding_job: nessun ticker da %s", exchange)
+                    continue
 
-    # ── Aggiorna _monitoring per TUTTI i simboli (non solo watchlist) ─────────
-    open_symbols = set(_funding_trader.positions.keys()) if _funding_trader else set()
-    for ticker in tickers:
-        sym      = ticker.get("symbol", "")
-        r_raw    = float(ticker.get("fundingRate", 0))
-        _funding_cache[sym] = r_raw  # cache completa per tutti
-        abs_r    = abs(r_raw * 100)
-        lvl      = None
-        if abs_r >= 2.00:   lvl = "hard"
-        elif abs_r >= 1.50: lvl = "extreme"
-        elif abs_r >= 1.00: lvl = "high"
-        elif abs_r >= 0.50: lvl = "soft"
-        if lvl and sym not in open_symbols:
-            _mon_add(sym, r_raw, lvl)
-        elif sym in _monitoring and not lvl:
-            _mon_remove(sym, "funding rientrato")
+                total_tickers += len(tickers)
+                logger.info("funding_job: %d tickers da %s per %d utenti", len(tickers), exchange, len(chat_ids))
 
-    _fj_running = False
+                # Pre-fetch posizioni per Bybit (legacy)
+                positions_all = []
+                if exchange == "bybit":
+                    try:
+                        positions_all = await bc.get_positions()
+                    except Exception as _e_pos:
+                        logger.warning("funding_job: errore posizioni %s: %s", exchange, _e_pos)
+
+                await _process_exchange_tickers(
+                    bot, bot_data, tickers, exchange, positions_all, chat_ids,
+                )
+
+            except Exception as e_ex:
+                logger.error("funding_job: errore exchange %s: %s", exchange, e_ex)
+
+        bot_data["symbols_count"] = total_tickers
+
+    except Exception as e:
+        logger.error("funding_job outer: %s", e)
+    finally:
+        _fj_running = False
 
 
 # ── Job OI spike (ogni 5 min) ────────────────────────────────────────────────

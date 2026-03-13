@@ -29,8 +29,31 @@ import funding_tracker as ft
 from bybit_client import close_positions_by_mm, close_positions_by_pnl
 import user_store
 import session_manager
+from user_registry import registry as _registry
 
 logger = logging.getLogger(__name__)
+
+# ── Helper multi-exchange ─────────────────────────────────────────────────────
+
+EXCHANGE_EMOJI = {"bybit": "🟡", "binance": "🟠", "okx": "🔵", "hyperliquid": "🟣"}
+EXCHANGE_NAME  = {"bybit": "Bybit", "binance": "Binance", "okx": "OKX", "hyperliquid": "Hyperliquid"}
+
+def _user_exchanges(chat_id) -> list:
+    """Lista degli exchange configurati per questo utente (da registry)."""
+    ucs = [uc for uc in _registry.all_clients() if str(uc.chat_id) == str(chat_id)]
+    return [uc.exchange for uc in ucs]
+
+def _get_client(chat_id, exchange: str = None):
+    """
+    Restituisce il client per (chat_id, exchange).
+    Se exchange è None, usa il primo disponibile (o bybit come fallback).
+    """
+    exchanges = _user_exchanges(chat_id)
+    if not exchanges:
+        return None, None
+    target = exchange if exchange in exchanges else exchanges[0]
+    client = _registry.get_client(int(chat_id), target)
+    return client, target
 
 # ── ConversationHandler states ────────────────────────────────────────────────
 MENU, WAITING_API_KEY, WAITING_API_SECRET = range(3)
@@ -618,31 +641,61 @@ async def storico7g_impl(update, symbol: str):
 # ══════════════════════════════════════════════════════════════════════════════
 
 async def saldo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not _has_credentials():
-        await update.message.reply_text("⚠️ Configura le credenziali con /start.")
+    chat_id   = update.effective_chat.id
+    exchanges = _user_exchanges(chat_id)
+
+    # Fallback legacy
+    if not exchanges:
+        if not _has_credentials():
+            await update.message.reply_text("⚠️ Configure your credentials with /start.")
+            return
+        await update.message.reply_text("💼 Fetching balance...")
+        wallet = await bc.get_wallet_balance()
+        if not wallet:
+            await update.message.reply_text("❌ Cannot fetch balance. Check API keys with /test.")
+            return
+        pnl_emoji = "✅" if wallet["totalPerpUPL"] >= 0 else "❌"
+        lines = [
+            "💼 *BALANCE — Bybit*\n",
+            f"Total equity:     `${wallet['totalEquity']:>12,.2f}`",
+            f"Wallet balance:   `${wallet['totalWalletBalance']:>12,.2f}`",
+            f"Available margin: `${wallet['totalAvailableBalance']:>12,.2f}`",
+            f"Open PnL:         `${wallet['totalPerpUPL']:>+12,.2f}` {pnl_emoji}",
+        ]
+        await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
         return
-    await update.message.reply_text("💼 Recupero saldo...")
 
-    wallet = await bc.get_wallet_balance()
-    if not wallet:
-        await update.message.reply_text("❌ Impossibile recuperare il saldo. Controlla le API key con /test.")
+    await update.message.reply_text("💼 Fetching balances...")
+
+    all_lines = []
+    for ex in exchanges:
+        client = _registry.get_client(chat_id, ex)
+        if not client:
+            continue
+        emoji = EXCHANGE_EMOJI.get(ex, "🏦")
+        name  = EXCHANGE_NAME.get(ex, ex.capitalize())
+        try:
+            wb = await client.get_wallet_balance()
+            if not wb:
+                all_lines.append(f"{emoji} *{name}* — ❌ No data")
+                continue
+            pnl_emoji = "✅" if wb.unrealized_pnl >= 0 else "❌"
+            all_lines += [
+                f"{emoji} *{name}*",
+                f"  Equity:    `${wb.total_equity:>12,.2f}`",
+                f"  Available: `${wb.available_balance:>12,.2f}`",
+                f"  Open PnL:  `${wb.unrealized_pnl:>+12,.2f}` {pnl_emoji}",
+                "",
+            ]
+        except Exception as e:
+            all_lines.append(f"{emoji} *{name}* — ❌ Error: {e}")
+
+    if not all_lines:
+        await update.message.reply_text("❌ Cannot fetch balance for any exchange.")
         return
 
-    pnl_emoji = "✅" if wallet["totalPerpUPL"] >= 0 else "❌"
-    lines = [
-        "💼 *SALDO ACCOUNT — Bybit*\n",
-        f"Equity totale:      `${wallet['totalEquity']:>12,.2f}`",
-        f"Wallet balance:     `${wallet['totalWalletBalance']:>12,.2f}`",
-        f"Margine disponibile:`${wallet['totalAvailableBalance']:>12,.2f}`",
-        f"Margine impegnato:  `${wallet['totalInitialMargin']:>12,.2f}`",
-        f"PnL aperto:         `${wallet['totalPerpUPL']:>+12,.2f}` {pnl_emoji}",
-        "",
-        "🪙 *Saldi per coin:*",
-    ]
-    for c in wallet["coins"]:
-        lines.append(f"  {c['coin']}: `{c['walletBalance']:,.4f}` (≈ ${c['usdValue']:,.2f})")
-
-    await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
+    header = f"💼 *BALANCE OVERVIEW*\n{'━'*20}\n"
+    await update.message.reply_text(header + "\n".join(all_lines), parse_mode="Markdown")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -650,69 +703,65 @@ async def saldo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ══════════════════════════════════════════════════════════════════════════════
 
 async def posizioni(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not _has_credentials():
-        await update.message.reply_text("⚠️ Configura le credenziali con /start.")
+    chat_id   = update.effective_chat.id
+    exchanges = _user_exchanges(chat_id)
+
+    if not exchanges:
+        await update.message.reply_text("⚠️ Configure your credentials with /start.")
         return
-    await update.message.reply_text("📋 Recupero posizioni...")
+    await update.message.reply_text("📋 Fetching positions...")
 
-    positions = await bc.get_positions()
-    if not positions:
-        # Esegui diagnostica veloce per capire il motivo
-        diag = await bc.test_positions_api()
-        diag_lines = ["📭 *No open positions found.*"]
-        diag_lines.append("")
-        diag_lines.append("🔍 *Diagnostica API:*")
-        all_ok = True
-        for lbl, d in diag.items():
-            if isinstance(d, dict):
-                code = d.get("retCode", "?")
-                msg  = d.get("retMsg", d.get("error", ""))
-                nz   = d.get("nonzero", 0)
-                icon = "✅" if code == 0 else "⚠️"
-                if code != 0:
-                    all_ok = False
-                diag_lines.append(f"  {icon} `{lbl}` — code={code}, pos={nz}")
-                if code != 0 and msg:
-                    diag_lines.append(f"     _{msg[:60]}_")
-        if all_ok:
-            diag_lines.append("")
-            diag_lines.append("ℹ️ L'API risponde correttamente — le posizioni sono realmente vuote su questo account.")
-            diag_lines.append("💡 Se hai posizioni aperte, verifica che le API Key appartengano all'account corretto.")
-        await update.message.reply_text("\n".join(diag_lines), parse_mode="Markdown")
+    all_lines = []
+    total_pnl_all = 0.0
+
+    for ex in exchanges:
+        client = _registry.get_client(chat_id, ex)
+        if not client:
+            continue
+        emoji = EXCHANGE_EMOJI.get(ex, "🏦")
+        name  = EXCHANGE_NAME.get(ex, ex.capitalize())
+        try:
+            positions = await client.get_positions()
+        except Exception as e:
+            all_lines.append(f"{emoji} *{name}* — ❌ Error: {e}\n")
+            continue
+
+        if not positions:
+            all_lines.append(f"{emoji} *{name}* — 📭 No open positions\n")
+            continue
+
+        all_lines.append(f"{emoji} *{name}*")
+        total_pnl = 0.0
+        for i, p in enumerate(positions, 1):
+            side_emoji = "🟢" if p.side == "Buy" else "🔴"
+            direction  = "LONG" if p.side == "Buy" else "SHORT"
+            pnl        = p.unrealized_pnl
+            total_pnl += pnl
+            total_pnl_all += pnl
+            pnl_emoji  = "✅" if pnl >= 0 else "❌"
+            entry      = p.entry_price
+            mark       = p.mark_price
+            liq        = p.liq_price
+            block = [
+                f"  {i}) *{p.symbol}* {side_emoji} {direction} x{p.leverage}",
+                f"     Size: `{p.size}`  Entry: `{entry:,.4f}`",
+                f"     Mark: `{mark:,.4f}`  Liq: `{liq:,.4f}`",
+                f"     PnL:  `{pnl:+,.2f} USDT` {pnl_emoji}",
+                "",
+            ]
+            all_lines.extend(block)
+        sign = "+" if total_pnl >= 0 else ""
+        all_lines.append(f"  ∑ PnL {name}: `{sign}{total_pnl:.2f} USDT`")
+        all_lines.append("")
+
+    if not any(l.strip() for l in all_lines):
+        await update.message.reply_text("📭 *No open positions on any exchange.*", parse_mode="Markdown")
         return
 
-    lines = ["📋 *POSIZIONI APERTE — Bybit*\n"]
-    total_pnl = 0.0
-
-    for i, p in enumerate(positions, 1):
-        side_emoji = "🟢" if p["side"] == "Buy" else "🔴"
-        direction = "LONG" if p["side"] == "Buy" else "SHORT"
-        pnl = p["unrealisedPnl"]
-        pnl_pct = p["pnlPct"]
-        total_pnl += pnl
-        pnl_emoji = "✅" if pnl >= 0 else "❌"
-        status = "⚠️ Liquidazione!" if p["positionStatus"] == "Liq" else ""
-
-        block = [
-            f"{i}) *{p['symbol']}* {side_emoji} {direction} x{p['leverage']}",
-            f"   Size: `{p['size']}`",
-            f"   Entry: `{p['avgPrice']:,.2f} $`",
-            f"   Mark:  `{p['markPrice']:,.2f} $`",
-            f"   PnL:   `{pnl:+,.2f} $` ({pnl_pct:+.1f}%) {pnl_emoji}",
-            f"   Liq:   `{p['liqPrice']:,.2f} $` {status}",
-        ]
-        if p["takeProfit"]:
-            block.append(f"   TP:    `{p['takeProfit']:,.2f} $`")
-        if p["stopLoss"]:
-            block.append(f"   SL:    `{p['stopLoss']:,.2f} $`")
-        block.append("")
-        lines.extend(block)
-
-    total_emoji = "✅" if total_pnl >= 0 else "❌"
-    lines.append(f"─────────────────────")
-    lines.append(f"Totale PnL aperto: `{total_pnl:+,.2f} $` {total_emoji}")
-
-    await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
+    sign_all = "+" if total_pnl_all >= 0 else ""
+    footer = f"{'━'*20}\n🔢 Total open PnL: `{sign_all}{total_pnl_all:.2f} USDT`"
+    header = f"📋 *OPEN POSITIONS*\n{'━'*20}\n"
+    await update.message.reply_text(header + "\n".join(all_lines) + "\n" + footer, parse_mode="Markdown")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1381,59 +1430,67 @@ async def profitto_funding(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # /rischio — Analisi rischio posizioni aperte
 # ═══════════════════════════════════════════════════════════════════════════════
 async def rischio(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Analisi del rischio per ogni posizione aperta: distanza liquidazione, leverage, PnL%."""
-    if not _has_credentials(update.effective_chat.id):
-        await update.message.reply_text("⚠️ Configura prima le tue API Key con /start")
+    """Risk analysis for all open positions: liquidation distance, leverage, PnL%."""
+    chat_id   = update.effective_chat.id
+    exchanges = _user_exchanges(chat_id)
+    if not exchanges:
+        await update.message.reply_text("⚠️ Configure your credentials with /start.")
         return
-    await update.message.reply_text("⚠️ Analisi rischio in corso...")
-    try:
-        positions = await bc.get_positions()
-    except Exception as e:
-        await update.message.reply_text(f"❌ Errore: {e}")
-        return
-    if not positions:
-        await update.message.reply_text("📭 Nessuna posizione aperta.")
-        return
+    await update.message.reply_text("⚠️ Fetching risk analysis...")
 
-    lines = ["⚠️ *ANALISI RISCHIO POSIZIONI*", ""]
-    for p in positions:
-        sym        = p.get("symbol", "")
-        side_raw   = p.get("side", "Buy")
-        side       = "🟢 LONG" if side_raw == "Buy" else "🔴 SHORT"
-        mark       = float(p.get("markPrice", 0))
-        liq        = float(p.get("liqPrice", 0) or 0)
-        lev        = float(p.get("leverage", 1) or 1)
-        upnl       = float(p.get("unrealisedPnl", 0))
-        pnl_pct    = float(p.get("unrealisedPnlPcnt", 0))
-        size       = float(p.get("size", 0))
-        pos_val    = float(p.get("positionValue", 0))
+    lines = ["⚠️ *RISK ANALYSIS*", ""]
+    any_pos = False
 
-        if liq > 0 and mark > 0:
-            if side_raw == "Buy":
-                dist_pct = (mark - liq) / mark * 100
+    for ex in exchanges:
+        client = _registry.get_client(chat_id, ex)
+        if not client:
+            continue
+        emoji = EXCHANGE_EMOJI.get(ex, "🏦")
+        name  = EXCHANGE_NAME.get(ex, ex.capitalize())
+        try:
+            positions = await client.get_positions()
+        except Exception as e:
+            lines.append(f"{emoji} *{name}* — ❌ Error: {e}\n")
+            continue
+        if not positions:
+            continue
+
+        lines.append(f"{emoji} *{name}*")
+        for p in positions:
+            any_pos    = True
+            side_raw   = p.side
+            side_lbl   = "🟢 LONG" if side_raw == "Buy" else "🔴 SHORT"
+            mark       = p.mark_price
+            liq        = p.liq_price
+            lev        = p.leverage
+            upnl       = p.unrealized_pnl
+            size       = p.size
+
+            if liq > 0 and mark > 0:
+                dist_pct = (mark - liq) / mark * 100 if side_raw == "Buy" else (liq - mark) / mark * 100
+                dist_pct = max(dist_pct, 0)
+                risk_lbl = (
+                    "🔴 CRITICAL" if dist_pct < 5 else
+                    "🟠 HIGH"     if dist_pct < 10 else
+                    "🟡 MEDIUM"   if dist_pct < 20 else
+                    "🟢 LOW"
+                )
+                dist_str = f"{dist_pct:.1f}% ({risk_lbl})"
             else:
-                dist_pct = (liq - mark) / mark * 100
-            dist_pct = max(dist_pct, 0)
-            if dist_pct < 5:
-                risk_emoji = "🔴 CRITICO"
-            elif dist_pct < 10:
-                risk_emoji = "🟠 ALTO"
-            elif dist_pct < 20:
-                risk_emoji = "🟡 MEDIO"
-            else:
-                risk_emoji = "🟢 BASSO"
-            dist_str = f"{dist_pct:.1f}% ({risk_emoji})"
-        else:
-            dist_str = "N/D"
+                dist_str = "N/A"
 
-        sign = "+" if upnl >= 0 else ""
-        lines.append(f"*{sym}* {side} {lev:.0f}x")
-        lines.append(f"  Mark: `{mark:.4f}` | Liq: `{liq:.4f}`")
-        lines.append(f"  Distanza liq: `{dist_str}`")
-        lines.append(f"  PnL: `{sign}{upnl:.2f} USDT` ({sign}{pnl_pct:.2f}%)")
-        lines.append(f"  Valore pos: `{pos_val:.2f} USDT`")
-        lines.append("")
+            sign = "+" if upnl >= 0 else ""
+            lines += [
+                f"  *{p.symbol}* {side_lbl} {lev}x",
+                f"    Mark: `{mark:.4f}` | Liq: `{liq:.4f}`",
+                f"    Liq distance: `{dist_str}`",
+                f"    PnL: `{sign}{upnl:.2f} USDT`  Size: `{size}`",
+                "",
+            ]
 
+    if not any_pos:
+        await update.message.reply_text("📭 *No open positions on any exchange.*", parse_mode="Markdown")
+        return
     await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
 
 
@@ -1441,56 +1498,65 @@ async def rischio(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # /summary — Riepilogo rapido portafoglio
 # ═══════════════════════════════════════════════════════════════════════════════
 async def summary(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Riepilogo rapido: wallet + posizioni aperte."""
-    if not _has_credentials(update.effective_chat.id):
-        await update.message.reply_text("⚠️ Configura prima le tue API Key con /start")
+    """Quick portfolio summary: wallet + open positions across all exchanges."""
+    chat_id   = update.effective_chat.id
+    exchanges = _user_exchanges(chat_id)
+    if not exchanges:
+        await update.message.reply_text("⚠️ Configure your credentials with /start.")
         return
-    await update.message.reply_text("📊 Calcolo summary...")
-    try:
-        wallet_raw = await bc.get_wallet_balance()
-        positions  = await bc.get_positions()
-    except Exception as e:
-        await update.message.reply_text(f"❌ Errore: {e}")
-        return
+    await update.message.reply_text("📊 Building summary...")
 
-    if not wallet_raw:
-        await update.message.reply_text("❌ Impossibile recuperare il saldo.")
-        return
+    now_str = datetime.now(TZ_IT).strftime("%d/%m/%Y %H:%M")
+    lines = [f"📊 *PORTFOLIO SUMMARY — {now_str}*", ""]
+    total_equity = 0.0
+    total_upnl   = 0.0
+    total_pos    = 0
 
-    equity = wallet_raw.get("totalEquity", 0)
-    upnl   = wallet_raw.get("totalPerpUPL", 0)
-    rpnl   = wallet_raw.get("totalPerpRPL", 0)
-    avail  = wallet_raw.get("totalAvailableBalance", 0)
-    margin = wallet_raw.get("totalInitialMargin", 0)
+    for ex in exchanges:
+        client = _registry.get_client(chat_id, ex)
+        if not client:
+            continue
+        emoji = EXCHANGE_EMOJI.get(ex, "🏦")
+        name  = EXCHANGE_NAME.get(ex, ex.capitalize())
+        try:
+            wb        = await client.get_wallet_balance()
+            positions = await client.get_positions()
+        except Exception as e:
+            lines.append(f"{emoji} *{name}* — ❌ Error: {e}\n")
+            continue
 
-    n_long  = sum(1 for p in positions if p.get("side") == "Buy")
-    n_short = sum(1 for p in positions if p.get("side") == "Sell")
-    tot_upnl = sum(float(p.get("unrealisedPnl", 0)) for p in positions)
+        eq     = wb.total_equity       if wb else 0.0
+        avail  = wb.available_balance  if wb else 0.0
+        upnl   = wb.unrealized_pnl     if wb else 0.0
+        total_equity += eq
+        total_upnl   += upnl
+        total_pos    += len(positions)
 
-    best_sym = max(positions, key=lambda p: float(p.get("unrealisedPnl", 0)), default=None)
-    worst_sym = min(positions, key=lambda p: float(p.get("unrealisedPnl", 0)), default=None)
+        n_long  = sum(1 for p in positions if p.side == "Buy")
+        n_short = sum(1 for p in positions if p.side == "Sell")
+        pos_upnl = sum(p.unrealized_pnl for p in positions)
 
-    now_it = datetime.now(TZ_IT).strftime("%d/%m/%Y %H:%M")
-    lines = [
-        f"📊 *SUMMARY PORTAFOGLIO — {now_it}*", "",
-        f"💼 Equity: `{equity:.2f} USDT`",
-        f"💵 Disponibile: `{avail:.2f} USDT`",
-        f"📈 Unrealised PnL: `{upnl:+.2f} USDT`",
-        f"💰 Realised PnL: `{rpnl:+.2f} USDT`",
-        f"🔐 Margine usato: `{margin:.2f} USDT`",
-        "",
-        f"📂 Posizioni: `{len(positions)}` (🟢 {n_long} LONG | 🔴 {n_short} SHORT)",
-        f"📊 PnL totale aperte: `{tot_upnl:+.2f} USDT`",
+        lines += [
+            f"{emoji} *{name}*",
+            f"  Equity:    `{eq:,.2f} USDT`",
+            f"  Available: `{avail:,.2f} USDT`",
+            f"  Open PnL:  `{upnl:+,.2f} USDT`",
+            f"  Positions: `{len(positions)}` (🟢 {n_long} LONG | 🔴 {n_short} SHORT)",
+        ]
+        if positions:
+            best  = max(positions, key=lambda p: p.unrealized_pnl)
+            worst = min(positions, key=lambda p: p.unrealized_pnl)
+            lines.append(f"  🏆 Best:  {best.symbol} `{best.unrealized_pnl:+.2f}`")
+            lines.append(f"  📉 Worst: {worst.symbol} `{worst.unrealized_pnl:+.2f}`")
+        lines.append("")
+
+    lines += [
+        f"{'━'*20}",
+        f"🔢 Total equity:   `{total_equity:,.2f} USDT`",
+        f"📊 Total open PnL: `{total_upnl:+,.2f} USDT`",
+        f"📂 Total positions:`{total_pos}`",
     ]
-    if best_sym:
-        b_pnl = float(best_sym.get("unrealisedPnl", 0))
-        lines.append(f"🏆 Migliore: {best_sym.get('symbol')} `{b_pnl:+.2f} USDT`")
-    if worst_sym:
-        w_pnl = float(worst_sym.get("unrealisedPnl", 0))
-        lines.append(f"📉 Peggiore: {worst_sym.get('symbol')} `{w_pnl:+.2f} USDT`")
-
     await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
-
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # /newlistings — Nuovi listing con funding elevato
