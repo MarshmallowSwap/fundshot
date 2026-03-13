@@ -916,6 +916,27 @@ nav {
         <div style="font-size:10px;color:var(--text3);margin-top:4px">Profit max prima di chiusura forzata</div>
       </div>
     </div>
+
+    <!-- BASE -->
+    <div class="card" style="border-top:2px solid #22c55e">
+      <div class="ch" style="margin-bottom:14px">
+        <div class="ct" style="color:#22c55e">📊 BASE</div>
+        <span class="badge" style="color:#22c55e;border-color:#22c55e;background:rgba(34,197,94,.1)">≥ 0.50%</span>
+      </div>
+      <div class="inp-group">
+        <div class="inp-label">TP1 Target (%)</div>
+        <input class="inp" id="tp-base-tp1" type="number" step="0.1" min="0.1" value="0.3">
+      </div>
+      <div class="inp-group">
+        <div class="inp-label">Trailing Buffer (%)</div>
+        <input class="inp" id="tp-base-trail" type="number" step="0.1" min="0.1" value="0.3">
+      </div>
+      <div class="inp-group">
+        <div class="inp-label">Max Cap (%)</div>
+        <input class="inp" id="tp-base-cap" type="number" step="0.5" min="1" value="1.5">
+        <div style="font-size:10px;color:var(--text3);margin-top:4px">Profit max prima di chiusura forzata</div>
+      </div>
+    </div>
   </div>
 
   <!-- SAVE BAR -->
@@ -1791,6 +1812,7 @@ const CFG_DEFAULTS = {
     hard:    [1.5, 1.0, 4.0],
     extreme: [1.0, 0.8, 3.0],
     high:    [0.5, 0.5, 2.0],
+    base:    [0.3, 0.3, 1.5],
   },
   // Soglie alert
   thr: { jackpot: 2.50, hard: 2.00, extreme: 1.50, high: 1.00, close: 0.75 },
@@ -1832,7 +1854,7 @@ function initSettings() {
   sv('cfg-minreset', cfg.minreset);
   sv('cfg-cooldown', cfg.cooldown);
   // TP per livello
-  ['jackpot','hard','extreme','high'].forEach(lvl => {
+  ['jackpot','hard','extreme','high','base'].forEach(lvl => {
     const t = cfg.tp[lvl] || CFG_DEFAULTS.tp[lvl];
     sv(`tp-${lvl}-tp1`,   t[0]);
     sv(`tp-${lvl}-trail`, t[1]);
@@ -1896,6 +1918,7 @@ function saveAll() {
       hard:    [gv('tp-hard-tp1'),    gv('tp-hard-trail'),    gv('tp-hard-cap')],
       extreme: [gv('tp-extreme-tp1'), gv('tp-extreme-trail'), gv('tp-extreme-cap')],
       high:    [gv('tp-high-tp1'),    gv('tp-high-trail'),    gv('tp-high-cap')],
+      base:    [gv('tp-base-tp1'),    gv('tp-base-trail'),    gv('tp-base-cap')],
     },
     thr: {
       jackpot: gv('thr-jackpot'), hard:    gv('thr-hard'),

@@ -97,7 +97,8 @@ def load_config(path: str = "trader_config.json") -> None:
             "jackpot": [1.2, 1.2, 6.0],
             "hard":    [1.2, 1.2, 6.0],
             "extreme": [1.0, 1.0, 5.0],
-            "high":    [0.8, 0.8, 4.0]
+            "high":    [0.8, 0.8, 4.0],
+            "base":    [0.3, 0.3, 1.5]
         },
         "thr": {
             "jackpot": 2.50,
