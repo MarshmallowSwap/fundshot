@@ -788,6 +788,7 @@ def main():
     # Registra handler comandi trading inline
     from telegram.ext import CommandHandler
     app.add_handler(CommandHandler("stats",            cmd_stats))
+    app.add_handler(CommandHandler("test_oi",          cmd_test_oi))
     app.add_handler(CommandHandler("posizioni_trader", cmd_posizioni_trader))
 
     logger.info(
@@ -798,6 +799,29 @@ def main():
     )
 
     app.run_polling(allowed_updates=["message", "callback_query"])
+
+
+async def cmd_test_oi(update, context):
+    """Invia un alert OI spike di test per verificare il formato."""
+    import oi_monitor as _oim
+    # Prende un simbolo reale con OI alto per il test
+    symbol = "BTCUSDT"
+    funding = -0.0312  # funding negativo simulato
+    oi_chg  = 3.87     # spike simulato
+
+    msg = _oim.format_oi_spike_alert(symbol, oi_chg, funding)
+    msg += "\n\n_⚠️ Questo è un alert di TEST_"
+
+    try:
+        from chart_gen import generate_chart
+        buf = generate_chart(symbol, funding)
+        if buf:
+            buf.seek(0)
+            await update.message.reply_photo(photo=buf, caption=msg, parse_mode="Markdown")
+            return
+    except Exception:
+        pass
+    await update.message.reply_text(msg, parse_mode="Markdown")
 
 
 if __name__ == "__main__":
