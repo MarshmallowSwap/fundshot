@@ -8,6 +8,7 @@ MODIFICHE RISPETTO ALL'ORIGINALE:
 """
 
 import os
+import requests
 import time
 import logging
 from collections import deque
@@ -278,6 +279,29 @@ def _dynamic_suffix(symbol: str, level: str) -> str:
     return ""
 
 
+
+def _get_oi(symbol: str) -> str:
+    """Fetch OI change 5m dalla API pubblica Bybit. Restituisce stringa formattata."""
+    try:
+        r = requests.get(
+            "https://api.bybit.com/v5/market/open-interest",
+            params={"category": "linear", "symbol": symbol,
+                    "intervalTime": "5min", "limit": 3},
+            timeout=5
+        )
+        data = r.json()
+        if data.get("retCode") == 0:
+            items = data["result"]["list"]
+            curr  = float(items[0]["openInterest"])
+            prev  = float(items[1]["openInterest"])
+            chg   = (curr - prev) / prev * 100 if prev else 0
+            arrow = "▲" if chg >= 0 else "▼"
+            return f"{arrow} `{chg:+.2f}%`"
+    except Exception:
+        pass
+    return "`n/d`"
+
+
 def format_alert(
     symbol: str,
     rate_pct: float,
@@ -290,12 +314,14 @@ def format_alert(
     rate_str  = f"{rate_pct:+.4f}%"
     direction = _direction(rate_pct)
     suffix    = _dynamic_suffix(symbol, level)
+    oi_str    = _get_oi(symbol)
 
     if level == "rientro":
         return (
             f"{emoji} {title}\n"
             f"*{symbol}*\n"
             f"Rate: {rate_str} (ogni {interval})\n"
+            f"OI 5m: {oi_str}\n"
             f"Eccesso rientrato"
         )
 
@@ -306,6 +332,7 @@ def format_alert(
             f"{emoji} {title}\n"
             f"*{symbol}*\n"
             f"Rate: {rate_str} (ogni {interval}){suffix}\n"
+            f"OI 5m: {oi_str}\n"
             f"\U0001f4b0 Funding MASSIMO: {income}\n"
             f"\U0001f680 Mantieni / Apri {side} -- opportunita RARA!"
         )
@@ -316,6 +343,7 @@ def format_alert(
             f"{emoji} {title}\n"
             f"*{symbol}*\n"
             f"Rate: {rate_str} (ogni {interval}){suffix}\n"
+            f"OI 5m: {oi_str}\n"
             f"Valuta di {action}"
         )
 
@@ -325,6 +353,7 @@ def format_alert(
             f"{emoji} {title}\n"
             f"*{symbol}*\n"
             f"Rate: {rate_str} (ogni {interval}){suffix}\n"
+            f"OI 5m: {oi_str}\n"
             f"Attenzione: funding su {action} ancora attivo"
         )
 
@@ -332,6 +361,7 @@ def format_alert(
         f"{emoji} {title}\n"
         f"*{symbol}*\n"
         f"Rate: {rate_str} (ogni {interval}){suffix}\n"
+        f"OI 5m: {oi_str}\n"
         f"Segnale: {direction}"
     )
 
