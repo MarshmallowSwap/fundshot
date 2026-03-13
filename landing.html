@@ -399,6 +399,7 @@ function injectTelegramWidget() {
   script.setAttribute('data-radius', '8');
   script.setAttribute('data-onauth', 'onTelegramAuth(user)');
   script.setAttribute('data-request-access', 'write');
+  script.setAttribute('data-lang', 'en');
   placeholder.style.display = 'none';
   container.appendChild(script);
 }
@@ -439,7 +440,15 @@ function logout(e) {
   localStorage.removeItem('fs_token');
   localStorage.removeItem('fs_user');
   document.getElementById('user-panel').classList.remove('show');
-  document.getElementById('tg-btn-placeholder').style.display = 'flex';
+  // Distrugge il widget e lo re-inietta fresco (rimuove cache sessione Telegram)
+  const container = document.getElementById('tg-widget-container');
+  container.innerHTML = '';
+  // Rimuove eventuali iframe Telegram rimasti nel DOM
+  document.querySelectorAll('iframe[name^="telegram"]').forEach(el => el.remove());
+  // Re-inietta il widget dopo un tick
+  setTimeout(() => {
+    injectTelegramWidget();
+  }, 100);
   toast('Signed out', '👋');
 }
 
