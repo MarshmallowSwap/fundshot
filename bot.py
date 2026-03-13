@@ -74,8 +74,15 @@ TRADING_DEMO = os.getenv("TRADING_DEMO", "false").lower() == "true"
 
 
 # ── Helper: invia messaggio Telegram ─────────────────────────────────────────
-async def send_alert(bot: Bot, text: str, target_chat_id=None, symbol: str = None, rate: float = None):
+async def send_alert(bot: Bot, text: str, target_chat_id=None, symbol: str = None,
+                     rate: float = None, exchange: str = None):
     """Invia alert a un utente specifico o a tutti gli utenti registrati su Supabase."""
+    # Aggiunge badge exchange in testa al messaggio se specificato
+    if exchange and exchange != "bybit":
+        BADGES = {"binance": "🟠 BINANCE", "okx": "🔵 OKX", "hyperliquid": "🟣 HYPERLIQUID"}
+        badge = BADGES.get(exchange)
+        if badge:
+            text = f"_{badge}_\n{text}"
     if target_chat_id:
         recipients = [str(target_chat_id)]
     else:

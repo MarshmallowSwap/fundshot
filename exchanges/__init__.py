@@ -6,13 +6,15 @@ Exchange clients multi-tenant.
 from .models import FundingTicker, Position, WalletBalance, InstrumentInfo, OrderResult
 from .base import ExchangeClient
 from .bybit import BybitClient
+from .binance import BinanceClient
+from .okx import OKXClient
 
 # Registry: exchange_id → classe
 EXCHANGE_REGISTRY: dict[str, type[ExchangeClient]] = {
-    "bybit": BybitClient,
-    # "binance": BinanceClient,        # FASE 2
-    # "okx":     OKXClient,            # FASE 3
-    # "hyperliquid": HyperliquidClient, # FASE 5
+    "bybit":   BybitClient,
+    "binance": BinanceClient,
+    "okx":     OKXClient,
+    # "hyperliquid": HyperliquidClient,   # FASE 5
 }
 
 SUPPORTED_EXCHANGES = list(EXCHANGE_REGISTRY.keys())
