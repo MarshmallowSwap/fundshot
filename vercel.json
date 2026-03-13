@@ -1,1 +1,10 @@
-{"outputDirectory":".","builds":[{"src":"index.html","use":"@vercel/static"}]}
+{
+  "version": 2,
+  "builds": [
+    { "src": "landing.html", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/", "dest": "/landing.html" },
+    { "src": "/(.*)", "dest": "/landing.html" }
+  ]
+}
