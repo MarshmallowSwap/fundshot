@@ -287,14 +287,14 @@ async def funding_job(context):
         if _bot_alert_enabled("level_change"):
             level_alert = al.check_level_change(symbol, al.classify(symbol, rate_pct), rate_pct=rate_pct, last_price=last_price, pct_24h=pct_24h)
             if level_alert:
-                await send_alert(bot, level_alert)
+                await send_alert(bot, level_alert, symbol=symbol, rate=rate_pct)
                 bot_data["alerts_sent"] = bot_data.get("alerts_sent", 0) + 1
 
         # 2. Alert prossimo funding (entro X minuti)
         if next_funding_ts:
             next_text = al.process_next_funding(symbol, rate_pct, interval_h, next_funding_ts, last_price=last_price, pct_24h=pct_24h)
             if next_text:
-                await send_alert(bot, next_text)
+                await send_alert(bot, next_text, symbol=symbol, rate=rate_pct)
                 bot_data["alerts_sent"] = bot_data.get("alerts_sent", 0) + 1
 
         # 3. Tracking guadagno funding: rileva reset ciclo (rate quasi zero)
