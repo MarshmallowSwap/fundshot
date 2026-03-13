@@ -843,23 +843,25 @@ def main():
     )
     logger.info("Daily digest schedulato alle 08:00 IT")
 
-    # Job funding monitor (ogni 60s)
+    # Job funding monitor (ogni 120s — evita sovrapposizioni)
+    FUNDING_INTERVAL = max(JOB_INTERVAL, 120)
     app.job_queue.run_repeating(
         funding_job,
-        interval=JOB_INTERVAL,
+        interval=FUNDING_INTERVAL,
         first=10,
         name="funding_monitor",
     )
+    logger.info("📡 Job funding monitor schedulato ogni %ds", FUNDING_INTERVAL)
 
-    # Job auto-trading (ogni 60s, offset +5s rispetto al funding_job)
+    # Job auto-trading (stesso intervallo, offset +10s rispetto al funding_job)
     if TRADING_ENABLED:
         app.job_queue.run_repeating(
             trading_job,
-            interval=JOB_INTERVAL,
-            first=15,        # parte 5s dopo funding_job (first=10 + 5)
+            interval=FUNDING_INTERVAL,
+            first=20,
             name="trading_monitor",
         )
-        logger.info("🤖 Job auto-trading schedulato ogni %ds (first=15s)", JOB_INTERVAL)
+        logger.info("🤖 Job auto-trading schedulato ogni %ds (first=20s)", FUNDING_INTERVAL)
 
     # Job OI spike (ogni 5 minuti, offset +20s)
     if oi_monitor:
