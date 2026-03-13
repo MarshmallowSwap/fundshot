@@ -469,7 +469,8 @@ class FundingTrader:
     def __init__(self, bybit: BybitTrader, telegram_send_fn):
         self.bybit         = bybit
         self.send          = telegram_send_fn      # async fn(chat_id, msg)
-        self.positions:    dict[str, TradePosition] = {}
+        self.positions:        dict[str, TradePosition] = {}
+        self._recently_closed: dict[str, float] = {}   # symbol -> timestamp chiusura
         self.persistence:  dict[str, int]           = {}
         self.results:      list[TradeResult]        = []
         self.chat_id:      Optional[str]            = None
@@ -556,6 +557,16 @@ class FundingTrader:
         # 5. Posizione già aperta su questo simbolo
         if symbol in self.positions:
             return False, "posizione già aperta"
+
+        # 1b. Cooldown post-chiusura (30 min per evitare riapertura immediata)
+        REOPEN_COOLDOWN = 30 * 60  # 30 minuti
+        if symbol in self._recently_closed:
+            elapsed = time.time() - self._recently_closed[symbol]
+            if elapsed < REOPEN_COOLDOWN:
+                remaining = int((REOPEN_COOLDOWN - elapsed) / 60)
+                return False, f"cooldown post-chiusura ({remaining} min rimanenti)"
+            else:
+                del self._recently_closed[symbol]
 
         # 6. Max posizioni raggiunte
         if len(self.positions) >= CONFIG["max_positions"]:
@@ -700,6 +711,30 @@ class FundingTrader:
                 logger.error(f"monitor_positions {symbol}: {e}")
 
     async def _monitor_single(self, symbol: str, pos: TradePosition, chat_id: str):
+        # ── CHECK PRIORITARIO: Bybit ha già chiuso la posizione? ──
+        bybit_pos = self.bybit.get_position(symbol)
+        if bybit_pos is None or float(bybit_pos.get("size", 0)) == 0:
+            # Posizione chiusa esternamente (TP/SL nativo Bybit o liquidazione)
+            mark_price = self.bybit.get_mark_price(symbol) or pos.entry_price
+            is_short   = pos.direction == "SHORT"
+            pnl_pct    = ((pos.entry_price - mark_price) / pos.entry_price * 100) if is_short                          else ((mark_price - pos.entry_price) / pos.entry_price * 100)
+            pnl_usdt   = pos.notional * (pnl_pct / 100)
+            msg = (
+                f"🔔 *POSIZIONE CHIUSA — {pos.direction} {symbol}*\n"
+                f"━━━━━━━━━━━━━━━━━━\n"
+                f"📌 Motivo:    `Chiusa da Bybit (TP/SL nativo)`\n"
+                f"💰 Prezzo:    `${mark_price:.6f}`\n"
+                f"📈 PnL est.:  `{pnl_usdt:+.2f} USDT` ({pnl_pct:+.2f}%)\n"
+                f"━━━━━━━━━━━━━━━━━━\n"
+                f"⏱️ Durata: `{((datetime.now(timezone.utc)-pos.opened_at).seconds//60)} min`"
+            )
+            await self.send(chat_id, msg)
+            self._record_result(pos, pnl_usdt, pnl_pct, "BYBIT_NATIVE_CLOSE")
+            self._recently_closed[symbol] = time.time()
+            del self.positions[symbol]
+            logger.info(f"Posizione {symbol} chiusa esternamente da Bybit — rimossa dal tracking, cooldown 30min")
+            return
+
         mark_price = self.bybit.get_mark_price(symbol)
         if not mark_price:
             return
@@ -795,6 +830,7 @@ class FundingTrader:
             pnl = pos.notional * (pnl_pct / 100)
             await self._send_close_msg(chat_id, pos, reason, price, pnl, pnl_pct, "100%")
             self._record_result(pos, pnl, pnl_pct, reason)
+            self._recently_closed[pos.symbol] = time.time()
             del self.positions[symbol]
 
     async def _close_remaining(self, symbol: str, pos: TradePosition, chat_id: str,
@@ -808,6 +844,7 @@ class FundingTrader:
             total_pnl = pnl_tp1 + pnl_rest
             await self._send_close_msg(chat_id, pos, reason, price, total_pnl, pnl_pct, "70% residuo")
             self._record_result(pos, total_pnl, pnl_pct, reason)
+            self._recently_closed[pos.symbol] = time.time()
             del self.positions[symbol]
 
     async def _send_close_msg(self, chat_id: str, pos: TradePosition, reason: str,
