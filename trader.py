@@ -834,8 +834,9 @@ class FundingTrader:
         logger.info(f"Trade chiuso: {pos.direction} {pos.symbol} | {reason} | PnL: {pnl:+.2f} USDT")
 
     def _record_result(self, pos: TradePosition, pnl: float, pnl_pct: float, reason: str):
+        import json as _json
         duration = (datetime.now(timezone.utc) - pos.opened_at).seconds / 60
-        self.results.append(TradeResult(
+        result = TradeResult(
             symbol       = pos.symbol,
             direction    = pos.direction,
             pnl_usdt     = pnl,
@@ -843,7 +844,33 @@ class FundingTrader:
             duration_min = duration,
             close_reason = reason,
             level        = pos.level,
-        ))
+        )
+        self.results.append(result)
+
+        # Scrivi su file per il dashboard
+        RESULTS_FILE = "/tmp/fk_results.json"
+        try:
+            try:
+                with open(RESULTS_FILE) as f:
+                    data = _json.load(f)
+            except Exception:
+                data = []
+            data.append({
+                "symbol":       result.symbol,
+                "direction":    result.direction,
+                "pnl_usdt":     round(result.pnl_usdt, 4),
+                "pnl_pct":      round(result.pnl_pct, 4),
+                "duration_min": round(result.duration_min, 1),
+                "close_reason": result.close_reason,
+                "level":        result.level,
+                "ts":           datetime.now(timezone.utc).isoformat(),
+            })
+            # Tieni solo ultimi 200 risultati
+            data = data[-200:]
+            with open(RESULTS_FILE, "w") as f:
+                _json.dump(data, f)
+        except Exception as e:
+            logger.warning(f"_record_result: errore scrittura file: {e}")
 
     # ── FUNDING EXIT ──
 

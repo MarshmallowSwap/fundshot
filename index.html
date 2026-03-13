@@ -1514,6 +1514,68 @@ window.addPartialClose = function(pnlUsdt) {
   updateChart(0, []);
 };
 
+// ─── FETCH RESULTS DAL SERVER ───
+async function fetchResults() {
+  try {
+    const proxy = proxyBase();
+    const r = await fetch(proxy + '/api/results');
+    if (!r.ok) return;
+    const data = await r.json();
+    if (!data.ok || !data.results) return;
+    updateFromServerResults(data.results);
+  } catch(e) {
+    // silenzioso
+  }
+}
+
+function updateFromServerResults(results) {
+  if (!results || !results.length) return;
+
+  // Calcola PnL realizzato totale dal server
+  const realized = results.reduce((s, r) => s + (r.pnl_usdt || 0), 0);
+  const wins     = results.filter(r => r.pnl_usdt > 0).length;
+  const winrate  = results.length ? ((wins / results.length) * 100).toFixed(0) + '%' : '—%';
+
+  // Aggiorna KPI
+  const rEl  = document.getElementById('pnl-realized');
+  const wrEl = document.getElementById('pnl-winrate');
+  const totEl = document.getElementById('pnl-total');
+  if (rEl)  { rEl.textContent = (realized>=0?'+':'')+realized.toFixed(2); rEl.style.color = realized>=0?'var(--teal2)':'var(--red2)'; }
+  if (wrEl) wrEl.textContent = winrate;
+
+  // Aggiorna trade history con i dati server (sovrascrive localStorage)
+  TS.trades = results.slice().reverse().map(r => ({
+    time:    r.ts ? new Date(r.ts).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}) : '—',
+    symbol:  r.symbol,
+    side:    r.direction,
+    size:    '—',
+    entry:   null,
+    exit:    null,
+    pnl:     r.pnl_usdt || 0,
+    funding: 0,
+    rr:      r.pnl_pct ? (r.pnl_pct/1).toFixed(2)+'%' : '—',
+    level:   r.level,
+    reason:  r.close_reason,
+  }));
+  TS.realized = realized;
+
+  // Aggiorna badge partial nelle posizioni aperte
+  const partialBySymbol = {};
+  results.forEach(r => {
+    if (!partialBySymbol[r.symbol]) partialBySymbol[r.symbol] = 0;
+    partialBySymbol[r.symbol] += r.pnl_usdt;
+  });
+
+  renderTradeHistory();
+  if (totEl) {
+    // Legge PnL non realizzato corrente
+    const unr = parseFloat(document.getElementById('pnl-unrealized')?.textContent || '0');
+    const tot = realized + unr;
+    totEl.textContent = (tot>=0?'+':'')+tot.toFixed(2);
+    totEl.style.color = tot>=0?'var(--amber2)':'var(--red2)';
+  }
+}
+
 // ─── NAV ───
 function goto(id, btn) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -1824,6 +1886,10 @@ async function loadPositions(){
     if(!list.length){el.innerHTML='<div class="empty-state"><div class="ei">📭</div>Nessuna posizione aperta</div>';updateChart(0,[]);return;}
 
     let totalOpenPnl=0;
+    // Aggiorna PnL non realizzato nel box KPI
+    const unrealisedTotal = list.reduce((s,p)=>s+parseFloat(p.unrealisedPnl||0),0);
+    const uEl = document.getElementById('pnl-unrealized');
+    if (uEl) { uEl.textContent=(unrealisedTotal>=0?'+':'')+unrealisedTotal.toFixed(2); uEl.style.color=unrealisedTotal>=0?'var(--p2)':'var(--red2)'; }
     el.innerHTML=list.map(p=>{
       const isl=p.side==='Buy';
       const pnl=parseFloat(p.unrealisedPnl||0);
@@ -1868,6 +1934,7 @@ function initPositionsPage(){
   initChart();
   loadWallet();
   loadPositions();
+  fetchResults();
 }
 
 // ─── CONFIG DEFAULTS ───
@@ -2659,7 +2726,7 @@ let _secs = 60;
 function startCountdown(){
   setInterval(()=>{
     _secs--;
-    if(_secs<=0){ _secs=60; loadPublic(); fetchOI().then(updateOICard); if(document.getElementById('page-positions').classList.contains('active')) { loadPositions(); fetchMonitoring().then(updateMonitoringCard); } }
+    if(_secs<=0){ _secs=60; loadPublic(); fetchOI().then(updateOICard); fetchResults(); if(document.getElementById('page-positions').classList.contains('active')) { loadPositions(); fetchMonitoring().then(updateMonitoringCard); } }
     qs('countdown').textContent=_secs+'s';
     qs('rfill').style.width=(_secs/60*100)+'%';
   },1000);

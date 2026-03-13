@@ -163,11 +163,13 @@ def bybit_get_auth(path, params=None):
 # Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 _cache = {'tickers': None, 'positions': None, 'wallet': None, 'ts': {}}
 _cache_lock = threading.Lock()
-CACHE_TTL = 30  # secondi
+CACHE_TTL = 30  # secondi (tickers)
+CACHE_TTL_POS = 5   # secondi (posizioni e wallet — aggiornamento rapido PnL)
 
 def cache_get(key):
     with _cache_lock:
-        if _cache[key] and (time.time() - _cache['ts'].get(key, 0)) < CACHE_TTL:
+        ttl = CACHE_TTL_POS if key in ('positions','wallet') else CACHE_TTL
+        if _cache[key] and (time.time() - _cache['ts'].get(key, 0)) < ttl:
             return _cache[key]
     return None
 
@@ -340,6 +342,15 @@ class ProxyHandler(BaseHTTPRequestHandler):
             except Exception as e:
                 self._json({'ok': False, 'error': str(e)})
             return
+
+        elif p == '/api/results':
+            import json as _jj
+            try:
+                with open('/tmp/fk_results.json') as f:
+                    data = _jj.load(f)
+            except Exception:
+                data = []
+            self._json({"ok": True, "results": data})
 
         elif p == '/api/oi':
             try:
