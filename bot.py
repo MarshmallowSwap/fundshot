@@ -539,6 +539,115 @@ async def trading_job(context):
         _tj_running = False
 
 
+# ── Comando /autotrader on|off ────────────────────────────────────────────────
+async def cmd_autotrader_toggle(update, context):
+    """Abilita o disabilita l'auto-trader a runtime. Solo owner."""
+    global TRADING_ENABLED, _funding_trader, _bybit_trader
+
+    # Solo owner
+    chat_id = str(update.effective_chat.id)
+    if chat_id != str(os.getenv("CHAT_ID", CHAT_ID)):
+        await update.message.reply_text("⛔ Not authorized.", parse_mode="Markdown")
+        return
+
+    args = context.args
+    if not args or args[0].lower() not in ("on", "off"):
+        status = "🟢 ON" if TRADING_ENABLED else "🔴 OFF"
+        env    = "🎮 DEMO" if TRADING_DEMO else ("🧪 TESTNET" if TRADING_TESTNET else "🔴 MAINNET")
+        await update.message.reply_text(
+            f"🤖 *Auto-Trader* — {status}\n"
+            f"Environment: `{env}`\n\n"
+            f"Use `/autotrader on` or `/autotrader off`",
+            parse_mode="Markdown"
+        )
+        return
+
+    action = args[0].lower()
+
+    # ── ON ──────────────────────────────────────────────────────────────────
+    if action == "on":
+        if TRADING_ENABLED and _funding_trader is not None:
+            await update.message.reply_text(
+                "✅ *Auto-Trader is already running.*",
+                parse_mode="Markdown"
+            )
+            return
+
+        api_key    = os.getenv("BYBIT_API_KEY", "")
+        api_secret = os.getenv("BYBIT_API_SECRET", "")
+        if not api_key or not api_secret:
+            await update.message.reply_text(
+                "⚠️ *Cannot enable Auto-Trader*\n"
+                "`BYBIT_API_KEY` or `BYBIT_API_SECRET` missing in `.env`.",
+                parse_mode="Markdown"
+            )
+            return
+
+        load_config("trader_config.json")
+        _bybit_trader = BybitTrader(
+            api_key=api_key, api_secret=api_secret,
+            testnet=TRADING_TESTNET, demo=TRADING_DEMO,
+        )
+
+        async def _tg_send_toggle(cid, msg, symbol=None, rate=None):
+            try:
+                chart_buf = None
+                if symbol and rate is not None:
+                    try:
+                        chart_buf = generate_chart(symbol, rate)
+                    except Exception:
+                        pass
+                if chart_buf:
+                    chart_buf.seek(0)
+                    await update.get_bot().send_photo(chat_id=cid, photo=chart_buf,
+                                                      caption=msg, parse_mode="Markdown")
+                else:
+                    await update.get_bot().send_message(chat_id=cid, text=msg, parse_mode="Markdown")
+            except Exception as e:
+                logger.error("_tg_send_toggle: %s", e)
+
+        _funding_trader = FundingTrader(_bybit_trader, _tg_send_toggle)
+        TRADING_ENABLED = True
+
+        env_label = "🎮 DEMO" if TRADING_DEMO else ("🧪 TESTNET" if TRADING_TESTNET else "🔴 MAINNET")
+        await update.message.reply_text(
+            f"🤖 *Auto-Trader activated*\n"
+            f"Environment: `{env_label}`\n"
+            f"Size: `{TRADER_CONFIG['size_usdt']} USDT` | "
+            f"Leverage: `{TRADER_CONFIG['leverage']}x` | "
+            f"Max pos: `{TRADER_CONFIG['max_positions']}`\n"
+            f"Config: `trader_config.json` "
+            f"{'✅' if os.path.exists('trader_config.json') else '⚠️ not found (using defaults)'}",
+            parse_mode="Markdown"
+        )
+
+    # ── OFF ─────────────────────────────────────────────────────────────────
+    else:
+        if not TRADING_ENABLED or _funding_trader is None:
+            await update.message.reply_text(
+                "🔴 *Auto-Trader is already disabled.*",
+                parse_mode="Markdown"
+            )
+            return
+
+        open_pos = len(_funding_trader.positions) if _funding_trader else 0
+        TRADING_ENABLED = False
+        _funding_trader = None
+        _bybit_trader   = None
+
+        warning = (
+            f"\n⚠️ *{open_pos} open position(s) not closed automatically.* Check Bybit."
+            if open_pos > 0 else ""
+        )
+        await update.message.reply_text(
+            f"🔴 *Auto-Trader disabled*\n"
+            f"No new trades will be opened.\n"
+            f"Funding alerts are still active ✅"
+            f"{warning}",
+            parse_mode="Markdown"
+        )
+
+
 # ── Comando /stats trading ────────────────────────────────────────────────────
 async def cmd_stats(update, context):
     """Mostra statistiche delle operazioni di auto-trading."""
@@ -954,6 +1063,7 @@ def main():
     app.add_handler(CommandHandler("stats",            cmd_stats))
     app.add_handler(CommandHandler("test_oi",          cmd_test_oi))
     app.add_handler(CommandHandler("posizioni_trader", cmd_posizioni_trader))
+    app.add_handler(CommandHandler("autotrader",       cmd_autotrader_toggle))
 
     logger.info(
         "🚀 FundShot Bot avviato — interval=%ds | soglie=%s | trading=%s",
