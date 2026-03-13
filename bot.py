@@ -42,6 +42,10 @@ import ws_liquidations as wsl
 import watchlist_manager as wm
 import funding_tracker as ft
 
+# ── SaaS multi-tenant ─────────────────────────────────────────────────────────
+import onboarding
+from user_registry import registry as _registry
+
 # ── Auto-trading ──────────────────────────────────────────────────────────────
 from trader import CONFIG as TRADER_CONFIG, load_config, BybitTrader, FundingTrader
 
@@ -70,17 +74,21 @@ TRADING_DEMO = os.getenv("TRADING_DEMO", "false").lower() == "true"
 
 # ── Helper: invia messaggio Telegram ─────────────────────────────────────────
 async def send_alert(bot: Bot, text: str, target_chat_id=None, symbol: str = None, rate: float = None):
-    """Invia alert a un utente specifico o a tutti gli utenti con credenziali.
-    Se symbol e rate sono forniti, invia il grafico candlestick insieme all'alert.
-    """
+    """Invia alert a un utente specifico o a tutti gli utenti registrati su Supabase."""
     if target_chat_id:
         recipients = [str(target_chat_id)]
     else:
-        recipients = _user_store.users_with_credentials()
-        if not recipients:
-            fallback = os.getenv("CHAT_ID", CHAT_ID)
-            if fallback:
-                recipients = [fallback]
+        # Multi-tenant: tutti i chat_id con almeno un exchange configurato
+        supabase_ids = [str(cid) for cid in _registry.chat_ids()]
+        if supabase_ids:
+            recipients = supabase_ids
+        else:
+            # Fallback legacy: user_store o CHAT_ID env
+            recipients = _user_store.users_with_credentials()
+            if not recipients:
+                fallback = os.getenv("CHAT_ID", CHAT_ID)
+                if fallback:
+                    recipients = [fallback]
 
     # Genera grafico se disponibile
     chart_buf = None
@@ -691,6 +699,13 @@ async def post_init(app):
     if _user_store.migrate_from_env():
         logger.info("post_init: credenziali .env migrate nel multi-user store")
 
+    # ── SaaS: carica tutti gli utenti dal registry Supabase ──────────────────
+    try:
+        n = await _registry.refresh()
+        logger.info("Registry SaaS: %d client attivi", n)
+    except Exception as e:
+        logger.warning("Registry SaaS non disponibile: %s", e)
+
     # 1b. Carica storico guadagni funding
     ft.load()
 
@@ -895,6 +910,9 @@ def main():
     # Registra handler comandi (da commands.py)
     commands.inject_bot_commands(cmd_stats, cmd_posizioni_trader)
     commands.register(app)
+
+    # Registra wizard onboarding SaaS (sostituisce /start legacy)
+    app.add_handler(onboarding.build_onboarding_handler())
 
     # Registra handler comandi trading inline
     from telegram.ext import CommandHandler
