@@ -47,6 +47,7 @@ THR_HIGH      = 1.00
 THR_CLOSE_TIP = 0.75
 THRESHOLD_HARD        = 2.00
 THRESHOLD_EXTREME     = 1.50
+THRESHOLD_BASE        = 0.50
 THRESHOLD_HIGH        = 1.00
 THRESHOLD_CLOSE_TIP   = 0.75   # CONSIGLIO CHIUSURA: funding rientro area
 THRESHOLD_WARN_TIP    = 0.25   # mantenuto per compatibilita ma NON invia alert
@@ -156,6 +157,7 @@ _FIXED_THRESHOLDS = {
     "hard":      THRESHOLD_HARD,
     "extreme":   THRESHOLD_EXTREME,
     "high":      THRESHOLD_HIGH,
+    "base":      THRESHOLD_BASE,
     "close_tip": THRESHOLD_CLOSE_TIP,
     "warn_tip":  THRESHOLD_WARN_TIP,
     "rientro":   THRESHOLD_RIENTRO,
@@ -200,7 +202,7 @@ def get_thresholds_info(symbol: str) -> dict:
     """
     avg    = get_avg_rolling(symbol) if USE_DYNAMIC else 0.0
     result = {"dynamic_active": USE_DYNAMIC, "avg_rolling": avg, "levels": {}}
-    for level in ["critico", "hard", "extreme", "high", "close_tip", "warn_tip"]:
+    for level in ["critico", "hard", "extreme", "high", "base", "close_tip", "warn_tip"]:
         fixed     = _FIXED_THRESHOLDS[level]
         dynamic   = avg * MULTIPLIERS[level] if avg > 0 else 0.0
         effective = max(fixed, dynamic) if USE_DYNAMIC and avg > 0 else fixed
@@ -229,6 +231,8 @@ def classify(symbol: str, rate_pct: float) -> str:
         return "extreme"
     if abs_rate >= get_effective_threshold(symbol, "high"):
         return "high"
+    if abs_rate >= get_effective_threshold(symbol, "base"):
+        return "base"
     if abs_rate >= get_effective_threshold(symbol, "close_tip"):
         return "close_tip"
     if abs_rate >= get_effective_threshold(symbol, "warn_tip"):
@@ -256,6 +260,7 @@ _LEVEL_META = {
     "hard":      ("\U0001f534", "HARD FUNDING"),
     "extreme":   ("\U0001f525", "EXTREME FUNDING"),
     "high":      ("\U0001f6a8", "HIGH FUNDING"),
+    "base":      ("\U0001f4ca", "BASE FUNDING"),
     "close_tip": ("\u26a0\ufe0f",  "CONSIGLIO CHIUSURA"),
     "warn_tip":  ("\u2139\ufe0f",  "PERICOLO CHIUSURA"),
     "rientro":   ("\u2705", "FUNDING RIENTRATO"),
@@ -399,6 +404,7 @@ MIN_RESEND_INTERVAL: dict[str, int] = {
     "hard":      600,   # 10 min
     "extreme":   600,   # 10 min
     "high":      600,   # 10 min
+    "base":      300,   #  5 min
     "close_tip": 300,   #  5 min
     "warn_tip":  300,   #  5 min
     "rientro":   300,   #  5 min
@@ -529,7 +535,7 @@ def process_funding(symbol: str, rate_pct: float, interval_h) -> str | None:
     # ─────────────────────────────────────────────────────────────────────────
 
     # Segna il simbolo come funded per CRITICO / HIGH / EXTREME / HARD
-    if new_level in ("critico", "high", "extreme", "hard"):
+    if new_level in ("critico", "high", "extreme", "hard", "base"):
         mark_funded(symbol)
 
     # Anti-duplicato temporale
