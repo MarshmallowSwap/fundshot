@@ -293,7 +293,8 @@ def format_alert(
 
     if level == "rientro":
         return (
-            f"{emoji} {title} -- {symbol}\n"
+            f"{emoji} {title}\n"
+            f"*{symbol}*\n"
             f"Rate: {rate_str} (ogni {interval})\n"
             f"Eccesso rientrato"
         )
@@ -302,7 +303,8 @@ def format_alert(
         side   = "SHORT" if rate_pct > 0 else "LONG"
         income = "gli short INCASSANO" if rate_pct > 0 else "i long INCASSANO"
         return (
-            f"{emoji} {title} -- {symbol}\n"
+            f"{emoji} {title}\n"
+            f"*{symbol}*\n"
             f"Rate: {rate_str} (ogni {interval}){suffix}\n"
             f"\U0001f4b0 Funding MASSIMO: {income}\n"
             f"\U0001f680 Mantieni / Apri {side} -- opportunita RARA!"
@@ -311,7 +313,8 @@ def format_alert(
     if level == "close_tip":
         action = "chiudere posizioni SHORT" if rate_pct > 0 else "chiudere posizioni LONG"
         return (
-            f"{emoji} {title} -- {symbol}\n"
+            f"{emoji} {title}\n"
+            f"*{symbol}*\n"
             f"Rate: {rate_str} (ogni {interval}){suffix}\n"
             f"Valuta di {action}"
         )
@@ -319,13 +322,15 @@ def format_alert(
     if level == "warn_tip":
         action = "posizioni SHORT" if rate_pct > 0 else "posizioni LONG"
         return (
-            f"{emoji} {title} -- {symbol}\n"
+            f"{emoji} {title}\n"
+            f"*{symbol}*\n"
             f"Rate: {rate_str} (ogni {interval}){suffix}\n"
             f"Attenzione: funding su {action} ancora attivo"
         )
 
     return (
-        f"{emoji} {title} -- {symbol}\n"
+        f"{emoji} {title}\n"
+        f"*{symbol}*\n"
         f"Rate: {rate_str} (ogni {interval}){suffix}\n"
         f"Segnale: {direction}"
     )
