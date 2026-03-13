@@ -261,7 +261,7 @@ _LEVEL_META = {
     "hard":      ("\U0001f534", "HARD FUNDING"),
     "extreme":   ("\U0001f525", "EXTREME FUNDING"),
     "high":      ("\U0001f6a8", "HIGH FUNDING"),
-    "soft":      ("\U0001f4ca", "BASE FUNDING"),
+    "soft":      ("\U0001f4ca", "SOFT FUNDING"),
     "close_tip": ("\u26a0\ufe0f",  "CONSIGLIO CHIUSURA"),
     "warn_tip":  ("\u2139\ufe0f",  "PERICOLO CHIUSURA"),
     "rientro":   ("\u2705", "FUNDING RIENTRATO"),

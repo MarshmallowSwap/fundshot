@@ -556,7 +556,7 @@ class FundingTrader:
 
         # 5. Posizione già aperta su questo simbolo
         if symbol in self.positions:
-            return False, "posizione già aperta"
+            return False, "position already open"
 
         # 1b. Cooldown post-chiusura (30 min per evitare riapertura immediata)
         REOPEN_COOLDOWN = 30 * 60  # 30 minuti
@@ -679,12 +679,12 @@ class FundingTrader:
         strategy_line = (
             f"🎯 TP1 30%: `${params['tp1_price']:.6f}` ({params['tp1_pct']:+.2f}%) + Trailing {params['trailing_buffer']:.2f}%\n"
             if USE_TP1 else
-            f"🎯 Trailing 100%: attivo da `${active_price:.6f}` (+{params['tp1_pct']:.2f}%), dist `{params['trailing_buffer']:.2f}%`\n"
+            f"🎯 Trailing 100%: active from `${active_price:.6f}` (+{params['tp1_pct']:.2f}%), dist `{params['trailing_buffer']:.2f}%`\n"
         )
         msg = (
-            f"{emoji} *TRADE APERTO — {direction}*\n"
+            f"{emoji} *TRADE OPENED — {direction}*\n"
             f"━━━━━━━━━━━━━━━━━━\n"
-            f"📌 Coppia:    `{symbol}`\n"
+            f"📌 Pair:      `{symbol}`\n"
             f"💰 Entry:     `${mark_price:.6f}`\n"
             f"📊 Funding:   `{funding_rate*100:+.4f}%` ({level.upper()})\n"
             f"📈 OI Δ5m:    `{oi_data['change_5m']:+.2f}%`\n"
@@ -692,8 +692,8 @@ class FundingTrader:
             f"{strategy_line}"
             f"🎯 Cap max:   `~{params['tp_max_pct']:.1f}%`\n"
             f"🛡️ SL:        `${params['sl_price']:.6f}` (-{CONFIG['sl_pct']:.1f}%)\n"
-            f"⚡ Leva:      `{CONFIG['leverage']}x`\n"
-            f"💵 Size:      `{CONFIG['size_usdt']} USDT` → `{notional:.0f} USDT` nozionale\n"
+            f"⚡ Leverage:  `{CONFIG['leverage']}x`\n"
+            f"💵 Size:      `{CONFIG['size_usdt']} USDT` → `{notional:.0f} USDT` notional\n"
             f"━━━━━━━━━━━━━━━━━━\n"
             f"🆔 Order: `{order_id}`"
         )
@@ -720,11 +720,11 @@ class FundingTrader:
             pnl_pct    = ((pos.entry_price - mark_price) / pos.entry_price * 100) if is_short                          else ((mark_price - pos.entry_price) / pos.entry_price * 100)
             pnl_usdt   = pos.notional * (pnl_pct / 100)
             msg = (
-                f"🔔 *POSIZIONE CHIUSA — {pos.direction} {symbol}*\n"
+                f"🔔 *POSITION CLOSED — {pos.direction} {symbol}*\n"
                 f"━━━━━━━━━━━━━━━━━━\n"
-                f"📌 Motivo:    `Chiusa da Bybit (TP/SL nativo)`\n"
-                f"💰 Prezzo:    `${mark_price:.6f}`\n"
-                f"📈 PnL est.:  `{pnl_usdt:+.2f} USDT` ({pnl_pct:+.2f}%)\n"
+                f"📌 Reason:    `Closed by Bybit (native TP/SL)`\n"
+                f"💰 Price:     `${mark_price:.6f}`\n"
+                f"📈 Est. PnL:  `{pnl_usdt:+.2f} USDT` ({pnl_pct:+.2f}%)\n"
                 f"━━━━━━━━━━━━━━━━━━\n"
                 f"⏱️ Durata: `{((datetime.now(timezone.utc)-pos.opened_at).seconds//60)} min`"
             )
@@ -764,14 +764,14 @@ class FundingTrader:
                 pnl_tp1 = CONFIG["size_usdt"] * CONFIG["leverage"] * (pos.tp1_pct / 100) * (CONFIG["tp1_size_pct"] / 100)
 
                 msg = (
-                    f"✅ *TP1 COLPITO — {pos.direction} {symbol}*\n"
+                    f"✅ *TP1 HIT — {pos.direction} {symbol}*\n"
                     f"━━━━━━━━━━━━━━━━━━\n"
-                    f"💰 Prezzo:    `${mark_price:.4f}`\n"
-                    f"💵 Chiuso:    `30%` della posizione\n"
-                    f"📈 PnL parz:  `+{pnl_tp1:.2f} USDT`\n"
-                    f"🔄 SL spostato a breakeven: `${pos.entry_price:.4f}`\n"
-                    f"🎯 Trailing attivo: buffer `{pos.trailing_buffer:.1f}%`\n"
-                    f"⏳ 70% posizione ancora aperta..."
+                    f"💰 Price:     `${mark_price:.4f}`\n"
+                    f"💵 Closed:    `30%` of position\n"
+                    f"📈 Partial PnL: `+{pnl_tp1:.2f} USDT`\n"
+                    f"🔄 SL moved to breakeven: `${pos.entry_price:.4f}`\n"
+                    f"🎯 Trailing active: buffer `{pos.trailing_buffer:.1f}%`\n"
+                    f"⏳ 70% position still open..."
                 )
                 await self.send(chat_id, msg)
                 # Sposta SL a breakeven su Bybit
@@ -842,7 +842,7 @@ class FundingTrader:
             pnl_tp1  = pos.notional * (pos.tp1_pct / 100) * (CONFIG["tp1_size_pct"] / 100)
             pnl_rest = pos.notional * (pnl_pct / 100) * (1 - CONFIG["tp1_size_pct"] / 100)
             total_pnl = pnl_tp1 + pnl_rest
-            await self._send_close_msg(chat_id, pos, reason, price, total_pnl, pnl_pct, "70% residuo")
+            await self._send_close_msg(chat_id, pos, reason, price, total_pnl, pnl_pct, "70% remainder")
             self._record_result(pos, total_pnl, pnl_pct, reason)
             self._recently_closed[pos.symbol] = time.time()
             del self.positions[symbol]
@@ -850,22 +850,22 @@ class FundingTrader:
     async def _send_close_msg(self, chat_id: str, pos: TradePosition, reason: str,
                                price: float, pnl: float, pnl_pct: float, portion: str):
         emoji  = "💚" if pnl >= 0 else "🔴"
-        r_map  = {"TP_MAX":"🎯 TARGET MASSIMO","TRAILING":"📉 TRAILING STOP",
-                  "SL":"🛡️ STOP LOSS","SL_BREAKEVEN":"🔒 BREAKEVEN","FUNDING_EXIT":"🔄 FUNDING RIENTRATO"}
+        r_map  = {"TP_MAX":"🎯 MAX TARGET","TRAILING":"📉 TRAILING STOP",
+                  "SL":"🛡️ STOP LOSS","SL_BREAKEVEN":"🔒 BREAKEVEN","FUNDING_EXIT":"🔄 FUNDING RETREATED"}
         reason_str = r_map.get(reason, reason)
         duration   = (datetime.now(timezone.utc) - pos.opened_at).seconds // 60
 
         msg = (
-            f"{emoji} *TRADE CHIUSO — {reason_str}*\n"
+            f"{emoji} *TRADE CLOSED — {reason_str}*\n"
             f"━━━━━━━━━━━━━━━━━━\n"
-            f"📌 Coppia:    `{pos.symbol}` ({pos.direction})\n"
+            f"📌 Pair:      `{pos.symbol}` ({pos.direction})\n"
             f"💰 Entry:     `${pos.entry_price:.4f}`\n"
             f"💰 Exit:      `${price:.4f}`\n"
-            f"📊 Chiuso:    `{portion}`\n"
+            f"📊 Closed:    `{portion}`\n"
             f"━━━━━━━━━━━━━━━━━━\n"
             f"{'📈' if pnl >= 0 else '📉'} PnL:       `{pnl:+.2f} USDT` ({pnl_pct:+.2f}%)\n"
-            f"⏱️ Durata:    `{duration} min`\n"
-            f"📋 Livello:   `{pos.level.upper()}`"
+            f"⏱️ Duration:  `{duration} min`\n"
+            f"📋 Level:     `{pos.level.upper()}`"
         )
         await self.send(chat_id, msg)
         logger.info(f"Trade chiuso: {pos.direction} {pos.symbol} | {reason} | PnL: {pnl:+.2f} USDT")
