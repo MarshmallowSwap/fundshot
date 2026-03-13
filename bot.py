@@ -253,7 +253,7 @@ async def funding_job(context):
 
         # 1b. Alert cambio livello funding
         if _bot_alert_enabled("level_change"):
-            level_alert = al.check_level_change(symbol, al.classify(symbol, rate_pct))
+            level_alert = al.check_level_change(symbol, al.classify(symbol, rate_pct), rate_pct=rate_pct)
             if level_alert:
                 await send_alert(bot, level_alert)
                 bot_data["alerts_sent"] = bot_data.get("alerts_sent", 0) + 1

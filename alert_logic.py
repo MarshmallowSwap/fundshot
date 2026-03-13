@@ -658,16 +658,19 @@ def process_pump_dump(
 # ══════════════════════════════════════════════════════════════════════════════
 
 _prev_level_map:       dict[str, str]   = {}
+_prev_rate_map:        dict[str, float]  = {}
 _level_change_cooldown: dict[str, float] = {}
 _LEVEL_CHANGE_CD_SEC = 300   # 5 minuti
 
 
-def check_level_change(symbol: str, new_level: str) -> str | None:
+def check_level_change(symbol: str, new_level: str, rate_pct: float = 0.0, prev_rate_pct: float = 0.0) -> str | None:
     if not _alert_enabled('level_change'):
         return None
 
     prev = _prev_level_map.get(symbol, 'none')
+    prev_rate_saved = _prev_rate_map.get(symbol, 0.0)
     _prev_level_map[symbol] = new_level
+    _prev_rate_map[symbol]  = rate_pct
 
     if prev == new_level or prev == 'none' or new_level == 'none':
         return None
@@ -678,26 +681,53 @@ def check_level_change(symbol: str, new_level: str) -> str | None:
     _level_change_cooldown[symbol] = now
 
     RANK = {
-        'none': 0, 'rientro': 0, 'warn_tip': 1,
-        'close_tip': 2, 'high': 3, 'extreme': 4, 'hard': 5, 'critico': 6,
+        'none': 0, 'rientro': 0, 'base': 1, 'warn_tip': 2,
+        'close_tip': 3, 'high': 4, 'extreme': 5, 'hard': 6, 'critico': 7,
     }
+    EMOJI = {
+        'base':      '📊',
+        'warn_tip':  '⚠️',
+        'close_tip': '🔔',
+        'high':      '🚨',
+        'extreme':   '🔥',
+        'hard':      '🔴',
+        'critico':   '🎰',
+    }
+    LBL = {
+        'base': 'BASE', 'warn_tip': 'WARN', 'close_tip': 'CLOSE',
+        'high': 'HIGH', 'extreme': 'EXTREME', 'hard': 'HARD', 'critico': 'JACKPOT',
+    }
+
     p_r = RANK.get(prev, 0)
     n_r = RANK.get(new_level, 0)
 
     if n_r <= 0:
         return None
 
-    up        = n_r > p_r
-    emoji     = {'critico': '\U0001f911', 'hard': '\U0001f534', 'extreme': '\U0001f525', 'high': '\U0001f6a8'}.get(new_level, '') if up else ''
-    lbl       = {'critico': 'JACKPOT', 'hard': 'HARD', 'extreme': 'EXTREME', 'high': 'HIGH', 'close_tip': 'CLOSE', 'warn_tip': 'WARN'}
-    arrow_sym = 'SU' if up else 'GIU'
-    prev_lbl  = lbl.get(prev, prev.upper())
-    new_lbl   = lbl.get(new_level, new_level.upper())
+    up       = n_r > p_r
+    direction = '📈 SU' if up else '📉 GIÙ'
+    danger    = '⚠️' if up else 'ℹ️'
+
+    prev_emoji = EMOJI.get(prev, '📊')
+    new_emoji  = EMOJI.get(new_level, '📊')
+    prev_lbl   = LBL.get(prev, prev.upper())
+    new_lbl    = LBL.get(new_level, new_level.upper())
+
+    # Funding: usa il rate salvato per il precedente, il corrente per il nuovo
+    old_rate = prev_rate_saved if prev_rate_saved != 0.0 else prev_rate_pct
+    sign_old = '+' if old_rate >= 0 else ''
+    sign_new = '+' if rate_pct >= 0 else ''
 
     return (
-        f'{arrow_sym} {emoji} *CAMBIO LIVELLO -- {symbol}*\n'
-        f'{prev_lbl} -> {new_lbl}\n'
-        'Verifica posizione aperta!'
+        f'{danger} *CAMBIO LIVELLO {direction}*\n'
+        f'━━━━━━━━━━━━━━━━━━\n'
+        f'📌 Coppia:  `{symbol}`\n'
+        f'{prev_emoji} `{prev_lbl}` → {new_emoji} `{new_lbl}`\n'
+        f'━━━━━━━━━━━━━━━━━━\n'
+        f'📊 Funding precedente: `{sign_old}{old_rate:.4f}%`\n'
+        f'📊 Funding attuale:    `{sign_new}{rate_pct:.4f}%`\n'
+        f'━━━━━━━━━━━━━━━━━━\n'
+        f'🔍 Verifica posizione aperta!'
     )
 
 
