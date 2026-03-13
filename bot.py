@@ -19,6 +19,10 @@ from telegram.ext import ApplicationBuilder
 import bybit_client as bc
 import alert_logic as al
 from chart_gen import generate_chart
+try:
+    import oi_monitor
+except Exception as _e:
+    oi_monitor = None
 
 try:
     import alert_config_manager as _acm
@@ -802,11 +806,7 @@ def main():
 
 async def cmd_test_oi(update, context):
     """Invia un alert OI spike di test per verificare il formato."""
-    try:
-    import oi_monitor
-except Exception as _oi_err:
-    oi_monitor = None
-    import logging as _l; _l.getLogger(__name__).warning('oi_monitor import error: %s', _oi_err) as _oim
+    import oi_monitor as _oim
     # Prende un simbolo reale con OI alto per il test
     symbol = "BTCUSDT"
     funding = -0.0312  # funding negativo simulato
