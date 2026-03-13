@@ -317,8 +317,8 @@ class BybitTrader:
         })
         return r.get("retCode") == 0
 
-    def get_min_qty(self, symbol: str) -> float:
-        """Ottieni la quantità minima ordinabile per il simbolo."""
+    def get_lot_info(self, symbol: str) -> dict:
+        """Ottieni minOrderQty e qtyStep dal lotSizeFilter di Bybit."""
         try:
             r = requests.get(
                 "https://api.bybit.com/v5/market/instruments-info",
@@ -328,20 +328,34 @@ class BybitTrader:
             data = r.json()
             if data["retCode"] == 0:
                 info = data["result"]["list"][0]["lotSizeFilter"]
-                return float(info.get("minOrderQty", 0.001))
+                return {
+                    "min_qty":  float(info.get("minOrderQty", 0.001)),
+                    "qty_step": float(info.get("qtyStep", 0.001)),
+                }
         except Exception as e:
-            logger.error(f"get_min_qty {symbol}: {e}")
-        return 0.001
+            logger.error(f"get_lot_info {symbol}: {e}")
+        return {"min_qty": 0.001, "qty_step": 0.001}
+
+    def get_min_qty(self, symbol: str) -> float:
+        return self.get_lot_info(symbol)["min_qty"]
 
     def calc_qty(self, symbol: str, size_usdt: float, leverage: int) -> Optional[float]:
-        """Calcola qty in base al prezzo corrente e size USDT."""
+        """Calcola qty rispettando minOrderQty e qtyStep di Bybit."""
         price = self.get_mark_price(symbol)
         if not price:
             return None
+        lot   = self.get_lot_info(symbol)
+        min_q = lot["min_qty"]
+        step  = lot["qty_step"]
         notional = size_usdt * leverage
-        qty = round(notional / price, 3)
-        min_qty = self.get_min_qty(symbol)
-        return max(qty, min_qty)
+        raw_qty  = notional / price
+        # Arrotonda al multiplo di step
+        import math
+        decimals = max(0, -int(math.floor(math.log10(step)))) if step < 1 else 0
+        qty = round(math.floor(raw_qty / step) * step, decimals)
+        qty = max(qty, min_q)
+        logger.debug(f"calc_qty {symbol}: price={price} notional={notional} raw={raw_qty:.4f} step={step} qty={qty}")
+        return qty
 
     def place_order(self, symbol: str, side: str, qty: float,
                     sl_price: float, tp_price: float) -> Optional[str]:
