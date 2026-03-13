@@ -400,23 +400,42 @@ async def oi_spike_job(context):
                 for c in candidates
             ])
 
-        # Processa risultati
-        import time
+        # Processa risultati e aggiorna file OI per dashboard
+        import time, json as _json
         now = time.monotonic()
+        oi_snapshot = {}
+
         for sym_dict, oi_data in zip(candidates, results):
             if not oi_data:
                 continue
             chg = oi_data["change_5m"]
             sym = sym_dict["symbol"]
-            if chg >= oi_monitor.OI_SPIKE_THRESHOLD or chg <= oi_monitor.OI_DROP_THRESHOLD:
-                # Cooldown
+            funding = _funding_cache.get(sym, 0) * 100
+            is_spike = chg >= oi_monitor.OI_SPIKE_THRESHOLD or chg <= oi_monitor.OI_DROP_THRESHOLD
+
+            # Salva snapshot per la dashboard
+            oi_snapshot[sym] = {
+                "change_5m": round(chg, 3),
+                "oi":        round(oi_data["oi"], 0),
+                "funding":   round(funding, 4),
+                "spike":     is_spike,
+                "ts":        int(time.time()),
+            }
+
+            if is_spike:
                 if now - oi_monitor._last_oi_alert.get(sym, 0) < oi_monitor.OI_COOLDOWN_SEC:
                     continue
-                funding = _funding_cache.get(sym, 0) * 100
                 msg = oi_monitor.format_oi_spike_alert(sym, chg, funding)
                 oi_monitor._last_oi_alert[sym] = now
                 logger.info("OI spike %s: %+.2f%%", sym, chg)
                 await send_alert(bot, msg, symbol=sym, rate=funding)
+
+        # Scrivi snapshot su file per il proxy
+        try:
+            with open('/tmp/fk_oi.json', 'w') as _f:
+                _json.dump(oi_snapshot, _f)
+        except Exception as _fe:
+            logger.debug("fk_oi.json write error: %s", _fe)
 
     except Exception as e:
         logger.warning("oi_spike_job error: %s", e)

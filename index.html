@@ -640,6 +640,22 @@ nav {
     </div>
   </div>
 
+  <!-- OI CARD -->
+  <div class="card" style="margin-bottom:16px">
+    <div class="ch">
+      <div>
+        <div class="ct">📊 Open Interest</div>
+        <div style="font-size:11px;color:var(--text-muted)">Variazione OI 5min — aggiornato ogni 5 min</div>
+      </div>
+      <span id="oi-spike-count" style="background:var(--red2);color:#fff;padding:2px 10px;border-radius:20px;font-size:12px;font-weight:700;display:none">⚡ SPIKE</span>
+    </div>
+    <div id="oi-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;padding:14px 0 4px">
+      <div style="color:var(--text-muted);font-size:13px;grid-column:1/-1;text-align:center;padding:8px">
+        Caricamento...
+      </div>
+    </div>
+  </div>
+
   <!-- PNL CHART -->
   <div class="card g1">
     <div class="chart-header">
@@ -1674,6 +1690,60 @@ function renderFeed(){
 }
 
 // ─── WALLET ───
+async function fetchOI() {
+  try {
+    const r = await fetch(proxyBase() + '/api/oi');
+    const d = await r.json();
+    return d.ok ? d.oi : {};
+  } catch(e) { return {}; }
+}
+
+function updateOICard(oi) {
+  const grid = document.getElementById('oi-grid');
+  const badge = document.getElementById('oi-spike-count');
+  if (!grid) return;
+
+  const entries = Object.entries(oi);
+  if (!entries.length) {
+    grid.innerHTML = '<div style="color:var(--text-muted);font-size:13px;grid-column:1/-1;text-align:center;padding:8px">Nessun dato OI disponibile</div>';
+    badge.style.display = 'none';
+    return;
+  }
+
+  // Ordina: spike prima, poi per abs(change_5m) decrescente
+  entries.sort((a, b) => {
+    if (b[1].spike !== a[1].spike) return b[1].spike - a[1].spike;
+    return Math.abs(b[1].change_5m) - Math.abs(a[1].change_5m);
+  });
+
+  let spikeCount = entries.filter(([,v]) => v.spike).length;
+  badge.style.display = spikeCount > 0 ? '' : 'none';
+
+  grid.innerHTML = entries.map(([sym, v]) => {
+    const chg     = v.change_5m;
+    const isSpike = v.spike;
+    const isUp    = chg >= 0;
+    const arrow   = isUp ? '▲' : '▼';
+    const clr     = isUp ? 'var(--green2,#26a641)' : 'var(--red2,#f85149)';
+    const funding = v.funding;
+    const fClr    = funding < 0 ? 'var(--green2,#26a641)' : funding > 0 ? 'var(--red2,#f85149)' : 'var(--text-muted)';
+
+    const spike_style = isSpike
+      ? 'border:2px solid var(--amber2,#f59e0b);box-shadow:0 0 12px rgba(245,158,11,.35);transform:scale(1.06);z-index:2;'
+      : 'border:1px solid var(--border);';
+
+    const sym_size = isSpike ? 'font-size:15px;font-weight:800' : 'font-size:13px;font-weight:700';
+    const chg_size = isSpike ? 'font-size:20px;font-weight:800' : 'font-size:16px;font-weight:700';
+
+    return `<div style="background:var(--bg2);border-radius:12px;padding:12px 14px;position:relative;transition:all .3s;${spike_style}">
+      ${isSpike ? '<div style="position:absolute;top:6px;right:8px;font-size:10px;color:var(--amber2,#f59e0b);font-weight:700">⚡ SPIKE</div>' : ''}
+      <div style="${sym_size};color:var(--text1)">${sym.replace('USDT','')}</div>
+      <div style="${chg_size};color:${clr};margin:4px 0">${arrow} ${chg > 0 ? '+' : ''}${chg.toFixed(2)}%</div>
+      <div style="font-size:10px;color:${fClr}">F: ${funding > 0 ? '+' : ''}${funding.toFixed(4)}%</div>
+    </div>`;
+  }).join('');
+}
+
 async function fetchMonitoring() {
   try {
     const pb = typeof proxyBase === 'function' ? proxyBase() : ('http://'+window.location.hostname+':8080');
@@ -2589,7 +2659,7 @@ let _secs = 60;
 function startCountdown(){
   setInterval(()=>{
     _secs--;
-    if(_secs<=0){ _secs=60; loadPublic(); if(document.getElementById('page-positions').classList.contains('active')) { loadPositions(); fetchMonitoring().then(updateMonitoringCard); } }
+    if(_secs<=0){ _secs=60; loadPublic(); if(document.getElementById('page-positions').classList.contains('active')) { loadPositions(); fetchMonitoring().then(updateMonitoringCard); fetchOI().then(updateOICard); } }
     qs('countdown').textContent=_secs+'s';
     qs('rfill').style.width=(_secs/60*100)+'%';
   },1000);
