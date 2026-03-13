@@ -1568,12 +1568,22 @@ function updateFromServerResults(results) {
 
   renderTradeHistory();
   if (totEl) {
-    // Legge PnL non realizzato corrente
     const unr = parseFloat(document.getElementById('pnl-unrealized')?.textContent || '0');
     const tot = realized + unr;
     totEl.textContent = (tot>=0?'+':'')+tot.toFixed(2);
     totEl.style.color = tot>=0?'var(--amber2)':'var(--red2)';
   }
+
+  // Aggiorna anche i KPI della pagina trading (pnl-realized, pnl-winrate ecc.)
+  const pnlR = document.getElementById('pnl-realized');
+  const pnlW = document.getElementById('pnl-winrate');
+  const pnlRR = document.getElementById('pnl-rr');
+  if (pnlR) { pnlR.textContent=(realized>=0?'+':'')+realized.toFixed(2); pnlR.style.color=realized>=0?'var(--teal2)':'var(--red2)'; }
+  if (pnlW) pnlW.textContent = winrate;
+  if (pnlRR) pnlRR.textContent = results.length ? (results.reduce((s,r)=>s+Math.abs(r.pnl_pct),0)/results.length).toFixed(2) : '—';
+
+  // Aggiorna Guardian con i nuovi dati
+  if (typeof guardianUpdate === 'function') guardianUpdate();
 }
 
 // ─── NAV ───
