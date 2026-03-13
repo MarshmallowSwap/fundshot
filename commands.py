@@ -659,7 +659,7 @@ async def posizioni(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not positions:
         # Esegui diagnostica veloce per capire il motivo
         diag = await bc.test_positions_api()
-        diag_lines = ["📭 *Nessuna posizione aperta trovata.*"]
+        diag_lines = ["📭 *No open positions found.*"]
         diag_lines.append("")
         diag_lines.append("🔍 *Diagnostica API:*")
         all_ok = True
@@ -922,7 +922,7 @@ async def alerts_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         custom = wm.get_all_custom_thresholds()
         if not custom:
             await update.message.reply_text(
-                "ℹ️ *Nessuna soglia custom impostata.*\n\n"
+                "ℹ️ *No custom thresholds set.*\n\n"
                 "Tutti i simboli usano le soglie globali:\n"
                 "  🔴 HARD: 2.00%\n"
                 "  🔥 EXTREME: 1.50%\n"

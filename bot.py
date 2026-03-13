@@ -327,8 +327,8 @@ async def funding_job(context):
                         gain_dir = "ricevuto" if gain >= 0 else "pagato"
                         msg = (
                             f"💰 *FUNDING REGISTRATO — {symbol}*\n"
-                            f"Rate ciclo: {'+' if prev_rate>=0 else ''}{prev_rate:.4f}%\n"
-                            f"Posizione: {'SHORT' if side=='Sell' else 'LONG'} {size}\n"
+                            f"Cycle rate: {'+' if prev_rate>=0 else ''}{prev_rate:.4f}%\n"
+                            f"Position: {'SHORT' if side=='Sell' else 'LONG'} {size}\n"
                             f"Gain {gain_dir}: `{sign}{gain:.4f} USDT`"
                         )
                         await send_alert(bot, msg)

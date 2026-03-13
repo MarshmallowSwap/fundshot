@@ -150,7 +150,7 @@ class FundingTrader:
         if self.mins_to_next_reset() < self.cfg["mins_before_reset"]:
             return False, "troppo vicino al reset"
         if symbol in self.positions:
-            return False, "posizione già aperta"
+            return False, "position already open"
         cooldown = self.cfg["reopen_cooldown"]
         if symbol in self._recently_closed:
             elapsed = time.time() - self._recently_closed[symbol]

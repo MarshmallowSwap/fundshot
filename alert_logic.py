@@ -323,7 +323,7 @@ def format_alert(
     p24_arrow = "▲" if pct_24h >= 0 else "▼"
     p24_color = "+" if pct_24h >= 0 else ""
     p24_str   = f"{p24_arrow} `{p24_color}{pct_24h:.2f}%`" if pct_24h != 0 else "—"
-    price_line = f"💵 Prezzo:  {price_str}  |  24h: {p24_str}\n" if last_price > 0 else ""
+    price_line = f"💵 Price:  {price_str}  |  24h: {p24_str}\n" if last_price > 0 else ""
 
     if level == "rientro":
         return (
@@ -334,12 +334,12 @@ def format_alert(
             f"{price_line}"
             f"📈 OI 5m:   {oi_str}\n"
             f"━━━━━━━━━━━━━━━━━━\n"
-            f"✅ Eccesso rientrato — posizioni al sicuro"
+            f"✅ Excess cleared — positions safe"
         )
 
     if level == "critico":
         side   = "SHORT" if rate_pct > 0 else "LONG"
-        income = "gli SHORT incassano" if rate_pct > 0 else "i LONG incassano"
+        income = "SHORTs collect funding" if rate_pct > 0 else "LONGs collect funding"
         return (
             f"{emoji} *{title}*\n"
             f"━━━━━━━━━━━━━━━━━━\n"
@@ -348,12 +348,12 @@ def format_alert(
             f"{price_line}"
             f"📈 OI 5m:   {oi_str}\n"
             f"━━━━━━━━━━━━━━━━━━\n"
-            f"💰 Funding MASSIMO — {income}\n"
-            f"🚀 Mantieni / Apri *{side}* — opportunità RARA!"
+            f"💰 MAX FUNDING — {income}\n"
+            f"🚀 Hold / Open *{side}* — RARE opportunity!"
         )
 
     if level == "close_tip":
-        action = "chiudi SHORT" if rate_pct > 0 else "chiudi LONG"
+        action = "close SHORT" if rate_pct > 0 else "close LONG"
         return (
             f"{emoji} *{title}*\n"
             f"━━━━━━━━━━━━━━━━━━\n"
@@ -362,7 +362,7 @@ def format_alert(
             f"{price_line}"
             f"📈 OI 5m:   {oi_str}\n"
             f"━━━━━━━━━━━━━━━━━━\n"
-            f"🔔 Valuta di {action} — funding in rientro"
+            f"🔔 Consider {action} — funding retreating"
         )
 
     if level == "warn_tip":
@@ -375,7 +375,7 @@ def format_alert(
             f"{price_line}"
             f"📈 OI 5m:   {oi_str}\n"
             f"━━━━━━━━━━━━━━━━━━\n"
-            f"⚠️ Funding su {side} ancora attivo — monitora"
+            f"⚠️ Funding on {side} still active — monitor"
         )
 
     # BASE / HIGH / EXTREME / HARD
@@ -387,7 +387,7 @@ def format_alert(
         f"{price_line}"
         f"📈 OI 5m:   {oi_str}\n"
         f"━━━━━━━━━━━━━━━━━━\n"
-        f"🎯 Segnale: {direction}"
+        f"🎯 Signal: {direction}"
     )
 
 
@@ -404,9 +404,9 @@ def format_next_funding_alert(
 
     next_interval_label, changed = predict_next_interval(symbol, rate_pct, int(interval_h))
     interval_line = (
-        f"Ciclo: {current_interval}  ->  Prossimo: {next_interval_label} (cambio!)"
+        f"Cycle: {current_interval}  ->  Next: {next_interval_label} (change!)"
         if changed else
-        f"Ciclo: {current_interval}  (invariato)"
+        f"Cycle: {current_interval}  (unchanged)"
     )
 
     settlement_dt  = datetime.fromtimestamp(next_funding_ts_ms / 1000, tz=TZ_IT)
@@ -415,8 +415,8 @@ def format_next_funding_alert(
     return (
         f"FUNDING TRA {minutes_left} MIN -- {symbol}\n"
         f"Rate: {rate_str}  |  {interval_line}\n"
-        f"Segnale: {direction}\n"
-        f"Prossimo settlement: {settlement_str}"
+        f"Signal: {direction}\n"
+        f"Next settlement: {settlement_str}"
     )
 
 
@@ -425,7 +425,7 @@ def format_pump_dump_alert(symbol: str, pct_1h: float, pct_24h: float, last_pric
     label = "PUMP" if pct_1h > 0 else "DUMP"
     return (
         f"{emoji} {label} -- {symbol}\n"
-        f"Prezzo: {last_price:,.2f} $\n"
+        f"Price: {last_price:,.2f} $\n"
         f"1H: {pct_1h:+.2f}%  |  24H: {pct_24h:+.2f}%"
     )
 
@@ -657,30 +657,30 @@ def process_next_funding(
 
     # Next interval prediction
     next_lbl, changed = predict_next_interval(symbol, rate_pct, int(interval_h))
-    interval_line = f"⏭ Prossimo ciclo: `{next_lbl}` ⚠️ cambio!" if changed else f"⏭ Prossimo ciclo: `{next_lbl}`"
+    interval_line = f"⏭ Next cycle: `{next_lbl}` ⚠️ change!" if changed else f"⏭ Next cycle: `{next_lbl}`"
 
     # Suggerimento basato su posizione + rate
     if funded:
         if abs(rate_pct) >= get_effective_threshold(symbol, "extreme"):
-            suggerimento = "💰 TIENI — funding elevato, prossima raccolta imminente"
+            suggerimento = "💰 HOLD — high funding, next collection imminent"
         elif abs(rate_pct) >= get_effective_threshold(symbol, "base"):
-            suggerimento = "👀 MONITORA — valuta se tenere dopo il settlement"
+            suggerimento = "👀 MONITOR — consider holding after settlement"
         else:
-            suggerimento = "🔔 ATTENZIONE — funding in rientro, valuta chiusura"
+            suggerimento = "🔔 CAUTION — funding retreating, consider closing"
     else:
         if abs(rate_pct) >= get_effective_threshold(symbol, "high"):
-            suggerimento = f"🎯 OPPORTUNITÀ — considera apertura {direction}"
+            suggerimento = f"🎯 OPPORTUNITY — consider opening {direction}"
         else:
-            suggerimento = f"📊 Segnale {direction} — osserva dopo il reset"
+            suggerimento = f"📊 Signal {direction} — watch after reset"
 
     settlement_dt  = datetime.fromtimestamp(next_funding_ts_ms / 1000, tz=TZ_IT)
     settlement_str = settlement_dt.strftime("%H:%M")
 
-    pos_line  = "✅ Posizione aperta" if funded else "📭 Nessuna posizione"
+    pos_line  = "✅ Position open" if funded else "📭 No position"
     price_str = f"`${last_price:.6f}`" if last_price > 0 else "—"
     p24_arrow = "▲" if pct_24h >= 0 else "▼"
     p24_str   = f"{p24_arrow} `{('+' if pct_24h>=0 else '')}{pct_24h:.2f}%`" if pct_24h != 0 else ""
-    price_line = f"💵 Prezzo:  {price_str}  |  24h: {p24_str}\n" if last_price > 0 else ""
+    price_line = f"💵 Price:  {price_str}  |  24h: {p24_str}\n" if last_price > 0 else ""
 
     return (
         f"⏰ *PRE-SETTLEMENT — {int(minutes_left)} MIN*\n"
@@ -786,7 +786,7 @@ def check_level_change(symbol: str, new_level: str, rate_pct: float = 0.0, prev_
         return None
 
     up       = n_r > p_r
-    direction = '📈 SU' if up else '📉 GIÙ'
+    direction = '📈 UP' if up else '📉 DOWN'
     danger    = '⚠️' if up else 'ℹ️'
 
     prev_emoji = EMOJI.get(prev, '📊')
@@ -802,19 +802,19 @@ def check_level_change(symbol: str, new_level: str, rate_pct: float = 0.0, prev_
     price_str = f"`${last_price:.6f}`" if last_price > 0 else "—"
     p24_arrow = "▲" if pct_24h >= 0 else "▼"
     p24_str   = f"{p24_arrow} `{('+' if pct_24h>=0 else '')}{pct_24h:.2f}%`" if pct_24h != 0 else ""
-    price_line = f"💵 Prezzo:  {price_str}  |  24h: {p24_str}\n" if last_price > 0 else ""
+    price_line = f"💵 Price:  {price_str}  |  24h: {p24_str}\n" if last_price > 0 else ""
 
     return (
-        f'{danger} *CAMBIO LIVELLO {direction}*\n'
+        f'{danger} *LEVEL CHANGE {direction}*\n'
         f'━━━━━━━━━━━━━━━━━━\n'
         f'📌 *{symbol}*\n'
         f'{prev_emoji} `{prev_lbl}` → {new_emoji} `{new_lbl}`\n'
         f'━━━━━━━━━━━━━━━━━━\n'
-        f'📊 Funding prec.: `{sign_old}{old_rate:.4f}%`\n'
-        f'📊 Funding att.:  `{sign_new}{rate_pct:.4f}%`\n'
+        f'📊 Prev. funding: `{sign_old}{old_rate:.4f}%`\n'
+        f'📊 Curr. funding: `{sign_new}{rate_pct:.4f}%`\n'
         f'{price_line}'
         f'━━━━━━━━━━━━━━━━━━\n'
-        f'🔍 Verifica posizione aperta!'
+        f'🔍 Check your open position!'
     )
 
 
@@ -843,10 +843,10 @@ def check_liquidation_risk(
         _liq_alerted[symbol] = True
         d = "LONG" if side == "Buy" else "SHORT"
         return (
-            f'*LIQUIDAZIONE IMMINENTE -- {symbol}*\n'
-            f'Posizione {d} | Mark: `{mark:,.4f}`\n'
+            f'*LIQUIDATION IMMINENT -- {symbol}*\n'
+            f'{d} position | Mark: `{mark:,.4f}`\n'
             f'Liq: `{liq:,.4f}` | Distanza: *{dist:.1f}%*\n'
-            'AGISCI SUBITO!'
+            'ACT NOW!'
         )
 
     if dist >= 20.0 and _liq_alerted.get(symbol):

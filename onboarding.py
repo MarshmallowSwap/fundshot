@@ -342,7 +342,7 @@ async def cmd_deletekeys(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     user = await get_user(chat_id)
     if not user:
-        await update.message.reply_text("Nessuna credenziale trovata.")
+        await update.message.reply_text("No credentials found.")
         return
     for ex in user.active_exchanges:
         await delete_credentials(user.id, ex)
