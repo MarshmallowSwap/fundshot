@@ -1588,6 +1588,31 @@ function updateFromBybitTrades(trades) {
   if (typeof guardianUpdate === 'function') guardianUpdate();
 }
 
+// ─── FETCH UNREALIZED PNL ───
+async function fetchUnrealizedPnl() {
+  if (!S.k) return; // no API key
+  try {
+    const r = await priv('/v5/account/wallet-balance', { accountType: 'UNIFIED' });
+    const list = r?.result?.list || [];
+    if (!list.length) return;
+    const unr = parseFloat(list[0].totalPerpUPL || list[0].totalUnrealisedPnl || 0);
+    const uEl = document.getElementById('pnl-unrealized');
+    if (uEl) {
+      uEl.textContent = (unr >= 0 ? '+' : '') + unr.toFixed(2);
+      uEl.style.color = unr >= 0 ? 'var(--p2)' : 'var(--red2)';
+    }
+    // Aggiorna totale sessione
+    const totEl = document.getElementById('pnl-total');
+    const rEl   = document.getElementById('pnl-realized');
+    if (totEl && rEl) {
+      const realized = parseFloat(rEl.textContent) || 0;
+      const tot = realized + unr;
+      totEl.textContent = (tot >= 0 ? '+' : '') + tot.toFixed(2);
+      totEl.style.color = tot >= 0 ? 'var(--amber2)' : 'var(--red2)';
+    }
+  } catch(e) {}
+}
+
 // ─── FETCH RESULTS DAL SERVER ───
 async function fetchResults() {
   try {
@@ -1670,7 +1695,7 @@ function goto(id, btn) {
   if (id === 'positions') { initPositionsPage(); }
   if (id === 'settings')  { initSettings(); }
   if (id === 'funding')   { renderFundTable(); }
-  if (id === 'trading')   { initTradingPage(); fetchResults(); fetchClosedPnl(); }
+  if (id === 'trading')   { initTradingPage(); fetchResults(); fetchClosedPnl(); fetchUnrealizedPnl(); }
 }
 
 // ─── TABS ───
@@ -2821,7 +2846,7 @@ let _secs = 60;
 function startCountdown(){
   setInterval(()=>{
     _secs--;
-    if(_secs<=0){ _secs=60; loadPublic(); fetchAndUpdateOI(); fetchResults(); fetchClosedPnl(); if(document.getElementById('page-positions').classList.contains('active')) { loadPositions(); fetchMonitoring().then(updateMonitoringCard); } }
+    if(_secs<=0){ _secs=60; loadPublic(); fetchAndUpdateOI(); fetchResults(); fetchClosedPnl(); fetchUnrealizedPnl(); if(document.getElementById('page-positions').classList.contains('active')) { loadPositions(); fetchMonitoring().then(updateMonitoringCard); } }
     qs('countdown').textContent=_secs+'s';
     qs('rfill').style.width=(_secs/60*100)+'%';
   },1000);
@@ -2831,6 +2856,7 @@ function startCountdown(){
 loadPublic();
 fetchResults();
 fetchClosedPnl();
+fetchUnrealizedPnl();
 startCountdown();
 // Delay lieve per assicurare DOM pronto
 setTimeout(() => fetchAndUpdateOI(), 500);
