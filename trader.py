@@ -360,29 +360,34 @@ class BybitTrader:
     def place_order(self, symbol: str, side: str, qty: float,
                     sl_price: float, tp_price: float) -> Optional[str]:
         """
-        Apre un ordine market con SL e TP1 già impostati.
+        Apre un ordine market specificando la size in USDT (marketUnit: quoteCoin).
+        Bybit calcola automaticamente la qty in base al prezzo corrente.
         side: "Buy" (long) o "Sell" (short)
         """
         self.set_leverage(symbol, CONFIG["leverage"])
 
+        # Nozionale in USDT = size * leverage
+        notional_usdt = CONFIG["size_usdt"] * CONFIG["leverage"]
+
         body = {
-            "category":          CONFIG["category"],
-            "symbol":            symbol,
-            "side":              side,
-            "orderType":         "Market",
-            "qty":               str(qty),
-            "stopLoss":          str(round(sl_price, 4)),
-            "takeProfit":        str(round(tp_price, 4)),
-            "slTriggerBy":       "MarkPrice",
-            "tpTriggerBy":       "MarkPrice",
-            "timeInForce":       "IOC",
-            "reduceOnly":        False,
-            "closeOnTrigger":    False,
+            "category":       CONFIG["category"],
+            "symbol":         symbol,
+            "side":           side,
+            "orderType":      "Market",
+            "qty":            str(round(notional_usdt, 2)),
+            "marketUnit":     "quoteCoin",   # specifica in USDT, Bybit calcola la qty
+            "stopLoss":       str(round(sl_price, 6)),
+            "takeProfit":     str(round(tp_price, 6)),
+            "slTriggerBy":    "MarkPrice",
+            "tpTriggerBy":    "MarkPrice",
+            "timeInForce":    "IOC",
+            "reduceOnly":     False,
+            "closeOnTrigger": False,
         }
         r = self._post("/v5/order/create", body)
         if r.get("retCode") == 0:
             return r["result"]["orderId"]
-        logger.error(f"place_order error: {r.get('retMsg')} | {symbol} {side} {qty}")
+        logger.error(f"place_order error: {r.get('retMsg')} | {symbol} {side} {notional_usdt}USDT")
         return None
 
     def close_position(self, symbol: str, side: str, qty: float) -> bool:
