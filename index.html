@@ -2816,10 +2816,11 @@ function startCountdown(){
 
 // ─── INIT ───
 loadPublic();
-fetchOI().then(updateOICard);
 fetchResults();
 fetchClosedPnl();
 startCountdown();
+// Delay lieve per assicurare DOM pronto
+setTimeout(() => fetchOI().then(updateOICard), 500);
 </script>
 </body>
 </html>
