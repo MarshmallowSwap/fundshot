@@ -591,13 +591,18 @@ def process_next_funding(
     interval_h,
     next_funding_ts_ms: int,
 ) -> str | None:
+    """Alert unificato PRE-SETTLEMENT: countdown + next funding + suggerimento.
+    Scatta FUNDING_ALERT_MINUTES minuti prima del settlement per tutti i simboli
+    con funding significativo (>= base) o con posizione aperta.
+    """
     if not _alert_enabled('next_funding'):
         return None
-    # Gate: invia alert solo per simboli con posizione aperta (funded)
-    if not is_funded(symbol):
-        return None
-    high_thr = get_effective_threshold(symbol, "high")
-    if abs(rate_pct) < high_thr:
+
+    base_thr = get_effective_threshold(symbol, "base")
+    funded   = is_funded(symbol)
+
+    # Invia se ha posizione aperta OPPURE se funding >= base
+    if not funded and abs(rate_pct) < base_thr:
         return None
 
     now_ms       = int(time.time() * 1000)
@@ -612,8 +617,50 @@ def process_next_funding(
         return None
 
     state["next_funding_alerted"] = True
-    return format_next_funding_alert(
-        symbol, rate_pct, interval_h, int(minutes_left), next_funding_ts_ms
+
+    # Componi alert unificato
+    level        = classify(symbol, rate_pct)
+    EMOJI_LVL    = {"base":"📊","warn_tip":"⚠️","close_tip":"🔔","high":"🚨","extreme":"🔥","hard":"🔴","critico":"🎰"}
+    LBL          = {"base":"BASE","warn_tip":"WARN","close_tip":"CLOSE","high":"HIGH","extreme":"EXTREME","hard":"HARD","critico":"JACKPOT"}
+    lvl_emoji    = EMOJI_LVL.get(level, "📊")
+    lvl_lbl      = LBL.get(level, level.upper())
+    direction    = _direction(rate_pct)
+    sign         = "+" if rate_pct >= 0 else ""
+
+    # Next interval prediction
+    next_lbl, changed = predict_next_interval(symbol, rate_pct, int(interval_h))
+    interval_line = f"⏭ Prossimo ciclo: `{next_lbl}` ⚠️ cambio!" if changed else f"⏭ Prossimo ciclo: `{next_lbl}`"
+
+    # Suggerimento basato su posizione + rate
+    if funded:
+        if abs(rate_pct) >= get_effective_threshold(symbol, "extreme"):
+            suggerimento = "💰 TIENI — funding elevato, prossima raccolta imminente"
+        elif abs(rate_pct) >= get_effective_threshold(symbol, "base"):
+            suggerimento = "👀 MONITORA — valuta se tenere dopo il settlement"
+        else:
+            suggerimento = "🔔 ATTENZIONE — funding in rientro, valuta chiusura"
+    else:
+        if abs(rate_pct) >= get_effective_threshold(symbol, "high"):
+            suggerimento = f"🎯 OPPORTUNITÀ — considera apertura {direction}"
+        else:
+            suggerimento = f"📊 Segnale {direction} — osserva dopo il reset"
+
+    settlement_dt  = datetime.fromtimestamp(next_funding_ts_ms / 1000, tz=TZ_IT)
+    settlement_str = settlement_dt.strftime("%H:%M")
+
+    pos_line = "✅ Posizione aperta" if funded else "📭 Nessuna posizione"
+
+    return (
+        f"⏰ *PRE-SETTLEMENT — {int(minutes_left)} MIN*\n"
+        f"━━━━━━━━━━━━━━━━━━\n"
+        f"📌 `{symbol}`  {lvl_emoji} `{lvl_lbl}`\n"
+        f"📊 Funding: `{sign}{rate_pct:.4f}%`  |  Segnale: {direction}\n"
+        f"━━━━━━━━━━━━━━━━━━\n"
+        f"🕐 Settlement: `{settlement_str}`\n"
+        f"{interval_line}\n"
+        f"━━━━━━━━━━━━━━━━━━\n"
+        f"{pos_line}\n"
+        f"{suggerimento}"
     )
 
 
