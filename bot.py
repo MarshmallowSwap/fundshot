@@ -332,7 +332,7 @@ async def funding_job(context):
             _mon_remove(sym, "funding rientrato")
 
     # ── OI Spike check su tutti i ticker ─────────────────────────────────────
-    if _bot_alert_enabled("oi_spike"):
+    if _bot_alert_enabled("oi_spike") and oi_monitor:
         try:
             oi_alerts = oi_monitor.check_oi_spikes(tickers)
             for sym, msg, chg in oi_alerts:
@@ -393,8 +393,7 @@ async def trading_job(context):
                     context.bot_data["trades_opened"] = context.bot_data.get("trades_opened", 0) + 1
                     _mon_remove(symbol, "trade aperto")
                 else:
-                    if _funding_trader.persistence.get(symbol, 0) >= 1:
-                        logger.debug("trading_job %s: skip — %s", symbol, reason)
+                    logger.info("trading_job %s: skip — %s", symbol, reason)
 
             except Exception as e:
                 logger.error("trading_job symbol %s: %s", symbol, e)
@@ -803,7 +802,11 @@ def main():
 
 async def cmd_test_oi(update, context):
     """Invia un alert OI spike di test per verificare il formato."""
-    import oi_monitor as _oim
+    try:
+    import oi_monitor
+except Exception as _oi_err:
+    oi_monitor = None
+    import logging as _l; _l.getLogger(__name__).warning('oi_monitor import error: %s', _oi_err) as _oim
     # Prende un simbolo reale con OI alto per il test
     symbol = "BTCUSDT"
     funding = -0.0312  # funding negativo simulato
