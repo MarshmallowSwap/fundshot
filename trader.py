@@ -62,8 +62,8 @@ CONFIG = {
         "base":    0.005,
     },
     "min_funding_abs":      0.005,  # funding minimo assoluto per entrare
-    "min_oi_change_5m":     1.5,    # OI deve crescere almeno 1.5% in 5min
-    "min_persistence":      2,      # periodi consecutivi sopra soglia
+    "min_oi_change_5m":     0.1,    # OI deve crescere almeno 0.1% in 5min
+    "min_persistence":      1,      # periodi consecutivi sopra soglia
     "mins_before_reset":    30,     # minuti minimi al prossimo reset funding
 
     # Timing
@@ -122,14 +122,14 @@ def load_config(path: str = "trader_config.json") -> None:
         with open(path, "r") as f:
             c = json.load(f)
 
-        CONFIG["size_usdt"]     = float(c.get("size",     CONFIG["size_usdt"]))
-        CONFIG["leverage"]      = int(c.get("leva",       CONFIG["leverage"]))
-        CONFIG["max_positions"] = int(c.get("maxpos",     CONFIG["max_positions"]))
-        CONFIG["sl_pct"]        = float(c.get("sl",       CONFIG["sl_pct"]))
-        CONFIG["tp1_size_pct"]  = int(c.get("tp1pct",     CONFIG["tp1_size_pct"]))
-        CONFIG["min_persistence"]   = int(c.get("persist",   CONFIG["min_persistence"]))
-        CONFIG["min_oi_change_5m"]  = float(c.get("oi",      CONFIG["min_oi_change_5m"]))
-        CONFIG["mins_before_reset"] = int(c.get("minreset",  CONFIG["mins_before_reset"]))
+        CONFIG["size_usdt"]     = float(c.get("size_usdt",    c.get("size",     CONFIG["size_usdt"])))
+        CONFIG["leverage"]      = int(c.get("leverage",        c.get("leva",     CONFIG["leverage"])))
+        CONFIG["max_positions"] = int(c.get("max_positions",   c.get("maxpos",   CONFIG["max_positions"])))
+        CONFIG["sl_pct"]        = float(c.get("sl_pct",        c.get("sl",       CONFIG["sl_pct"])))
+        CONFIG["tp1_size_pct"]  = int(c.get("tp1_size_pct",    c.get("tp1pct",   CONFIG["tp1_size_pct"])))
+        CONFIG["min_persistence"]   = int(c.get("min_persistence",   c.get("persist",  CONFIG["min_persistence"])))
+        CONFIG["min_oi_change_5m"]  = float(c.get("min_oi_change_5m", c.get("oi",     CONFIG["min_oi_change_5m"])))
+        CONFIG["mins_before_reset"] = int(c.get("mins_before_reset",  c.get("minreset", CONFIG["mins_before_reset"])))
 
         # TP per livello dal formato dashboard: {"hard": [tp1, trail, cap], ...}
         tp_map = {
