@@ -1929,8 +1929,8 @@ async function sendToBot(source='settings') {
     _ts: Date.now()
   };
 
-  const BASE = localStorage.getItem('fk_proxy') || '';
-  const url  = BASE ? BASE.replace(/\/+$/, '') + '/api/config' : '/api/config';
+  const BASE = localStorage.getItem('fk_proxy') || proxyBase();
+  const url  = BASE.replace(/\/+$/, '') + '/api/config';
 
   const statusEl = document.getElementById(source==='settings' ? 'key-msg' : 'trading-send-msg');
 
