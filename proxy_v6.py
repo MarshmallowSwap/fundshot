@@ -402,6 +402,24 @@ class ProxyHandler(BaseHTTPRequestHandler):
                 self._json({"ok": False, "error": str(e)}, 500)
             return
 
+
+        if p == "/api/auto-trading":
+            user = self._auth()
+            if not user:
+                return
+            try:
+                body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+                enabled = bool(body.get("enabled", False))
+                # Scrivi flag file letto da bot.py ogni ciclo
+                flag_file = "/tmp/fs_autotrader.flag"
+                with open(flag_file, "w") as f:
+                    json.dump({"enabled": enabled, "ts": time.time()}, f)
+                log.info("auto-trading toggle: %s", "ON" if enabled else "OFF")
+                self._json({"ok": True, "enabled": enabled})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)}, 500)
+            return
+
         # ── Backward compat: endpoint v5 senza auth ───────────────────────────
         if p in ("/api/config", "/api/stats", "/api/logs",
                  "/api/bot-status", "/api/alert-config"):

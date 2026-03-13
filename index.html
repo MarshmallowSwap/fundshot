@@ -840,7 +840,7 @@ nav {
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0" class="settings-4col">
         <div style="border-right:1px solid var(--border);padding-right:18px">
           <div class="tr">
-            <div><div class="tr-label">🤖 Bot Attivo</div><div class="tr-sub">Apertura posizioni automatica</div></div>
+            <div><div class="tr-label">🤖 Auto-Trader</div><div class="tr-sub">Automatic position opening</div></div>
             <button class="tgl" id="tog-bot" onclick="this.classList.toggle('on');botToggleFeedback(this)"></button>
           </div>
           <div class="tr">
@@ -2777,9 +2777,9 @@ async function saveAndSendTrading() {
 function updateSummary(cfg) {
   const el = qs('cfg-summary');
   if (!el) return;
-  const botStatus = cfg.tog?.bot ? '🤖 Bot ATTIVO' : '⏸ Bot inattivo';
+  const botStatus = cfg.tog?.bot ? '🤖 Auto-Trader ON' : '⏸ Auto-Trader OFF';
   const net = cfg.tog?.testnet ? 'Testnet' : 'Mainnet';
-  el.textContent = `${botStatus} · Size ${cfg.size} USDT · ${cfg.leva}x leva · Max ${cfg.maxpos} pos · SL ${cfg.sl}% · ${net}`;
+  el.textContent = `${botStatus} · Size ${cfg.size} USDT · ${cfg.leva}x leverage · Max ${cfg.maxpos} pos · SL ${cfg.sl}% · ${net}`;
 }
 
 function resetDefaults() {

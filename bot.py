@@ -478,13 +478,67 @@ async def oi_spike_job(context):
 # ── Job auto-trading ──────────────────────────────────────────────────────────
 _tj_running = False   # lock anti-sovrapposizione
 
+def _check_autotrader_flag() -> bool | None:
+    """
+    Legge /tmp/fs_autotrader.flag scritto dalla dashboard (proxy).
+    Ritorna True/False se il flag è presente e recente (<5min), None altrimenti.
+    """
+    import json as _j
+    flag = "/tmp/fs_autotrader.flag"
+    try:
+        if not os.path.exists(flag):
+            return None
+        data = _j.loads(open(flag).read())
+        if time.time() - data.get("ts", 0) > 300:   # flag scaduto dopo 5 min
+            return None
+        return bool(data.get("enabled", False))
+    except Exception:
+        return None
+
+
 async def trading_job(context):
     """
     Job auto-trading multi-tenant.
     Esegue FundingTrader per ogni utente registrato su Supabase.
     Mantiene retrocompatibilità con il trader legacy single-tenant.
     """
-    global _tj_running
+    global _tj_running, TRADING_ENABLED, _funding_trader, _bybit_trader
+
+    # Controlla flag dalla dashboard (toggle in tempo reale)
+    flag_state = _check_autotrader_flag()
+    if flag_state is not None and flag_state != TRADING_ENABLED:
+        if flag_state:
+            # Avvia trader se non già attivo
+            if _funding_trader is None:
+                api_key    = os.getenv("BYBIT_API_KEY", "")
+                api_secret = os.getenv("BYBIT_API_SECRET", "")
+                if api_key and api_secret:
+                    load_config("trader_config.json")
+                    from exchanges.bybit import BybitTrader as _BT
+                    _bybit_trader   = _BT(api_key=api_key, api_secret=api_secret,
+                                          testnet=TRADING_TESTNET, demo=TRADING_DEMO)
+                    _funding_trader = FundingTrader(_bybit_trader, lambda *a, **kw: None)
+                    TRADING_ENABLED = True
+                    env_label = "🎮 DEMO" if TRADING_DEMO else ("🧪 TESTNET" if TRADING_TESTNET else "🔴 MAINNET")
+                    await send_to_owner(context.bot,
+                        f"🤖 *Auto-Trader activated* (dashboard)\n"
+                        f"Environment: `{env_label}`\n"
+                        f"Size: `{TRADER_CONFIG['size_usdt']} USDT` | "
+                        f"Leverage: `{TRADER_CONFIG['leverage']}x` | "
+                        f"Max pos: `{TRADER_CONFIG['max_positions']}`")
+                    logger.info("Auto-trader attivato da dashboard flag")
+        else:
+            # Disattiva trader
+            open_pos = len(_funding_trader.positions) if _funding_trader else 0
+            TRADING_ENABLED = False
+            _funding_trader = None
+            _bybit_trader   = None
+            warning = f"\n⚠️ *{open_pos} open position(s) not closed automatically.*" if open_pos > 0 else ""
+            await send_to_owner(context.bot,
+                f"🔴 *Auto-Trader disabled* (dashboard)\n"
+                f"Funding alerts still active ✅{warning}")
+            logger.info("Auto-trader disattivato da dashboard flag")
+
     if not TRADING_ENABLED:
         return
     if _tj_running:
