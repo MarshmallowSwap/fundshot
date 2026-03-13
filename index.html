@@ -525,6 +525,7 @@ nav {
     <button class="np" onclick="goto('positions',this)">Posizioni</button>
     <button class="np" onclick="goto('trading',this)">⚡ Trading</button>
     <button class="np" onclick="goto('settings',this)">Settings</button>
+    <button class="np" onclick="goto('docs',this)">📖 Docs</button>
   </div>
   <div class="nav-right">
     <div class="refresh-bar"><div class="refresh-fill" id="rfill" style="width:100%"></div></div>
@@ -1366,6 +1367,468 @@ nav {
 
 </div>
 
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- PAGE: DOCS                                          -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="page" id="page-docs">
+  <div style="max-width:820px;margin:0 auto;padding-bottom:60px">
+
+    <!-- HEADER -->
+    <div style="text-align:center;margin-bottom:36px">
+      <div style="font-size:40px;margin-bottom:8px">👑</div>
+      <div style="font-size:22px;font-weight:800;color:var(--text);letter-spacing:.5px">FUNDING KING BOT</div>
+      <div style="font-size:13px;color:var(--text3);margin-top:4px">Documentazione completa · v2.0</div>
+    </div>
+
+    <!-- INDICE -->
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:20px 24px;margin-bottom:28px">
+      <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">Indice</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 24px">
+        <a href="#sec-come-funziona" style="color:var(--p1);font-size:13px;text-decoration:none">1. Come funziona</a>
+        <a href="#sec-livelli" style="color:var(--p1);font-size:13px;text-decoration:none">2. Livelli di alert</a>
+        <a href="#sec-alert-tipi" style="color:var(--p1);font-size:13px;text-decoration:none">3. Tipi di alert</a>
+        <a href="#sec-trading" style="color:var(--p1);font-size:13px;text-decoration:none">4. Auto-trading</a>
+        <a href="#sec-dashboard" style="color:var(--p1);font-size:13px;text-decoration:none">5. Leggere il dashboard</a>
+        <a href="#sec-settings" style="color:var(--p1);font-size:13px;text-decoration:none">6. Impostazioni</a>
+        <a href="#sec-comandi" style="color:var(--p1);font-size:13px;text-decoration:none">7. Comandi Telegram</a>
+        <a href="#sec-glossario" style="color:var(--p1);font-size:13px;text-decoration:none">8. Glossario</a>
+      </div>
+    </div>
+
+    <!-- ── 1. COME FUNZIONA ───────────────────────────────────────────────── -->
+    <div id="sec-come-funziona" class="ch" style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:20px">
+      <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:16px;display:flex;align-items:center;gap:10px">
+        <span style="background:var(--p1);color:#fff;border-radius:8px;padding:2px 10px;font-size:12px">01</span>
+        Come funziona
+      </div>
+      <p style="color:var(--text2);font-size:13px;line-height:1.7;margin-bottom:14px">
+        Funding King Bot monitora in tempo reale il <strong style="color:var(--text)">funding rate</strong> di oltre 500 coppie perpetue su Bybit.
+        Ogni 60 secondi scarica tutti i ticker, classifica ogni coppia per intensità del funding e invia alert su Telegram quando superano le soglie configurate.
+      </p>
+      <div style="background:var(--bg3);border-radius:10px;padding:16px;margin-bottom:14px">
+        <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:1px;margin-bottom:10px">CICLO DI LAVORO (ogni 60s)</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;align-items:center;gap:10px;font-size:12px;color:var(--text2)">
+            <span style="background:var(--p1);color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0">1</span>
+            Fetch 500+ ticker da Bybit → funding rate, prezzo, OI, prossimo settlement
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:12px;color:var(--text2)">
+            <span style="background:var(--p1);color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0">2</span>
+            Classificazione per livello (BASE → JACKPOT) tramite soglie configurabili
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:12px;color:var(--text2)">
+            <span style="background:var(--p1);color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0">3</span>
+            Invio alert Telegram con grafico candlestick 15m per ogni segnale
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:12px;color:var(--text2)">
+            <span style="background:var(--p1);color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0">4</span>
+            Auto-trader valuta apertura posizione per ogni simbolo in alert
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:12px;color:var(--text2)">
+            <span style="background:var(--p1);color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0">5</span>
+            Monitoraggio posizioni aperte ogni 60s — rilevamento chiusura nativa Bybit
+          </div>
+        </div>
+      </div>
+      <div style="background:var(--bg3);border-radius:10px;padding:14px;font-size:12px;color:var(--text2)">
+        <strong style="color:var(--teal2)">💡 Logica del funding rate:</strong> Il funding rate è un pagamento periodico (ogni 1h, 4h o 8h) tra long e short.
+        Se è <strong style="color:var(--green2)">positivo</strong> → i long pagano gli short. Se è <strong style="color:var(--red2)">negativo</strong> → gli short pagano i long.
+        Tassi estremi indicano mercato sbilanciato e spesso precedono un'inversione.
+      </div>
+    </div>
+
+    <!-- ── 2. LIVELLI DI ALERT ─────────────────────────────────────────────── -->
+    <div id="sec-livelli" class="ch" style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:20px">
+      <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:16px;display:flex;align-items:center;gap:10px">
+        <span style="background:var(--p1);color:#fff;border-radius:8px;padding:2px 10px;font-size:12px">02</span>
+        Livelli di alert
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+
+        <div style="background:var(--bg3);border-left:3px solid #a78bfa;border-radius:8px;padding:14px 16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <span style="font-size:13px;font-weight:700;color:var(--text)">📊 BASE</span>
+            <span style="font-size:12px;color:var(--text3);font-family:monospace">≥ ±0.10%</span>
+          </div>
+          <div style="font-size:12px;color:var(--text2)">Primo segnale — funding significativo, ma non eccezionale. Il bot inizia il monitoraggio. Auto-trader può aprire con TP conservativo.</div>
+        </div>
+
+        <div style="background:var(--bg3);border-left:3px solid #60a5fa;border-radius:8px;padding:14px 16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <span style="font-size:13px;font-weight:700;color:var(--text)">🚨 HIGH</span>
+            <span style="font-size:12px;color:var(--text3);font-family:monospace">≥ ±1.00%</span>
+          </div>
+          <div style="font-size:12px;color:var(--text2)">Funding elevato — opportunità interessante. Il bot invia alert con grafico e valuta apertura. Pre-Settlement attivo.</div>
+        </div>
+
+        <div style="background:var(--bg3);border-left:3px solid #f97316;border-radius:8px;padding:14px 16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <span style="font-size:13px;font-weight:700;color:var(--text)">🔥 EXTREME</span>
+            <span style="font-size:12px;color:var(--text3);font-family:monospace">≥ ±1.50%</span>
+          </div>
+          <div style="font-size:12px;color:var(--text2)">Funding molto alto — segnale forte. L'auto-trader apre con trailing stop completo (nessun TP fisso). Possibile inversione imminente.</div>
+        </div>
+
+        <div style="background:var(--bg3);border-left:3px solid #ef4444;border-radius:8px;padding:14px 16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <span style="font-size:13px;font-weight:700;color:var(--text)">🔴 HARD</span>
+            <span style="font-size:12px;color:var(--text3);font-family:monospace">≥ ±2.00%</span>
+          </div>
+          <div style="font-size:12px;color:var(--text2)">Funding estremo — mercato molto sbilanciato. Alta probabilità di rientro. Trailing stop aggressivo, SL -6%.</div>
+        </div>
+
+        <div style="background:var(--bg3);border-left:3px solid #fbbf24;border-radius:8px;padding:14px 16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <span style="font-size:13px;font-weight:700;color:var(--text)">🎰 JACKPOT</span>
+            <span style="font-size:12px;color:var(--text3);font-family:monospace">≥ ±3.00%</span>
+          </div>
+          <div style="font-size:12px;color:var(--text2)">Evento rarissimo — funding eccezionale. Massima opportunità di incasso. Alert prioritario, trailing stop massimo.</div>
+        </div>
+
+        <div style="background:var(--bg3);border-left:3px solid var(--green2);border-radius:8px;padding:14px 16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <span style="font-size:13px;font-weight:700;color:var(--text)">✅ RIENTRO</span>
+            <span style="font-size:12px;color:var(--text3);font-family:monospace">≤ ±0.02%</span>
+          </div>
+          <div style="font-size:12px;color:var(--text2)">Il funding è tornato a zero. Se avevi una posizione aperta per incassare funding, questo è il segnale di uscita. Il bot chiude il monitoring.</div>
+        </div>
+
+      </div>
+      <div style="margin-top:14px;background:var(--bg3);border-radius:10px;padding:12px;font-size:12px;color:var(--text2)">
+        <strong style="color:var(--amber2)">⚙️ Soglie personalizzabili:</strong> ogni livello può essere modificato globalmente in Settings → Soglie Alert,
+        o per singolo simbolo con il comando <code style="background:var(--bg1);padding:1px 5px;border-radius:4px">/alerts BTCUSDT high 1.5</code>
+      </div>
+    </div>
+
+    <!-- ── 3. TIPI DI ALERT ───────────────────────────────────────────────── -->
+    <div id="sec-alert-tipi" class="ch" style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:20px">
+      <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:16px;display:flex;align-items:center;gap:10px">
+        <span style="background:var(--p1);color:#fff;border-radius:8px;padding:2px 10px;font-size:12px">03</span>
+        Tipi di alert Telegram
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+
+        <div style="background:var(--bg3);border-radius:10px;padding:14px 16px">
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">📊 Alert Funding Rate</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.6">Inviato ogni volta che un simbolo supera una soglia per la prima volta o sale di livello. Include il grafico candlestick 15m.
+          <br>Contiene: livello, rate attuale, prezzo, variazione 24h, OI 5min, segnale direzionale.</div>
+        </div>
+
+        <div style="background:var(--bg3);border-radius:10px;padding:14px 16px">
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">📈 Alert Cambio Livello</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.6">Inviato quando un simbolo già in monitoring cambia livello (es. da HIGH → EXTREME).
+          Mostra il livello precedente e quello attuale con il rate di entrambi. Utile per seguire l'escalation.</div>
+        </div>
+
+        <div style="background:var(--bg3);border-radius:10px;padding:14px 16px">
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">⏰ Alert PRE-SETTLEMENT</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.6">Inviato ~14 minuti prima del settlement del funding. Combina:
+          countdown, rate attuale, prezzo, orario settlement, predizione prossimo ciclo, suggerimento TIENI/MONITORA/OPPORTUNITÀ.
+          <br>Attivo per tutti i simboli ≥ BASE o con posizione aperta.</div>
+        </div>
+
+        <div style="background:var(--bg3);border-radius:10px;padding:14px 16px">
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">🚀 Alert PUMP / 💥 DUMP</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.6">Inviato quando un simbolo sale o scende di ≥5% in 1 ora. Indipendente dal funding rate — monitora variazioni di prezzo brusche.
+          Utile per cogliere movimenti violenti in tempo reale.</div>
+        </div>
+
+        <div style="background:var(--bg3);border-radius:10px;padding:14px 16px">
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">💧 Alert Liquidazione</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.6">Inviato quando viene rilevata una liquidazione ≥ $100k su un simbolo. Indica pressione di mercato intensa
+          e spesso precede un'inversione rapida.</div>
+        </div>
+
+        <div style="background:var(--bg3);border-radius:10px;padding:14px 16px">
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">🤖 Alert Trade Aperto / Chiuso</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.6">Inviato dall'auto-trader all'apertura di un trade (entry, SL, TP, leva) e alla chiusura (PnL realizzato, motivo di uscita).
+          La chiusura può avvenire per TP nativo Bybit, trailing stop, o rientro del funding.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── 4. AUTO-TRADING ────────────────────────────────────────────────── -->
+    <div id="sec-trading" class="ch" style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:20px">
+      <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:16px;display:flex;align-items:center;gap:10px">
+        <span style="background:var(--p1);color:#fff;border-radius:8px;padding:2px 10px;font-size:12px">04</span>
+        Auto-trading
+      </div>
+
+      <div style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:16px">
+        L'auto-trader apre posizioni su Bybit in modo autonomo basandosi sul funding rate.
+        La logica è <strong style="color:var(--text)">contrarian</strong>: quando il funding è molto positivo (i long pagano tanto) → apre SHORT,
+        quando è molto negativo → apre LONG. L'obiettivo è incassare il funding e/o cavalcare il rientro.
+      </div>
+
+      <div style="background:var(--bg3);border-radius:10px;padding:16px;margin-bottom:14px">
+        <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:1px;margin-bottom:12px">LOGICA DI APERTURA</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.8">
+          ① Il job di trading scatta ogni 120s (prima volta dopo 20s)<br>
+          ② Per ogni simbolo in monitoring con livello ≥ BASE<br>
+          ③ Verifica: nessuna posizione già aperta + cooldown 30min rispettato<br>
+          ④ Calcola size: <code style="background:var(--bg1);padding:1px 5px;border-radius:4px">qty = (50 USDT × 5x leva) / mark_price</code><br>
+          ⑤ Apre la posizione tramite API Bybit (modalità demo o live)
+        </div>
+      </div>
+
+      <div style="background:var(--bg3);border-radius:10px;padding:16px;margin-bottom:14px">
+        <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:1px;margin-bottom:12px">TRAILING STOP — LOGICA IBRIDA</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:6px">BASE / HIGH</div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.6">
+              TP1 fisso sul 30% della posizione (chiusura parziale)<br>
+              Trailing stop nativo Bybit sul 70% rimanente<br>
+              SL fisso -6% sempre attivo
+            </div>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:6px">EXTREME / HARD / JACKPOT</div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.6">
+              Solo trailing stop nativo al 100%<br>
+              Nessun TP fisso — lascia correre<br>
+              SL fisso -6% sempre attivo
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="background:var(--bg3);border-radius:10px;padding:14px 16px;margin-bottom:14px">
+        <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:1px;margin-bottom:10px">PARAMETRI TP/TRAILING PER LIVELLO</div>
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead>
+            <tr style="color:var(--text3)">
+              <th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--border)">Livello</th>
+              <th style="text-align:center;padding:4px 8px;border-bottom:1px solid var(--border)">TP1</th>
+              <th style="text-align:center;padding:4px 8px;border-bottom:1px solid var(--border)">Buffer Trail</th>
+              <th style="text-align:center;padding:4px 8px;border-bottom:1px solid var(--border)">Cap Max</th>
+            </tr>
+          </thead>
+          <tbody style="color:var(--text2)">
+            <tr><td style="padding:5px 8px">📊 BASE</td><td style="text-align:center">0.30%</td><td style="text-align:center">0.30%</td><td style="text-align:center">1.50%</td></tr>
+            <tr><td style="padding:5px 8px">🚨 HIGH</td><td style="text-align:center">0.50%</td><td style="text-align:center">0.50%</td><td style="text-align:center">2.00%</td></tr>
+            <tr><td style="padding:5px 8px">🔥 EXTREME</td><td style="text-align:center">—</td><td style="text-align:center">0.80%</td><td style="text-align:center">3.00%</td></tr>
+            <tr><td style="padding:5px 8px">🔴 HARD</td><td style="text-align:center">—</td><td style="text-align:center">1.00%</td><td style="text-align:center">4.00%</td></tr>
+            <tr><td style="padding:5px 8px">🎰 JACKPOT</td><td style="text-align:center">—</td><td style="text-align:center">1.20%</td><td style="text-align:center">6.00%</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:12px 16px;font-size:12px;color:var(--text2)">
+        <strong style="color:var(--red2)">⚠️ Cooldown 30 minuti:</strong> dopo la chiusura di una posizione su un simbolo, il bot non riaprirà
+        lo stesso simbolo per 30 minuti. Evita riaperture immediate su movimenti volatili.
+      </div>
+    </div>
+
+    <!-- ── 5. LEGGERE IL DASHBOARD ────────────────────────────────────────── -->
+    <div id="sec-dashboard" class="ch" style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:20px">
+      <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:16px;display:flex;align-items:center;gap:10px">
+        <span style="background:var(--p1);color:#fff;border-radius:8px;padding:2px 10px;font-size:12px">05</span>
+        Leggere il dashboard
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:14px">
+
+        <div style="background:var(--bg3);border-radius:10px;padding:14px 16px">
+          <div style="font-size:13px;font-weight:700;color:var(--p1);margin-bottom:8px">🏠 Dashboard</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.7">
+            <strong style="color:var(--text)">TOP SHORT/LONG:</strong> classifica live delle coppie con funding più estremo. Le barre colorate mostrano l'intensità relativa.<br>
+            <strong style="color:var(--text)">Card OI:</strong> Open Interest complessivo delle 9 coppie prioritarie — mostra se il mercato sta aumentando o diminuendo l'esposizione.<br>
+            <strong style="color:var(--text)">Ticker in cima:</strong> le ultime coppie entrate in alert scorrono in tempo reale.
+          </div>
+        </div>
+
+        <div style="background:var(--bg3);border-radius:10px;padding:14px 16px">
+          <div style="font-size:13px;font-weight:700;color:var(--p1);margin-bottom:8px">📊 Funding</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.7">
+            Tabella completa di tutte le coppie in monitoring con livello attuale.<br>
+            <strong style="color:var(--text)">Tab Tutti:</strong> tutti i simboli in monitoring.<br>
+            <strong style="color:var(--text)">Tab Estremi:</strong> solo EXTREME, HARD, JACKPOT.<br>
+            <strong style="color:var(--text)">Tab SHORT/LONG:</strong> filtro per direzione del segnale.
+          </div>
+        </div>
+
+        <div style="background:var(--bg3);border-radius:10px;padding:14px 16px">
+          <div style="font-size:13px;font-weight:700;color:var(--p1);margin-bottom:8px">📂 Posizioni</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.7">
+            Posizioni Bybit in tempo reale.<br>
+            <strong style="color:var(--text)">PnL non realizzato:</strong> aggiornato ogni 60s direttamente dal wallet Bybit (non solo quando sei su questa pagina).<br>
+            <strong style="color:var(--text)">Barra utilizzo margine:</strong> percentuale del capitale impegnato — tienila sotto il 70% per sicurezza.
+          </div>
+        </div>
+
+        <div style="background:var(--bg3);border-radius:10px;padding:14px 16px">
+          <div style="font-size:13px;font-weight:700;color:var(--p1);margin-bottom:8px">⚡ Trading</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.7">
+            <strong style="color:var(--text)">PnL Realizzato:</strong> guadagni/perdite dai trade già chiusi, letti da Bybit.<br>
+            <strong style="color:var(--text)">PnL Non Realizzato:</strong> mark-to-market delle posizioni aperte in questo momento.<br>
+            <strong style="color:var(--text)">Win Rate:</strong> percentuale di trade chiusi in profitto.<br>
+            <strong style="color:var(--text)">Guardian:</strong> sistema di protezione automatica — monitora drawdown, loss consecutive e blocca il trading se supera le soglie.
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── 6. IMPOSTAZIONI ────────────────────────────────────────────────── -->
+    <div id="sec-settings" class="ch" style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:20px">
+      <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:16px;display:flex;align-items:center;gap:10px">
+        <span style="background:var(--p1);color:#fff;border-radius:8px;padding:2px 10px;font-size:12px">06</span>
+        Impostazioni
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+
+        <div style="background:var(--bg3);border-radius:10px;padding:14px 16px">
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">🔑 API Key Bybit</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.6">Inserisci qui le tue credenziali Bybit per abilitare lettura saldo, posizioni e auto-trading.
+          Per l'ambiente demo usa le API della <strong style="color:var(--text)">Demo Trading</strong> di Bybit (non le API reali).
+          Le chiavi sono salvate solo localmente nel browser.</div>
+        </div>
+
+        <div style="background:var(--bg3);border-radius:10px;padding:14px 16px">
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">⚙️ Soglie Alert</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.6">
+            Modifica le soglie globali di ogni livello. Valori più bassi = più alert (più rumore).
+            Valori più alti = solo i segnali più forti.<br>
+            <strong style="color:var(--amber2)">Consiglio:</strong> tieni HIGH ≥ 1% e EXTREME ≥ 1.5% per evitare troppi falsi positivi.
+            Puoi impostare soglie personalizzate per singolo simbolo con <code style="background:var(--bg1);padding:1px 5px;border-radius:4px">/alerts</code>.
+          </div>
+        </div>
+
+        <div style="background:var(--bg3);border-radius:10px;padding:14px 16px">
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">🤖 Auto-Trading</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.6">
+            <strong style="color:var(--text)">Trade size:</strong> importo in USDT per singolo trade (moltiplicato per la leva per il nozionale).<br>
+            <strong style="color:var(--text)">Leva:</strong> default 5x — non alzarla troppo, il SL è fisso al -6% del nozionale.<br>
+            <strong style="color:var(--text)">Ambiente:</strong> Demo = paper trading su Bybit Demo (sicuro), Live = trading reale.<br>
+            <strong style="color:var(--text)">Livello minimo:</strong> il livello minimo di funding per cui il bot apre una posizione.
+          </div>
+        </div>
+
+        <div style="background:var(--bg3);border-radius:10px;padding:14px 16px">
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">🛡 Guardian — Protezione Rischio</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.6">
+            Sistema automatico che blocca il trading se vengono superati i limiti di rischio.<br>
+            <strong style="color:var(--text)">Max Drawdown:</strong> perdita massima tollerata dalla sessione (es. -15 USDT).<br>
+            <strong style="color:var(--text)">Max Loss consecutive:</strong> numero massimo di perdite di fila prima di bloccarsi.<br>
+            <strong style="color:var(--text)">Max Trade/sessione:</strong> limite al numero di trade aperti per giornata.
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── 7. COMANDI TELEGRAM ────────────────────────────────────────────── -->
+    <div id="sec-comandi" class="ch" style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:20px">
+      <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:16px;display:flex;align-items:center;gap:10px">
+        <span style="background:var(--p1);color:#fff;border-radius:8px;padding:2px 10px;font-size:12px">07</span>
+        Comandi Telegram
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+
+        <div style="background:var(--bg3);border-radius:8px;padding:10px 14px">
+          <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:1px;margin-bottom:8px">FUNDING RATE</div>
+          <div style="font-size:12px;color:var(--text2);line-height:2">
+            <code style="color:var(--p1)">/top10</code> — Top 10 SHORT + LONG live<br>
+            <code style="color:var(--p1)">/storico SYM</code> — Ultimi 8 cicli<br>
+            <code style="color:var(--p1)">/storico SYM 7g</code> — Storico 7 giorni<br>
+            <code style="color:var(--p1)">/backtest SYM</code> — Simula P&L 30gg<br>
+            <code style="color:var(--p1)">/backtest top10</code> — Top 10 backtest<br>
+            <code style="color:var(--p1)">/backtest watchlist</code> — Watchlist
+          </div>
+        </div>
+
+        <div style="background:var(--bg3);border-radius:8px;padding:10px 14px">
+          <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:1px;margin-bottom:8px">ACCOUNT</div>
+          <div style="font-size:12px;color:var(--text2);line-height:2">
+            <code style="color:var(--p1)">/saldo</code> — Saldo e equity<br>
+            <code style="color:var(--p1)">/posizioni</code> — Posizioni con PnL%<br>
+            <code style="color:var(--p1)">/rischio</code> — Distanza liquidazione<br>
+            <code style="color:var(--p1)">/summary</code> — Riepilogo rapido<br>
+            <code style="color:var(--p1)">/trading</code> — Stats auto-trader<br>
+            <code style="color:var(--p1)">/aperte</code> — Posizioni bot
+          </div>
+        </div>
+
+        <div style="background:var(--bg3);border-radius:8px;padding:10px 14px">
+          <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:1px;margin-bottom:8px">WATCHLIST & ALERT</div>
+          <div style="font-size:12px;color:var(--text2);line-height:2">
+            <code style="color:var(--p1)">/watchlist</code> — Stato watchlist<br>
+            <code style="color:var(--p1)">/watch BTC ETH</code> — Aggiungi<br>
+            <code style="color:var(--p1)">/unwatch BTC</code> — Rimuovi<br>
+            <code style="color:var(--p1)">/unwatch all</code> — Reset totale<br>
+            <code style="color:var(--p1)">/mute SYM</code> — Silenzia alert<br>
+            <code style="color:var(--p1)">/unmute SYM</code> — Riattiva alert
+          </div>
+        </div>
+
+        <div style="background:var(--bg3);border-radius:8px;padding:10px 14px">
+          <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:1px;margin-bottom:8px">SISTEMA</div>
+          <div style="font-size:12px;color:var(--text2);line-height:2">
+            <code style="color:var(--p1)">/alerts</code> — Soglie custom<br>
+            <code style="color:var(--p1)">/alerts SYM high 1.5</code> — Imposta<br>
+            <code style="color:var(--p1)">/alerts SYM reset</code> — Ripristina<br>
+            <code style="color:var(--p1)">/status</code> — Stato bot<br>
+            <code style="color:var(--p1)">/test</code> — Test connessione<br>
+            <code style="color:var(--p1)">/deletekeys</code> — Elimina API key
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── 8. GLOSSARIO ───────────────────────────────────────────────────── -->
+    <div id="sec-glossario" class="ch" style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:20px">
+      <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:16px;display:flex;align-items:center;gap:10px">
+        <span style="background:var(--p1);color:#fff;border-radius:8px;padding:2px 10px;font-size:12px">08</span>
+        Glossario
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:grid;grid-template-columns:140px 1fr;gap:8px;padding:10px 0;border-bottom:1px solid var(--border)">
+          <span style="font-size:12px;font-weight:700;color:var(--p1)">Funding Rate</span>
+          <span style="font-size:12px;color:var(--text2)">Pagamento periodico tra posizioni long e short nei futures perpetui. Percentuale applicata al valore nozionale della posizione.</span>
+        </div>
+        <div style="display:grid;grid-template-columns:140px 1fr;gap:8px;padding:10px 0;border-bottom:1px solid var(--border)">
+          <span style="font-size:12px;font-weight:700;color:var(--p1)">Nozionale</span>
+          <span style="font-size:12px;color:var(--text2)">Valore totale della posizione = size × prezzo. Con 50 USDT e leva 5x il nozionale è 250 USDT.</span>
+        </div>
+        <div style="display:grid;grid-template-columns:140px 1fr;gap:8px;padding:10px 0;border-bottom:1px solid var(--border)">
+          <span style="font-size:12px;font-weight:700;color:var(--p1)">Settlement</span>
+          <span style="font-size:12px;color:var(--text2)">Momento in cui il funding rate viene applicato e i pagamenti avvengono tra long e short. Ogni 1h, 4h o 8h a seconda della coppia.</span>
+        </div>
+        <div style="display:grid;grid-template-columns:140px 1fr;gap:8px;padding:10px 0;border-bottom:1px solid var(--border)">
+          <span style="font-size:12px;font-weight:700;color:var(--p1)">OI (Open Interest)</span>
+          <span style="font-size:12px;color:var(--text2)">Totale delle posizioni aperte su un simbolo. Un OI in crescita con funding estremo rinforza il segnale. Un calo suggerisce uscite di massa.</span>
+        </div>
+        <div style="display:grid;grid-template-columns:140px 1fr;gap:8px;padding:10px 0;border-bottom:1px solid var(--border)">
+          <span style="font-size:12px;font-weight:700;color:var(--p1)">Trailing Stop</span>
+          <span style="font-size:12px;color:var(--text2)">Stop loss che si muove automaticamente nella direzione del profitto mantenendo una distanza fissa (buffer). Permette di lasciare correre i profitti.</span>
+        </div>
+        <div style="display:grid;grid-template-columns:140px 1fr;gap:8px;padding:10px 0;border-bottom:1px solid var(--border)">
+          <span style="font-size:12px;font-weight:700;color:var(--p1)">Drawdown</span>
+          <span style="font-size:12px;color:var(--text2)">Perdita massima rispetto al picco di equity. Il Guardian blocca il trading se supera la soglia impostata.</span>
+        </div>
+        <div style="display:grid;grid-template-columns:140px 1fr;gap:8px;padding:10px 0;border-bottom:1px solid var(--border)">
+          <span style="font-size:12px;font-weight:700;color:var(--p1)">Contrarian</span>
+          <span style="font-size:12px;color:var(--text2)">Strategia che opera contro la direzione dominante del mercato. Funding positivo estremo → aprire SHORT perché i long sono "sovraffollati".</span>
+        </div>
+        <div style="display:grid;grid-template-columns:140px 1fr;gap:8px;padding:10px 0">
+          <span style="font-size:12px;font-weight:700;color:var(--p1)">Demo / Testnet</span>
+          <span style="font-size:12px;color:var(--text2)">Modalità paper trading: le operazioni vengono eseguite su un conto virtuale Bybit. Nessun rischio di capitale reale. Consigliato per testare la strategia.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div style="text-align:center;font-size:11px;color:var(--text3);padding:16px">
+      Funding King Bot · Sviluppato da Bitpunk 👑 · Dati in tempo reale da Bybit
+    </div>
+
+  </div>
+</div>
+
+
 <!-- TOAST -->
 <div id="toast"></div>
 
@@ -1696,6 +2159,7 @@ function goto(id, btn) {
   if (id === 'settings')  { initSettings(); }
   if (id === 'funding')   { renderFundTable(); }
   if (id === 'trading')   { initTradingPage(); fetchResults(); fetchClosedPnl(); fetchUnrealizedPnl(); }
+  if (id === 'docs')     { /* static, no fetch needed */ }
 }
 
 // ─── TABS ───
