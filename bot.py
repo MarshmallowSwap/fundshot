@@ -803,33 +803,31 @@ async def _setup_bot_menu(bot):
     from telegram import BotCommand, MenuButtonCommands
 
     bot_commands = [
-        BotCommand("start",           "🚀 Avvia il bot e configura le API"),
-        BotCommand("help",            "📋 Lista completa dei comandi"),
-        BotCommand("status",          "📡 Stato bot e monitoraggio attivo"),
-        BotCommand("top10",           "🔥 Top 10 SHORT + LONG in tempo reale"),
-        BotCommand("funding_top",     "📈 Top 10 funding positivi (SHORT)"),
-        BotCommand("funding_bottom",  "📉 Top 10 funding negativi (LONG)"),
-        BotCommand("storico",         "🕐 Ultimi 8 cicli di un simbolo"),
-        BotCommand("storico7g",       "📊 Storico 7 giorni con grafici"),
-        BotCommand("backtest",        "🧪 Simula P&L 30gg (SYMBOL|top10|watchlist)"),
-        BotCommand("watchlist",       "👁 Stato watchlist e simboli monitorati"),
-        BotCommand("watch",           "➕ Aggiungi simboli alla watchlist"),
-        BotCommand("unwatch",         "➖ Rimuovi simboli dalla watchlist"),
-        BotCommand("mute",            "🔇 Silenzia alert per un simbolo"),
-        BotCommand("unmute",          "🔔 Riattiva alert per un simbolo"),
-        BotCommand("alerts",          "⚙️ Soglie custom per simbolo"),
-        BotCommand("saldo",           "💼 Saldo wallet Bybit"),
-        BotCommand("posizioni",       "📂 Posizioni aperte con PnL"),
-        BotCommand("test",            "🔧 Test connessione Bybit + Telegram"),
-        BotCommand("rischio",         "⚠️ Analisi rischio posizioni aperte"),
-        BotCommand("summary",         "📊 Riepilogo rapido portafoglio"),
-        BotCommand("newlistings",     "🆕 Nuovi listing con funding elevato"),
-        BotCommand("analytics",       "📈 Analytics avanzati e statistiche"),
-        BotCommand("alert_config",    "⚙️ Configura soglie alert"),
-        BotCommand("profitto_funding","💹 Guadagni da funding per posizioni aperte"),
-        # ── Comandi auto-trading ──
-        BotCommand("stats",           "🤖 Statistiche auto-trader"),
-        BotCommand("posizioni_trader","📂 Posizioni aperte dall'auto-trader"),
+        # ── Funding Rate ─────────────────────────────────────────────────────
+        BotCommand("top10",     "🔥 Top 10 SHORT + LONG in tempo reale"),
+        BotCommand("storico",   "📅 Storico funding — /storico SYM [7g]"),
+        BotCommand("backtest",  "🧪 Simula P&L 30gg — /backtest SYM|top10|watchlist"),
+        # ── Account ──────────────────────────────────────────────────────────
+        BotCommand("saldo",     "💼 Saldo e equity Bybit"),
+        BotCommand("posizioni", "📂 Posizioni aperte con PnL%"),
+        BotCommand("rischio",   "⚠️ Analisi rischio e distanza liquidazione"),
+        BotCommand("summary",   "📊 Riepilogo rapido portafoglio"),
+        # ── Auto-Trading ─────────────────────────────────────────────────────
+        BotCommand("trading",   "🤖 Statistiche auto-trader"),
+        BotCommand("aperte",    "📂 Posizioni aperte dall'auto-trader"),
+        # ── Watchlist & Alert ─────────────────────────────────────────────────
+        BotCommand("watchlist", "👁 Stato watchlist completo"),
+        BotCommand("watch",     "➕ Aggiungi simboli — /watch BTC ETH SOL"),
+        BotCommand("unwatch",   "➖ Rimuovi simboli — /unwatch all per reset"),
+        BotCommand("mute",      "🔇 Silenzia alert per un simbolo"),
+        BotCommand("unmute",    "🔔 Riattiva alert per un simbolo"),
+        BotCommand("alerts",    "⚙️ Soglie custom — /alerts SYM livello valore"),
+        # ── Sistema ──────────────────────────────────────────────────────────
+        BotCommand("start",     "🚀 Setup credenziali API Bybit"),
+        BotCommand("status",    "📡 Stato bot, uptime, alert attivi"),
+        BotCommand("test",      "🔧 Test connessione Bybit"),
+        BotCommand("help",      "📋 Lista completa dei comandi"),
+        BotCommand("deletekeys","🗑 Elimina le tue API key"),
     ]
 
     try:
