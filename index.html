@@ -1663,6 +1663,7 @@ function goto(id, btn) {
   document.querySelectorAll('.np').forEach(b => b.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
   btn.classList.add('active');
+  if (id === 'dashboard') { fetchOI().then(updateOICard); }
   if (id === 'positions') { initPositionsPage(); }
   if (id === 'settings')  { initSettings(); }
   if (id === 'funding')   { renderFundTable(); }
@@ -2815,6 +2816,7 @@ function startCountdown(){
 
 // ─── INIT ───
 loadPublic();
+fetchOI().then(updateOICard);
 fetchResults();
 fetchClosedPnl();
 startCountdown();
