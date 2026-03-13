@@ -1585,7 +1585,7 @@ function goto(id, btn) {
   if (id === 'positions') { initPositionsPage(); }
   if (id === 'settings')  { initSettings(); }
   if (id === 'funding')   { renderFundTable(); }
-  if (id === 'trading')   { initTradingPage(); }
+  if (id === 'trading')   { initTradingPage(); fetchResults(); }
 }
 
 // ─── TABS ───
@@ -2734,6 +2734,7 @@ function startCountdown(){
 
 // ─── INIT ───
 loadPublic();
+fetchResults();
 startCountdown();
 </script>
 </body>
