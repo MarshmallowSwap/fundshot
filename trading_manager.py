@@ -32,15 +32,15 @@ DEFAULT_CONFIG = {
     "max_positions":    2,
     "sl_pct":           1.2,
     "tp1_size_pct":     30,
-    "trailing_buffer":  {"hard": 1.2, "extreme": 1.0, "high": 0.8, "base": 0.7},
-    "tp1_pct":          {"hard": 1.2, "extreme": 1.0, "high": 0.8, "base": 0.7},
-    "tp_max":           {"hard": 6.0, "extreme": 5.0, "high": 4.0, "base": 3.0},
+    "trailing_buffer":  {"hard": 1.2, "extreme": 1.0, "high": 0.8, "soft": 0.7},
+    "tp1_pct":          {"hard": 1.2, "extreme": 1.0, "high": 0.8, "soft": 0.7},
+    "tp_max":           {"hard": 6.0, "extreme": 5.0, "high": 4.0, "soft": 3.0},
     "funding_thresholds": {
         "jackpot": 0.030,
         "hard":    0.020,
         "extreme": 0.015,
         "high":    0.010,
-        "base":    0.005,
+        "soft":    0.005,
     },
     "min_funding_abs":   0.005,
     "min_persistence":   1,
@@ -117,7 +117,7 @@ class FundingTrader:
         if abs_r >= thr["hard"]:    return "hard"
         if abs_r >= thr["extreme"]: return "extreme"
         if abs_r >= thr["high"]:    return "high"
-        if abs_r >= thr["base"]:    return "base"
+        if abs_r >= thr["soft"]:    return "soft"
         return None
 
     def update_persistence(self, symbol: str, rate: float) -> int:
@@ -180,7 +180,7 @@ class FundingTrader:
             return
 
         # TP / SL / trailing params
-        lvl_key   = level if level in ("hard","extreme","high","base") else "hard"
+        lvl_key   = level if level in ("hard","extreme","high","soft") else "hard"
         tp1_pct   = self.cfg["tp1_pct"][lvl_key]   / 100
         buf_pct   = self.cfg["trailing_buffer"][lvl_key] / 100
         tp_max    = self.cfg["tp_max"][lvl_key]    / 100
@@ -196,7 +196,7 @@ class FundingTrader:
             act_price = mark * (1 + tp1_pct)
 
         trail_dist = mark * buf_pct
-        use_tp1    = level in ("base", "high")
+        use_tp1    = level in ("soft", "high")
 
         result = await self.client.open_position(
             symbol=symbol, side=side, qty=qty,
@@ -228,7 +228,7 @@ class FundingTrader:
         )
         self.positions[symbol] = pos
 
-        emoji = {"jackpot":"🎰","hard":"🔴","extreme":"🔥","high":"🚨","base":"📊"}.get(level,"📊")
+        emoji = {"jackpot":"🎰","hard":"🔴","extreme":"🔥","high":"🚨","soft":"📊"}.get(level,"📊")
         strat = (
             f"🎯 TP1 30%: `${tp1_price:.6f}` ({tp1_pct*100:+.2f}%) + Trailing {buf_pct*100:.2f}%\n"
             if use_tp1 else

@@ -2608,7 +2608,7 @@ function initSettings() {
   sv('cfg-minreset', cfg.minreset);
   sv('cfg-cooldown', cfg.cooldown);
   // TP per livello
-  ['jackpot','hard','extreme','high','base'].forEach(lvl => {
+  ['jackpot','hard','extreme','high','soft'].forEach(lvl => {
     const t = cfg.tp[lvl] || CFG_DEFAULTS.tp[lvl];
     sv(`tp-${lvl}-tp1`,   t[0]);
     sv(`tp-${lvl}-trail`, t[1]);
