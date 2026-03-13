@@ -238,6 +238,8 @@ async def funding_job(context):
         rate_pct        = rate_raw * 100
         interval_h      = ticker.get("fundingIntervalHour", 8)
         next_funding_ts = int(ticker.get("nextFundingTime", 0))
+        last_price      = float(ticker.get("lastPrice", 0))
+        pct_24h         = float(ticker.get("price24hPcnt", 0)) * 100
 
         # ── Aggiorna cache funding (usata da FundingTrader) ──────────────────
         _funding_cache[symbol] = rate_raw
@@ -246,21 +248,21 @@ async def funding_job(context):
         al.update_rate_history(symbol, rate_pct)
 
         # 1. Alert funding rate
-        alert_text = al.process_funding(symbol, rate_pct, interval_h)
+        alert_text = al.process_funding(symbol, rate_pct, interval_h, last_price=last_price, pct_24h=pct_24h)
         if alert_text:
             await send_alert(bot, alert_text, symbol=symbol, rate=rate_pct)
             bot_data["alerts_sent"] = bot_data.get("alerts_sent", 0) + 1
 
         # 1b. Alert cambio livello funding
         if _bot_alert_enabled("level_change"):
-            level_alert = al.check_level_change(symbol, al.classify(symbol, rate_pct), rate_pct=rate_pct)
+            level_alert = al.check_level_change(symbol, al.classify(symbol, rate_pct), rate_pct=rate_pct, last_price=last_price, pct_24h=pct_24h)
             if level_alert:
                 await send_alert(bot, level_alert)
                 bot_data["alerts_sent"] = bot_data.get("alerts_sent", 0) + 1
 
         # 2. Alert prossimo funding (entro X minuti)
         if next_funding_ts:
-            next_text = al.process_next_funding(symbol, rate_pct, interval_h, next_funding_ts)
+            next_text = al.process_next_funding(symbol, rate_pct, interval_h, next_funding_ts, last_price=last_price, pct_24h=pct_24h)
             if next_text:
                 await send_alert(bot, next_text)
                 bot_data["alerts_sent"] = bot_data.get("alerts_sent", 0) + 1

@@ -308,6 +308,8 @@ def format_alert(
     interval_h,
     level: str,
     prev_level: str = "none",
+    last_price: float = 0.0,
+    pct_24h: float = 0.0,
 ) -> str:
     emoji, title = _LEVEL_META.get(level, ("\U0001f4ca", "FUNDING"))
     interval  = _interval_label(interval_h)
@@ -316,53 +318,76 @@ def format_alert(
     suffix    = _dynamic_suffix(symbol, level)
     oi_str    = _get_oi(symbol)
 
+    # Righe comuni prezzo e 24h
+    price_str = f"`${last_price:.6f}`" if last_price > 0 else "—"
+    p24_arrow = "▲" if pct_24h >= 0 else "▼"
+    p24_color = "+" if pct_24h >= 0 else ""
+    p24_str   = f"{p24_arrow} `{p24_color}{pct_24h:.2f}%`" if pct_24h != 0 else "—"
+    price_line = f"💵 Prezzo:  {price_str}  |  24h: {p24_str}\n" if last_price > 0 else ""
+
     if level == "rientro":
         return (
-            f"{emoji} {title}\n"
-            f"*{symbol}*\n"
-            f"Rate: {rate_str} (ogni {interval})\n"
-            f"OI 5m: {oi_str}\n"
-            f"Eccesso rientrato"
+            f"{emoji} *{title}*\n"
+            f"━━━━━━━━━━━━━━━━━━\n"
+            f"📌 *{symbol}*\n"
+            f"📊 Rate:    `{rate_str}` (ogni {interval})\n"
+            f"{price_line}"
+            f"📈 OI 5m:   {oi_str}\n"
+            f"━━━━━━━━━━━━━━━━━━\n"
+            f"✅ Eccesso rientrato — posizioni al sicuro"
         )
 
     if level == "critico":
         side   = "SHORT" if rate_pct > 0 else "LONG"
-        income = "gli short INCASSANO" if rate_pct > 0 else "i long INCASSANO"
+        income = "gli SHORT incassano" if rate_pct > 0 else "i LONG incassano"
         return (
-            f"{emoji} {title}\n"
-            f"*{symbol}*\n"
-            f"Rate: {rate_str} (ogni {interval}){suffix}\n"
-            f"OI 5m: {oi_str}\n"
-            f"\U0001f4b0 Funding MASSIMO: {income}\n"
-            f"\U0001f680 Mantieni / Apri {side} -- opportunita RARA!"
+            f"{emoji} *{title}*\n"
+            f"━━━━━━━━━━━━━━━━━━\n"
+            f"📌 *{symbol}*\n"
+            f"📊 Rate:    `{rate_str}` (ogni {interval}){suffix}\n"
+            f"{price_line}"
+            f"📈 OI 5m:   {oi_str}\n"
+            f"━━━━━━━━━━━━━━━━━━\n"
+            f"💰 Funding MASSIMO — {income}\n"
+            f"🚀 Mantieni / Apri *{side}* — opportunità RARA!"
         )
 
     if level == "close_tip":
-        action = "chiudere posizioni SHORT" if rate_pct > 0 else "chiudere posizioni LONG"
+        action = "chiudi SHORT" if rate_pct > 0 else "chiudi LONG"
         return (
-            f"{emoji} {title}\n"
-            f"*{symbol}*\n"
-            f"Rate: {rate_str} (ogni {interval}){suffix}\n"
-            f"OI 5m: {oi_str}\n"
-            f"Valuta di {action}"
+            f"{emoji} *{title}*\n"
+            f"━━━━━━━━━━━━━━━━━━\n"
+            f"📌 *{symbol}*\n"
+            f"📊 Rate:    `{rate_str}` (ogni {interval}){suffix}\n"
+            f"{price_line}"
+            f"📈 OI 5m:   {oi_str}\n"
+            f"━━━━━━━━━━━━━━━━━━\n"
+            f"🔔 Valuta di {action} — funding in rientro"
         )
 
     if level == "warn_tip":
-        action = "posizioni SHORT" if rate_pct > 0 else "posizioni LONG"
+        side = "SHORT" if rate_pct > 0 else "LONG"
         return (
-            f"{emoji} {title}\n"
-            f"*{symbol}*\n"
-            f"Rate: {rate_str} (ogni {interval}){suffix}\n"
-            f"OI 5m: {oi_str}\n"
-            f"Attenzione: funding su {action} ancora attivo"
+            f"{emoji} *{title}*\n"
+            f"━━━━━━━━━━━━━━━━━━\n"
+            f"📌 *{symbol}*\n"
+            f"📊 Rate:    `{rate_str}` (ogni {interval}){suffix}\n"
+            f"{price_line}"
+            f"📈 OI 5m:   {oi_str}\n"
+            f"━━━━━━━━━━━━━━━━━━\n"
+            f"⚠️ Funding su {side} ancora attivo — monitora"
         )
 
+    # BASE / HIGH / EXTREME / HARD
     return (
-        f"{emoji} {title}\n"
-        f"*{symbol}*\n"
-        f"Rate: {rate_str} (ogni {interval}){suffix}\n"
-        f"OI 5m: {oi_str}\n"
-        f"Segnale: {direction}"
+        f"{emoji} *{title}*\n"
+        f"━━━━━━━━━━━━━━━━━━\n"
+        f"📌 *{symbol}*\n"
+        f"📊 Rate:    `{rate_str}` (ogni {interval}){suffix}\n"
+        f"{price_line}"
+        f"📈 OI 5m:   {oi_str}\n"
+        f"━━━━━━━━━━━━━━━━━━\n"
+        f"🎯 Segnale: {direction}"
     )
 
 
@@ -517,7 +542,7 @@ def get_funded_symbols() -> set[str]:
 # LOGICA PRINCIPALE FUNDING (Opzione A)
 # ══════════════════════════════════════════════════════════════════════════════
 
-def process_funding(symbol: str, rate_pct: float, interval_h) -> str | None:
+def process_funding(symbol: str, rate_pct: float, interval_h, last_price: float = 0.0, pct_24h: float = 0.0) -> str | None:
     """
     Opzione A: reset stato solo quando rate <= THRESHOLD_RIENTRO (effettivo).
     Usa soglie ibride (fisse + dinamiche).
@@ -578,7 +603,8 @@ def process_funding(symbol: str, rate_pct: float, interval_h) -> str | None:
         return None
     _record_alert(symbol, new_level)
 
-    return format_alert(symbol, rate_pct, interval_h, new_level, prev_level)
+    return format_alert(symbol, rate_pct, interval_h, new_level, prev_level,
+                        last_price=last_price, pct_24h=pct_24h)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -590,6 +616,8 @@ def process_next_funding(
     rate_pct: float,
     interval_h,
     next_funding_ts_ms: int,
+    last_price: float = 0.0,
+    pct_24h: float = 0.0,
 ) -> str | None:
     """Alert unificato PRE-SETTLEMENT: countdown + next funding + suggerimento.
     Scatta FUNDING_ALERT_MINUTES minuti prima del settlement per tutti i simboli
@@ -648,13 +676,18 @@ def process_next_funding(
     settlement_dt  = datetime.fromtimestamp(next_funding_ts_ms / 1000, tz=TZ_IT)
     settlement_str = settlement_dt.strftime("%H:%M")
 
-    pos_line = "✅ Posizione aperta" if funded else "📭 Nessuna posizione"
+    pos_line  = "✅ Posizione aperta" if funded else "📭 Nessuna posizione"
+    price_str = f"`${last_price:.6f}`" if last_price > 0 else "—"
+    p24_arrow = "▲" if pct_24h >= 0 else "▼"
+    p24_str   = f"{p24_arrow} `{('+' if pct_24h>=0 else '')}{pct_24h:.2f}%`" if pct_24h != 0 else ""
+    price_line = f"💵 Prezzo:  {price_str}  |  24h: {p24_str}\n" if last_price > 0 else ""
 
     return (
         f"⏰ *PRE-SETTLEMENT — {int(minutes_left)} MIN*\n"
         f"━━━━━━━━━━━━━━━━━━\n"
-        f"📌 `{symbol}`  {lvl_emoji} `{lvl_lbl}`\n"
-        f"📊 Funding: `{sign}{rate_pct:.4f}%`  |  Segnale: {direction}\n"
+        f"📌 *{symbol}*  {lvl_emoji} `{lvl_lbl}`\n"
+        f"📊 Funding:  `{sign}{rate_pct:.4f}%`  |  {direction}\n"
+        f"{price_line}"
         f"━━━━━━━━━━━━━━━━━━\n"
         f"🕐 Settlement: `{settlement_str}`\n"
         f"{interval_line}\n"
@@ -710,7 +743,8 @@ _level_change_cooldown: dict[str, float] = {}
 _LEVEL_CHANGE_CD_SEC = 300   # 5 minuti
 
 
-def check_level_change(symbol: str, new_level: str, rate_pct: float = 0.0, prev_rate_pct: float = 0.0) -> str | None:
+def check_level_change(symbol: str, new_level: str, rate_pct: float = 0.0, prev_rate_pct: float = 0.0,
+                        last_price: float = 0.0, pct_24h: float = 0.0) -> str | None:
     if not _alert_enabled('level_change'):
         return None
 
@@ -765,14 +799,20 @@ def check_level_change(symbol: str, new_level: str, rate_pct: float = 0.0, prev_
     sign_old = '+' if old_rate >= 0 else ''
     sign_new = '+' if rate_pct >= 0 else ''
 
+    price_str = f"`${last_price:.6f}`" if last_price > 0 else "—"
+    p24_arrow = "▲" if pct_24h >= 0 else "▼"
+    p24_str   = f"{p24_arrow} `{('+' if pct_24h>=0 else '')}{pct_24h:.2f}%`" if pct_24h != 0 else ""
+    price_line = f"💵 Prezzo:  {price_str}  |  24h: {p24_str}\n" if last_price > 0 else ""
+
     return (
         f'{danger} *CAMBIO LIVELLO {direction}*\n'
         f'━━━━━━━━━━━━━━━━━━\n'
-        f'📌 Coppia:  `{symbol}`\n'
+        f'📌 *{symbol}*\n'
         f'{prev_emoji} `{prev_lbl}` → {new_emoji} `{new_lbl}`\n'
         f'━━━━━━━━━━━━━━━━━━\n'
-        f'📊 Funding precedente: `{sign_old}{old_rate:.4f}%`\n'
-        f'📊 Funding attuale:    `{sign_new}{rate_pct:.4f}%`\n'
+        f'📊 Funding prec.: `{sign_old}{old_rate:.4f}%`\n'
+        f'📊 Funding att.:  `{sign_new}{rate_pct:.4f}%`\n'
+        f'{price_line}'
         f'━━━━━━━━━━━━━━━━━━\n'
         f'🔍 Verifica posizione aperta!'
     )
