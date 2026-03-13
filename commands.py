@@ -1135,8 +1135,9 @@ async def top10(update: Update, context: ContextTypes.DEFAULT_TYPE):
         settle   = _settlement_label(t["next_ts"])
         p24h     = f"{t['pct_24h']:+.1f}%"
         interval = f"{t['interval_h']}H"
+        sym_esc = t['symbol'].replace('_', '\_')
         short_lines.append(
-            f"`{i:>2}.` *{t['symbol']:<12}* `{t['rate']:+.4f}%`\n"
+            f"`{i:>2}.` *{sym_esc}* `{t['rate']:+.4f}%`\n"
             f"     `{bar:<12}` {badge} · {interval} · {settle} · {p24h}"
         )
 
@@ -1153,8 +1154,9 @@ async def top10(update: Update, context: ContextTypes.DEFAULT_TYPE):
         settle   = _settlement_label(t["next_ts"])
         p24h     = f"{t['pct_24h']:+.1f}%"
         interval = f"{t['interval_h']}H"
+        sym_esc = t['symbol'].replace('_', '\_')
         long_lines.append(
-            f"`{i:>2}.` *{t['symbol']:<12}* `{t['rate']:+.4f}%`\n"
+            f"`{i:>2}.` *{sym_esc}* `{t['rate']:+.4f}%`\n"
             f"     `{bar:<12}` {badge} · {interval} · {settle} · {p24h}"
         )
 
