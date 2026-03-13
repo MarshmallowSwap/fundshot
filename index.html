@@ -113,9 +113,20 @@ nav {
   font-family: 'DM Sans', sans-serif;
 }
 .np.active {
-  background: linear-gradient(135deg, var(--p1), var(--pk));
-  color: white;
-  box-shadow: 0 2px 12px rgba(139,92,246,.35);
+  background: linear-gradient(90deg,
+    #b8860b 0%,
+    #ffd700 20%,
+    #fffacd 38%,
+    #ffd700 55%,
+    #ffa500 70%,
+    #ffd700 85%,
+    #b8860b 100%
+  );
+  background-size: 200% auto;
+  animation: goldShimmer 2.5s linear infinite;
+  color: #1a1000;
+  font-weight: 700;
+  box-shadow: 0 2px 14px rgba(255,215,0,.35), 0 0 28px rgba(255,165,0,.15);
 }
 .np:hover:not(.active) { color: var(--text2); }
 
@@ -535,22 +546,7 @@ nav {
 <!-- ═══ NAV ═══ -->
 <nav>
   <div class="logo">
-    <div class="logo-icon">
-      <svg width="18" height="18" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="cg" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#FFD700"/>
-            <stop offset="50%" stop-color="#FFA500"/>
-            <stop offset="100%" stop-color="#FFD700"/>
-          </linearGradient>
-        </defs>
-        <path d="M4 48 L12 20 L24 34 L32 10 L40 34 L52 20 L60 48 Z" fill="url(#cg)"/>
-        <circle cx="32" cy="9" r="5" fill="#FFD700"/>
-        <circle cx="10" cy="20" r="4" fill="#FFD700"/>
-        <circle cx="54" cy="20" r="4" fill="#FFD700"/>
-        <rect x="4" y="48" width="56" height="8" rx="4" fill="url(#cg)"/>
-      </svg>
-    </div>
+    <div class="logo-icon">👑</div>
     <span class="logo-text">FUNDING KING</span>
   </div>
   <div class="nav-center">
