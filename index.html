@@ -1514,6 +1514,77 @@ window.addPartialClose = function(pnlUsdt) {
   updateChart(0, []);
 };
 
+// ─── FETCH CLOSED PNL DA BYBIT ───
+async function fetchClosedPnl() {
+  try {
+    const proxy = proxyBase();
+    const r = await fetch(proxy + '/api/closed-pnl');
+    if (!r.ok) return;
+    const data = await r.json();
+    if (!data.ok || !data.trades || !data.trades.length) return;
+    updateFromBybitTrades(data.trades);
+  } catch(e) {}
+}
+
+function updateFromBybitTrades(trades) {
+  if (!trades || !trades.length) return;
+
+  const tbody = document.getElementById('th-body');
+  const cnt   = document.getElementById('th-count');
+
+  // Calcola PnL totale realizzato da Bybit
+  const totalRealized = trades.reduce((s,t) => s + (t.pnl_usdt||0), 0);
+  const wins = trades.filter(t => t.pnl_usdt > 0).length;
+  const winrate = trades.length ? ((wins/trades.length)*100).toFixed(0)+'%' : '—%';
+
+  // Aggiorna KPI
+  const rEl = document.getElementById('pnl-realized');
+  const wrEl = document.getElementById('pnl-winrate');
+  if (rEl) { rEl.textContent=(totalRealized>=0?'+':'')+totalRealized.toFixed(2); rEl.style.color=totalRealized>=0?'var(--teal2)':'var(--red2)'; }
+  if (wrEl) wrEl.textContent = winrate;
+
+  // Aggiorna totale sessione
+  const totEl = document.getElementById('pnl-total');
+  if (totEl) {
+    const unr = parseFloat(document.getElementById('pnl-unrealized')?.textContent||'0');
+    const tot = totalRealized + unr;
+    totEl.textContent = (tot>=0?'+':'')+tot.toFixed(2);
+    totEl.style.color = tot>=0?'var(--amber2)':'var(--red2)';
+  }
+
+  // Aggiorna banner guardian header
+  const gbDd = document.getElementById('gb-trades');
+  if (gbDd) gbDd.textContent = trades.length;
+
+  if (cnt) cnt.textContent = trades.length + ' trade';
+  if (!tbody) return;
+
+  tbody.innerHTML = trades.map(t => {
+    const pnlCls = t.pnl_usdt >= 0 ? 'th-pnl-pos' : 'th-pnl-neg';
+    const sideCls = t.side === 'LONG' ? 'th-side-long' : 'th-side-short';
+    const entS = t.entry ? '$'+parseFloat(t.entry).toFixed(6) : '—';
+    const exitS = t.exit ? '$'+parseFloat(t.exit).toFixed(6) : '—';
+    const pct = (t.entry && t.exit) ?
+      (((parseFloat(t.exit)-parseFloat(t.entry))/parseFloat(t.entry))*(t.side==='LONG'?1:-1)*100).toFixed(2)+'%' : '—';
+    // Converti unix timestamp
+    const tsNum = parseInt(t.ts||'0');
+    const timeStr = tsNum > 0 ? new Date(tsNum*1000).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}) : '—';
+    return `<tr>
+      <td style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3)">${timeStr}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:12px;font-weight:600">${t.symbol}</td>
+      <td><span class="${sideCls}">${t.side}</span></td>
+      <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)">${t.qty||'—'}</td>
+      <td style="font-size:11px;color:var(--text3)">${entS}</td>
+      <td style="font-size:11px;color:var(--text3)">${exitS}</td>
+      <td class="${pnlCls}" style="font-weight:700">${t.pnl_usdt>=0?'+':''}${t.pnl_usdt.toFixed(2)}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--pk2)">+0.00</td>
+      <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)">${pct}</td>
+    </tr>`;
+  }).join('');
+
+  if (typeof guardianUpdate === 'function') guardianUpdate();
+}
+
 // ─── FETCH RESULTS DAL SERVER ───
 async function fetchResults() {
   try {
@@ -1595,7 +1666,7 @@ function goto(id, btn) {
   if (id === 'positions') { initPositionsPage(); }
   if (id === 'settings')  { initSettings(); }
   if (id === 'funding')   { renderFundTable(); }
-  if (id === 'trading')   { initTradingPage(); fetchResults(); }
+  if (id === 'trading')   { initTradingPage(); fetchResults(); fetchClosedPnl(); }
 }
 
 // ─── TABS ───
@@ -2736,7 +2807,7 @@ let _secs = 60;
 function startCountdown(){
   setInterval(()=>{
     _secs--;
-    if(_secs<=0){ _secs=60; loadPublic(); fetchOI().then(updateOICard); fetchResults(); if(document.getElementById('page-positions').classList.contains('active')) { loadPositions(); fetchMonitoring().then(updateMonitoringCard); } }
+    if(_secs<=0){ _secs=60; loadPublic(); fetchOI().then(updateOICard); fetchResults(); fetchClosedPnl(); if(document.getElementById('page-positions').classList.contains('active')) { loadPositions(); fetchMonitoring().then(updateMonitoringCard); } }
     qs('countdown').textContent=_secs+'s';
     qs('rfill').style.width=(_secs/60*100)+'%';
   },1000);
@@ -2745,6 +2816,7 @@ function startCountdown(){
 // ─── INIT ───
 loadPublic();
 fetchResults();
+fetchClosedPnl();
 startCountdown();
 </script>
 </body>

@@ -352,6 +352,43 @@ class ProxyHandler(BaseHTTPRequestHandler):
                 data = []
             self._json({"ok": True, "results": data})
 
+        elif p == '/api/closed-pnl':
+            # Legge closed PnL direttamente da Bybit (ultimi 50 trade)
+            k = _config.get("api_key","")
+            s = _config.get("api_secret","")
+            if not k:
+                self._json({"ok": False, "msg": "no_key", "trades": []})
+            else:
+                try:
+                    import time as _t, hmac as _h, hashlib as _hs, urllib.request as _u, json as _jj2
+                    ts = str(int(_t.time()*1000))
+                    params = "category=linear&limit=50"
+                    sign_str = ts + k + "5000" + params
+                    sig = _h.new(s.encode(), sign_str.encode(), _hs.sha256).hexdigest()
+                    url = f"https://api.bybit.com/v5/position/closed-pnl?{params}"
+                    req = _u.Request(url, headers={
+                        "X-BAPI-API-KEY": k,
+                        "X-BAPI-TIMESTAMP": ts,
+                        "X-BAPI-RECV-WINDOW": "5000",
+                        "X-BAPI-SIGN": sig,
+                    })
+                    with _u.urlopen(req, timeout=5) as resp:
+                        raw = _jj2.loads(resp.read())
+                    items = raw.get("result",{}).get("list",[])
+                    trades = [{
+                        "symbol":    x.get("symbol",""),
+                        "side":      "LONG" if x.get("side")=="Buy" else "SHORT",
+                        "qty":       x.get("qty",""),
+                        "entry":     x.get("avgEntryPrice",""),
+                        "exit":      x.get("avgExitPrice",""),
+                        "pnl_usdt":  float(x.get("closedPnl","0")),
+                        "ts":        str(int(x.get("updatedTime","0"))//1000),
+                        "source":    "bybit",
+                    } for x in items]
+                    self._json({"ok": True, "trades": trades})
+                except Exception as e:
+                    self._json({"ok": False, "error": str(e), "trades": []})
+
         elif p == '/api/oi':
             try:
                 import os as _os, json as _json
