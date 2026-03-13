@@ -29,8 +29,10 @@
   --green:   #10b981;
   --green2:  #34d399;
   --text:    #ede9fe;
+  --text1:   #e2dff0;
   --text2:   #a89cc8;
   --text3:   #6b5f8a;
+  --text-muted: #6b5f8a;
 }
 *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 
@@ -1663,7 +1665,7 @@ function goto(id, btn) {
   document.querySelectorAll('.np').forEach(b => b.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
   btn.classList.add('active');
-  if (id === 'dashboard') { fetchOI().then(updateOICard); }
+  if (id === 'dashboard') { fetchAndUpdateOI(); }
   if (id === 'positions') { initPositionsPage(); }
   if (id === 'settings')  { initSettings(); }
   if (id === 'funding')   { renderFundTable(); }
@@ -1838,8 +1840,18 @@ async function fetchOI() {
   try {
     const r = await fetch(proxyBase() + '/api/oi');
     const d = await r.json();
-    return d.ok ? d.oi : {};
-  } catch(e) { return {}; }
+    const oi = d.ok ? d.oi : {};
+    return oi;
+  } catch(e) {
+    console.warn('fetchOI error:', e);
+    return {};
+  }
+}
+
+// Versione che aggiorna sempre la card, anche se vuota
+async function fetchAndUpdateOI() {
+  const oi = await fetchOI();
+  updateOICard(oi);
 }
 
 function updateOICard(oi) {
@@ -2808,7 +2820,7 @@ let _secs = 60;
 function startCountdown(){
   setInterval(()=>{
     _secs--;
-    if(_secs<=0){ _secs=60; loadPublic(); fetchOI().then(updateOICard); fetchResults(); fetchClosedPnl(); if(document.getElementById('page-positions').classList.contains('active')) { loadPositions(); fetchMonitoring().then(updateMonitoringCard); } }
+    if(_secs<=0){ _secs=60; loadPublic(); fetchAndUpdateOI(); fetchResults(); fetchClosedPnl(); if(document.getElementById('page-positions').classList.contains('active')) { loadPositions(); fetchMonitoring().then(updateMonitoringCard); } }
     qs('countdown').textContent=_secs+'s';
     qs('rfill').style.width=(_secs/60*100)+'%';
   },1000);
@@ -2820,7 +2832,7 @@ fetchResults();
 fetchClosedPnl();
 startCountdown();
 // Delay lieve per assicurare DOM pronto
-setTimeout(() => fetchOI().then(updateOICard), 500);
+setTimeout(() => fetchAndUpdateOI(), 500);
 </script>
 </body>
 </html>
