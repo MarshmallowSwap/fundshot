@@ -361,18 +361,22 @@ class ProxyHandler(BaseHTTPRequestHandler):
             else:
                 try:
                     import time as _t, hmac as _h, hashlib as _hs, urllib.request as _u, json as _jj2
+                    recv_window = "5000"
                     ts = str(int(_t.time()*1000))
                     params = "category=linear&limit=50"
-                    sign_str = ts + k + "5000" + params
+                    # Firma corretta Bybit V5: ts + apiKey + recvWindow + queryString
+                    sign_str = ts + k + recv_window + params
                     sig = _h.new(s.encode(), sign_str.encode(), _hs.sha256).hexdigest()
-                    url = f"https://api.bybit.com/v5/position/closed-pnl?{params}"
+                    # Demo account usa endpoint diverso
+                    base = _bybit_base()
+                    url = f"{base}/v5/position/closed-pnl?{params}"
                     req = _u.Request(url, headers={
-                        "X-BAPI-API-KEY": k,
-                        "X-BAPI-TIMESTAMP": ts,
-                        "X-BAPI-RECV-WINDOW": "5000",
-                        "X-BAPI-SIGN": sig,
+                        "X-BAPI-API-KEY":     k,
+                        "X-BAPI-TIMESTAMP":   ts,
+                        "X-BAPI-RECV-WINDOW": recv_window,
+                        "X-BAPI-SIGN":        sig,
                     })
-                    with _u.urlopen(req, timeout=5) as resp:
+                    with _u.urlopen(req, timeout=8) as resp:
                         raw = _jj2.loads(resp.read())
                     items = raw.get("result",{}).get("list",[])
                     trades = [{
@@ -385,7 +389,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
                         "ts":        str(int(x.get("updatedTime","0"))//1000),
                         "source":    "bybit",
                     } for x in items]
-                    self._json({"ok": True, "trades": trades})
+                    self._json({"ok": True, "trades": trades, "debug": raw.get("retMsg","")})
                 except Exception as e:
                     self._json({"ok": False, "error": str(e), "trades": []})
 
