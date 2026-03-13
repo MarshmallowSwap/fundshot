@@ -335,17 +335,80 @@ async def funding_job(context):
         elif sym in _monitoring and not lvl:
             _mon_remove(sym, "funding rientrato")
 
-    # ── OI Spike check su tutti i ticker ─────────────────────────────────────
-    if _bot_alert_enabled("oi_spike") and oi_monitor:
-        try:
-            oi_alerts = oi_monitor.check_oi_spikes(tickers)
-            for sym, msg, chg in oi_alerts:
-                await send_alert(bot, msg, symbol=sym, rate=_funding_cache.get(sym, 0) * 100)
-                bot_data["alerts_sent"] = bot_data.get("alerts_sent", 0) + 1
-        except Exception as e_oi:
-            logger.warning("OI spike check error: %s", e_oi)
-
     _fj_running = False
+
+
+# ── Job OI spike (ogni 5 min) ────────────────────────────────────────────────
+_oi_running = False
+
+async def oi_spike_job(context):
+    """
+    Job OI spike: controlla spike OI ogni 5 minuti.
+    Controlla solo i simboli con funding significativo (>0.3%) per efficienza.
+    Usa thread pool per parallelizzare le chiamate API.
+    """
+    global _oi_running
+    if not oi_monitor:
+        return
+    if not _bot_alert_enabled("oi_spike"):
+        return
+    if _oi_running:
+        return
+    _oi_running = True
+
+    bot: Bot = context.bot
+    try:
+        # Filtra solo simboli con funding significativo dalla cache
+        # Evita di chiamare 544 API — tipicamente 20-30 simboli
+        MIN_FUNDING_FOR_OI = 0.003  # 0.3% minimo
+        candidates = [
+            {"symbol": sym}
+            for sym, rate in _funding_cache.items()
+            if abs(rate) >= MIN_FUNDING_FOR_OI
+        ]
+
+        if not candidates:
+            logger.debug("oi_spike_job: nessun candidato con funding >= 0.3%%")
+            return
+
+        logger.info("oi_spike_job: controllo OI su %d simboli (funding >= 0.3%%)", len(candidates))
+
+        # Esegui chiamate OI in parallelo con thread pool
+        import asyncio
+        from concurrent.futures import ThreadPoolExecutor
+
+        def fetch_one(sym_dict):
+            return oi_monitor._fetch_oi(sym_dict["symbol"])
+
+        loop = asyncio.get_event_loop()
+        with ThreadPoolExecutor(max_workers=10) as pool:
+            results = await asyncio.gather(*[
+                loop.run_in_executor(pool, oi_monitor._fetch_oi, c["symbol"])
+                for c in candidates
+            ])
+
+        # Processa risultati
+        import time
+        now = time.monotonic()
+        for sym_dict, oi_data in zip(candidates, results):
+            if not oi_data:
+                continue
+            chg = oi_data["change_5m"]
+            sym = sym_dict["symbol"]
+            if chg >= oi_monitor.OI_SPIKE_THRESHOLD or chg <= oi_monitor.OI_DROP_THRESHOLD:
+                # Cooldown
+                if now - oi_monitor._last_oi_alert.get(sym, 0) < oi_monitor.OI_COOLDOWN_SEC:
+                    continue
+                funding = _funding_cache.get(sym, 0) * 100
+                msg = oi_monitor.format_oi_spike_alert(sym, chg, funding)
+                oi_monitor._last_oi_alert[sym] = now
+                logger.info("OI spike %s: %+.2f%%", sym, chg)
+                await send_alert(bot, msg, symbol=sym, rate=funding)
+
+    except Exception as e:
+        logger.warning("oi_spike_job error: %s", e)
+    finally:
+        _oi_running = False
 
 
 # ── Job auto-trading ──────────────────────────────────────────────────────────
@@ -784,6 +847,16 @@ def main():
             name="trading_monitor",
         )
         logger.info("🤖 Job auto-trading schedulato ogni %ds (first=15s)", JOB_INTERVAL)
+
+    # Job OI spike (ogni 5 minuti, offset +20s)
+    if oi_monitor:
+        app.job_queue.run_repeating(
+            oi_spike_job,
+            interval=300,   # ogni 5 minuti
+            first=20,       # parte 20s dopo l'avvio
+            name="oi_spike_monitor",
+        )
+        logger.info("📊 Job OI spike schedulato ogni 5 min")
 
     # Registra handler comandi (da commands.py)
     commands.register(app)
