@@ -331,6 +331,15 @@ class ProxyHandler(BaseHTTPRequestHandler):
             except Exception as e:
                 self._json({'ok': False, 'msg': str(e)}, 500)
 
+        elif p == '/api/monitoring':
+            try:
+                import os as _os, json as _json
+                mon_file = '/tmp/fk_monitoring.json'
+                data = _json.load(open(mon_file)) if _os.path.exists(mon_file) else {}
+                self._json({'ok': True, 'monitoring': data})
+            except Exception as e:
+                self._json({'ok': False, 'error': str(e)})
+            return
         elif p == '/api/positions':
             k=_config.get("api_key","")
             if not k: self._json({"ok":True,"positions":[],"msg":"no_key"})
