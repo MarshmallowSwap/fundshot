@@ -827,12 +827,21 @@ async def post_init(app):
                 f"Config: `trader_config.json` {'✅' if os.path.exists('trader_config.json') else '⚠️ not found (using defaults)'}"
             )
         else:
-            logger.warning(
-                "AUTO_TRADING=true ma BYBIT_API_KEY/BYBIT_API_SECRET non configurate. "
-                "Trader non avviato."
+            logger.warning("AUTO_TRADING=true but API keys not configured.")
+            await send_to_owner(
+                app.bot,
+                "⚠️ *Auto-Trader not started*\n"
+                "`AUTO_TRADING=true` but API keys are missing.\n"
+                "Set `BYBIT_API_KEY` and `BYBIT_API_SECRET` in `.env` and restart."
             )
     else:
-        logger.info("Auto-trading DISABILITATO (AUTO_TRADING=false)")
+        logger.info("Auto-trading DISABLED (AUTO_TRADING=false)")
+        await send_to_owner(
+            app.bot,
+            "🤖 *Auto-Trader disabled*\n"
+            "Set `AUTO_TRADING=true` in `.env` and restart to enable.\n"
+            "Alerts are still active ✅"
+        )
 
     # 5. Registra comandi e Menu Button Telegram
     await _setup_bot_menu(app.bot)
