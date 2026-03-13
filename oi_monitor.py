@@ -78,11 +78,12 @@ def _get_suggestion(oi_chg: float, funding_pct: float | None) -> str:
 
     abs_f = abs(funding_pct)
 
-    if funding_pct < -0.05:
-        strength = "forte" if abs_f >= 0.5 else "moderato"
+    # Soglie: anche funding piccolo indica già una direzione chiara
+    if funding_pct < -0.01:
+        strength = "forte" if abs_f >= 0.5 else "moderato" if abs_f >= 0.1 else "debole"
         return f"🟢 Consiglio: *LONG* — short pagano funding ({funding_pct:+.4f}%), segnale {strength}"
-    elif funding_pct > 0.05:
-        strength = "forte" if abs_f >= 0.5 else "moderato"
+    elif funding_pct > 0.01:
+        strength = "forte" if abs_f >= 0.5 else "moderato" if abs_f >= 0.1 else "debole"
         return f"🔴 Consiglio: *SHORT* — long pagano funding ({funding_pct:+.4f}%), segnale {strength}"
     else:
         return f"⚪ Funding neutro ({funding_pct:+.4f}%) — OI spike speculativo, cautela"
