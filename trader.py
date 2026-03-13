@@ -406,6 +406,26 @@ class BybitTrader:
         logger.error(f"place_order error: {r.get('retMsg')} | {symbol} {side} qty={qty_calc} notional={notional}USDT")
         return None
 
+    def set_trailing_stop(self, symbol: str, side: str,
+                          trailing_dist: float, active_price: float) -> bool:
+        """
+        Imposta trailing stop nativo Bybit su una posizione aperta.
+        trailing_dist: distanza in USDT dal picco (es. entry * 0.003)
+        active_price:  prezzo di attivazione del trailing
+        """
+        body = {
+            "category":     CONFIG["category"],
+            "symbol":       symbol,
+            "trailingStop": str(round(trailing_dist, 6)),
+            "activePrice":  str(round(active_price, 6)),
+            "positionIdx":  0,
+        }
+        r = self._post("/v5/position/trading-stop", body)
+        ok = r.get("retCode") == 0
+        if not ok:
+            logger.warning(f"set_trailing_stop {symbol}: {r.get('retMsg')}")
+        return ok
+
     def close_position(self, symbol: str, side: str, qty: float) -> bool:
         """Chiude (parzialmente o totalmente) una posizione al mercato."""
         close_side = "Buy" if side == "Sell" else "Sell"
@@ -575,23 +595,47 @@ class FundingTrader:
         qty_tp1       = round(qty * CONFIG["tp1_size_pct"] / 100, 3)
         qty_remaining = round(qty - qty_tp1, 3)
 
+        # Logica ibrida:
+        # BASE/HIGH     → TP1 fisso 30% + trailing nativo Bybit sul 70%
+        # EXTREME/HARD/JACKPOT → solo trailing nativo Bybit al 100%
+        USE_TP1 = level in ("base", "high")
+
+        # Per livelli forti non impostiamo TP fisso — solo trailing
+        tp_price_order = params["tp1_price"] if USE_TP1 else 0
+
         order_id = self.bybit.place_order(
             symbol    = symbol,
             side      = side,
             qty       = qty,
             sl_price  = params["sl_price"],
-            tp_price  = params["tp1_price"],   # TP bybit = primo scaglione
+            tp_price  = tp_price_order,
         )
 
         if not order_id:
             logger.error(f"open_trade: ordine rifiutato {symbol}")
             return
 
-        # Calcola trailing stop iniziale
-        if direction == "SHORT":
-            trailing_stop = mark_price * (1 - params["trailing_buffer"] / 100)
+        # Imposta trailing stop nativo Bybit
+        # activePrice = entry + TP1 buffer (parte quando sei in profitto)
+        # trailingStop = distanza in USDT dal picco
+        tp1_pct  = params["tp1_pct"] / 100
+        buf_pct  = params["trailing_buffer"] / 100
+
+        if direction == "LONG":
+            active_price   = mark_price * (1 + tp1_pct)
+            trailing_dist  = mark_price * buf_pct
         else:
-            trailing_stop = mark_price * (1 + params["trailing_buffer"] / 100)
+            active_price   = mark_price * (1 - tp1_pct)
+            trailing_dist  = mark_price * buf_pct
+
+        ts_ok = self.bybit.set_trailing_stop(symbol, side, trailing_dist, active_price)
+        if ts_ok:
+            logger.info(f"Trailing stop nativo impostato {symbol}: dist={trailing_dist:.6f} active={active_price:.6f}")
+        else:
+            logger.warning(f"Trailing stop nativo NON impostato {symbol} — gestione manuale attiva")
+
+        # trailing_stop locale usato come fallback se Bybit non supporta trailing
+        trailing_stop = active_price
 
         pos = TradePosition(
             symbol           = symbol,
@@ -619,22 +663,28 @@ class FundingTrader:
 
         self.positions[symbol] = pos
 
-        level_emoji = {"hard":"🔴","extreme":"🔥","high":"🚨","base":"ℹ️"}[level]
+        level_emoji = {"hard":"🔴","extreme":"🔥","high":"🚨","base":"📊","critico":"🎰"}
+        emoji = level_emoji.get(level, "📊")
+        strategy_line = (
+            f"🎯 TP1 30%: `${params['tp1_price']:.6f}` ({params['tp1_pct']:+.2f}%) + Trailing {params['trailing_buffer']:.2f}%\n"
+            if USE_TP1 else
+            f"🎯 Trailing 100%: attivo da `${active_price:.6f}` (+{params['tp1_pct']:.2f}%), dist `{params['trailing_buffer']:.2f}%`\n"
+        )
         msg = (
-            f"{level_emoji} *TRADE APERTO — {direction}*\n"
+            f"{emoji} *TRADE APERTO — {direction}*\n"
             f"━━━━━━━━━━━━━━━━━━\n"
             f"📌 Coppia:    `{symbol}`\n"
-            f"💰 Entry:     `${mark_price:.4f}`\n"
+            f"💰 Entry:     `${mark_price:.6f}`\n"
             f"📊 Funding:   `{funding_rate*100:+.4f}%` ({level.upper()})\n"
             f"📈 OI Δ5m:    `{oi_data['change_5m']:+.2f}%`\n"
             f"━━━━━━━━━━━━━━━━━━\n"
-            f"🎯 TP1 (30%): `${params['tp1_price']:.4f}` ({params['tp1_pct']:+.2f}%)\n"
-            f"🎯 TP max:    `~{params['tp_max_pct']:.1f}%` (trailing)\n"
-            f"🛡️ SL:        `${params['sl_price']:.4f}` (-{CONFIG['sl_pct']:.1f}%)\n"
+            f"{strategy_line}"
+            f"🎯 Cap max:   `~{params['tp_max_pct']:.1f}%`\n"
+            f"🛡️ SL:        `${params['sl_price']:.6f}` (-{CONFIG['sl_pct']:.1f}%)\n"
             f"⚡ Leva:      `{CONFIG['leverage']}x`\n"
-            f"💵 Size:      `{CONFIG['size_usdt']} USDT` (notionale: `{notional:.0f} USDT`)\n"
+            f"💵 Size:      `{CONFIG['size_usdt']} USDT` → `{notional:.0f} USDT` nozionale\n"
             f"━━━━━━━━━━━━━━━━━━\n"
-            f"🆔 Order ID: `{order_id}`"
+            f"🆔 Order: `{order_id}`"
         )
         await self.send(chat_id, msg, symbol=symbol, rate=funding_rate*100)
         logger.info(f"Trade aperto: {direction} {symbol} @ {mark_price} | level={level}")
