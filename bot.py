@@ -83,6 +83,10 @@ async def send_alert(bot: Bot, text: str, target_chat_id=None, symbol: str = Non
     if symbol and rate is not None:
         try:
             chart_buf = generate_chart(symbol, rate)
+            if chart_buf:
+                logger.info("Grafico generato per %s (%d bytes)", symbol, len(chart_buf.getvalue()))
+            else:
+                logger.warning("Grafico None per %s — invio solo testo", symbol)
         except Exception as e:
             logger.warning("Grafico non generato per %s: %s", symbol, e)
 
