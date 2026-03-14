@@ -1,39 +1,42 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FundShot</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='0%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%23FFE55C'/%3E%3Cstop offset='100%25' stop-color='%23D4820A'/%3E%3C/linearGradient%3E%3ClinearGradient id='g2' x1='0%25' y1='0%25' x2='0%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%23FFEF80'/%3E%3Cstop offset='100%25' stop-color='%23FFC200'/%3E%3C/linearGradient%3E%3C/defs%3E%3C!-- banda base --%3E%3Crect x='6' y='44' width='52' height='12' rx='4' fill='url(%23g)'/%3E%3C!-- corpo corona --%3E%3Cpath d='M6 44 L6 28 L18 38 L32 10 L46 38 L58 28 L58 44 Z' fill='url(%23g)'/%3E%3C!-- highlight interno --%3E%3Cpath d='M6 44 L6 32 L16 40 L32 16 L48 40 L58 32 L58 44 Z' fill='url(%23g2)' opacity='0.5'/%3E%3C!-- gemma cima --%3E%3Ccircle cx='32' cy='10' r='5' fill='%23FF4444'/%3E%3Ccircle cx='32' cy='10' r='3' fill='%23FF8888'/%3E%3C!-- gemma sinistra --%3E%3Ccircle cx='6' cy='28' r='4' fill='%2322AAFF'/%3E%3Ccircle cx='6' cy='28' r='2.2' fill='%2388DDFF'/%3E%3C!-- gemma destra --%3E%3Ccircle cx='58' cy='28' r='4' fill='%2322AAFF'/%3E%3Ccircle cx='58' cy='28' r='2.2' fill='%2388DDFF'/%3E%3C!-- puntini banda --%3E%3Ccircle cx='20' cy='50' r='2.5' fill='%23FFE55C'/%3E%3Ccircle cx='32' cy='50' r='2.5' fill='%23FFE55C'/%3E%3Ccircle cx='44' cy='50' r='2.5' fill='%23FFE55C'/%3E%3C/svg%3E">
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 :root {
-  --bg:      #070510;
-  --bg1:     #0e0b1a;
-  --bg2:     #151225;
-  --bg3:     #1c1830;
-  --card:    #181428;
-  --border:  #251f3d;
-  --border2: #32295a;
-  --p1:      #8b5cf6;
-  --p2:      #a78bfa;
-  --p3:      #c4b5fd;
-  --pk:      #ec4899;
-  --pk2:     #f472b6;
-  --teal:    #2dd4bf;
-  --teal2:   #5eead4;
-  --amber:   #f59e0b;
-  --amber2:  #fcd34d;
-  --red:     #f43f5e;
-  --red2:    #fb7185;
-  --green:   #10b981;
-  --green2:  #34d399;
-  --text:    #ede9fe;
-  --text1:   #e2dff0;
-  --text2:   #a89cc8;
-  --text3:   #6b5f8a;
-  --text-muted: #6b5f8a;
+  --bg:      #05040a;
+  --bg1:     #080612;
+  --bg2:     #0f0d18;
+  --bg3:     #13111f;
+  --card:    #0f0d18;
+  --border:  rgba(255,255,255,.07);
+  --border2: rgba(255,255,255,.12);
+  --p1:      #d4a843;
+  --p2:      #f0c96a;
+  --p3:      #a07828;
+  --pk:      #f0c96a;
+  --pk2:     #d4a843;
+  --teal:    #00c9a7;
+  --teal2:   #00e5bf;
+  --amber:   #d4a843;
+  --amber2:  #f0c96a;
+  --red:     #ff4d6d;
+  --red2:    #ff7090;
+  --green:   #00c9a7;
+  --green2:  #00e5bf;
+  --text:    #f0ecff;
+  --text1:   #e8e0ff;
+  --text2:   #9890b0;
+  --text3:   #5a5278;
+  --text-muted: #5a5278;
+  --gold:    #d4a843;
+  --gold2:   #f0c96a;
+  --gold-lt: #f5d98a;
 }
 *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 
@@ -51,8 +54,8 @@ body::before {
   content: '';
   position: fixed; inset: 0; z-index: 0; pointer-events: none;
   background:
-    radial-gradient(ellipse 80% 50% at 10% 0%, rgba(139,92,246,.10) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 40% at 90% 100%, rgba(236,72,153,.07) 0%, transparent 60%),
+    radial-gradient(ellipse 80% 50% at 10% 0%, rgba(212,168,67,.07) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 90% 100%, rgba(0,201,167,.05) 0%, transparent 60%),
     radial-gradient(ellipse 40% 30% at 50% 50%, rgba(45,212,191,.04) 0%, transparent 60%);
 }
 
@@ -148,7 +151,7 @@ nav {
 }
 .refresh-fill {
   position: absolute; left: 0; top: 0; bottom: 0;
-  background: linear-gradient(90deg, var(--p1), var(--pk));
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
   border-radius: 1px;
   transition: width .5s linear;
 }
