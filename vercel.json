@@ -6,9 +6,17 @@
     { "src": "index.html",   "use": "@vercel/static" }
   ],
   "routes": [
-    { "src": "/admin", "dest": "/admin.html" },
+    { "src": "/admin",     "dest": "/admin.html" },
     { "src": "/dashboard", "dest": "/index.html" },
-    { "src": "/", "dest": "/landing.html" },
-    { "src": "/(.*)", "dest": "/landing.html" }
+    { "src": "/",          "dest": "/landing.html" },
+    { "src": "/(.*)",      "dest": "/landing.html" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*).html",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate" }
+      ]
+    }
   ]
 }
