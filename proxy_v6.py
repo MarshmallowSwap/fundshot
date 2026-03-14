@@ -464,7 +464,6 @@ class ProxyHandler(BaseHTTPRequestHandler):
                 return
             try:
                 import asyncio
-                from urllib.parse import parse_qs, urlparse
                 from db.supabase_client import get_user, get_credentials
                 from user_registry import registry as _reg
                 from exchanges import make_client
@@ -519,7 +518,6 @@ class ProxyHandler(BaseHTTPRequestHandler):
                 return
             try:
                 import asyncio
-                from urllib.parse import parse_qs, urlparse
                 from db.supabase_client import get_user, get_credentials
                 from exchanges import make_client
 
