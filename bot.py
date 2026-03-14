@@ -347,11 +347,28 @@ async def _process_exchange_tickers(
                     await send_alert(bot, level_alert, target_chat_id=cid, symbol=symbol, rate=rate_pct, **ex_kwargs)
                 bot_data["alerts_sent"] = bot_data.get("alerts_sent", 0) + 1
 
-        # 2. Alert pre-settlement
+        # 2. Alert pre-settlement (Pro/Elite only)
         if next_ts:
             next_text = al.process_next_funding(symbol, rate_pct, interval_h, next_ts, last_price=last_price, pct_24h=pct_24h)
             if next_text:
                 for cid in target_chat_ids:
+                    # Controlla piano — solo Pro/Elite ricevono pre-settlement
+                    try:
+                        from db.supabase_client import get_user, get_client as _gc_ps
+                        from datetime import datetime as _dt_ps, timezone as _tz_ps
+                        _u_ps = await get_user(int(cid))
+                        _plan_ps = "free"
+                        if _u_ps and _u_ps.plan != "free":
+                            _res_ps = _gc_ps().table("users").select("plan_expires_at").eq("id", _u_ps.id).single().execute()
+                            _exp_ps = (_res_ps.data or {}).get("plan_expires_at")
+                            if not _exp_ps or _dt_ps.fromisoformat(_exp_ps.replace("Z", "+00:00")) > _dt_ps.now(_tz_ps.utc):
+                                _plan_ps = _u_ps.plan
+                    except Exception:
+                        _plan_ps = "free"
+
+                    if _plan_ps == "free":
+                        continue  # Free → skip pre-settlement
+
                     await send_alert(bot, next_text, target_chat_id=cid, symbol=symbol, rate=rate_pct, **ex_kwargs)
                 bot_data["alerts_sent"] = bot_data.get("alerts_sent", 0) + 1
 
