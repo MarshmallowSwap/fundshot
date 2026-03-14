@@ -1615,7 +1615,9 @@ nav {
       <a href="#doc-guardian" style="color:var(--p2);font-size:.875rem;text-decoration:none;display:flex;align-items:center;gap:8px;padding:4px 0"><span style="color:var(--text3);font-family:monospace;font-size:.8rem">03b</span> Guardian &amp; Dashboard Cards</a>
       <a href="#doc-referral" style="color:var(--p2);font-size:.875rem;text-decoration:none;display:flex;align-items:center;gap:8px;padding:4px 0"><span style="color:var(--text3);font-family:monospace;font-size:.8rem">07</span> Referral Program</a>
       <a href="#doc-exchanges" style="color:var(--p2);font-size:.875rem;text-decoration:none;display:flex;align-items:center;gap:8px;padding:4px 0"><span style="color:var(--text3);font-family:monospace;font-size:.8rem">04</span> Supported Exchanges</a>
-      <a href="#doc-glossary" style="color:var(--p2);font-size:.875rem;text-decoration:none;display:flex;align-items:center;gap:8px;padding:4px 0"><span style="color:var(--text3);font-family:monospace;font-size:.8rem">08</span> Glossary</a>
+      <a href="#doc-oi" style="color:var(--p2);font-size:.875rem;text-decoration:none;display:flex;align-items:center;gap:8px;padding:4px 0"><span style="color:var(--text3);font-family:monospace;font-size:.8rem">08b</span> Open Interest</a>
+      <a href="#doc-alerts-explained" style="color:var(--p2);font-size:.875rem;text-decoration:none;display:flex;align-items:center;gap:8px;padding:4px 0"><span style="color:var(--text3);font-family:monospace;font-size:.8rem">08c</span> Reading Alerts</a>
+      <a href="#doc-glossary" style="color:var(--p2);font-size:.875rem;text-decoration:none;display:flex;align-items:center;gap:8px;padding:4px 0"><span style="color:var(--text3);font-family:monospace;font-size:.8rem">09</span> Glossary</a>
     </div>
   </div>
 
@@ -1914,6 +1916,137 @@ nav {
       <div style="display:flex;gap:10px;padding:9px 14px;background:var(--bg3);border-radius:8px;color:var(--text2)"><span style="color:var(--p2)">③</span>Friend pays → you earn 10% automatically (forever)</div>
       <div style="display:flex;gap:10px;padding:9px 14px;background:var(--bg3);border-radius:8px;color:var(--text2)"><span style="color:var(--p2)">④</span>Monthly payout every 1st of the month (min $5 USDT)</div>
       <div style="display:flex;gap:10px;padding:9px 14px;background:var(--bg3);border-radius:8px;color:var(--text2)"><span style="color:var(--p2)">⑤</span>Set your wallet: <code style="background:var(--bg2);padding:1px 6px;border-radius:4px">/setwallet YOUR_USDT_TRC20</code></div>
+    </div>
+  </div>
+
+  <!-- 08b. OPEN INTEREST -->
+  <div id="doc-oi" style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:20px;position:relative;overflow:hidden">
+    <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--p1),transparent)"></div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <span style="font-family:'DM Mono',monospace;font-size:.65rem;background:var(--p1);color:#fff;padding:3px 10px;border-radius:4px;font-weight:700">08b</span>
+      <span style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;color:var(--text)">Open Interest — what it is and how FundShot uses it</span>
+    </div>
+    <p style="color:var(--text2);font-size:.875rem;line-height:1.8;margin-bottom:18px"><strong style="color:var(--text)">Open Interest (OI)</strong> is the total number of outstanding derivative contracts (perpetual futures) that have not been settled. It represents the total market exposure at any given moment — how much capital is currently committed to open positions on a given pair.</p>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px">
+      <div style="background:rgba(0,201,167,.06);border:1px solid rgba(0,201,167,.15);border-radius:12px;padding:16px">
+        <div style="font-weight:700;color:var(--teal2);margin-bottom:8px;font-size:.9rem">📈 OI Rising</div>
+        <div style="font-size:.85rem;color:var(--text2);line-height:1.6">New money entering the market. More participants opening positions. When combined with extreme funding, it confirms that the imbalance is getting <strong style="color:var(--text)">larger and more unstable</strong> — a stronger reversal signal.</div>
+      </div>
+      <div style="background:rgba(255,77,109,.06);border:1px solid rgba(255,77,109,.15);border-radius:12px;padding:16px">
+        <div style="font-weight:700;color:var(--red2);margin-bottom:8px;font-size:.9rem">📉 OI Falling</div>
+        <div style="font-size:.85rem;color:var(--text2);line-height:1.6">Positions being closed. Money leaving the market. When OI drops sharply while funding is still extreme, it may signal a <strong style="color:var(--text)">liquidation cascade</strong> already underway — the reversal has started.</div>
+      </div>
+    </div>
+
+    <div style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--gold);letter-spacing:.15em;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:8px">
+      <span style="width:20px;height:1px;background:var(--gold);opacity:.5;display:inline-block"></span>
+      How FundShot uses OI
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px">
+      <div style="display:flex;gap:12px;padding:10px 14px;background:rgba(255,255,255,.025);border-radius:10px;font-size:.875rem;color:var(--text2)">
+        <span style="color:var(--gold);font-weight:700;flex-shrink:0">01</span>
+        <span><strong style="color:var(--text)">Signal confirmation:</strong> An extreme funding rate alone is a signal. Extreme funding <em>plus</em> a spike in OI is a much stronger signal. FundShot cross-references both before sending HARD or JACKPOT alerts.</span>
+      </div>
+      <div style="display:flex;gap:12px;padding:10px 14px;background:rgba(255,255,255,.025);border-radius:10px;font-size:.875rem;color:var(--text2)">
+        <span style="color:var(--gold);font-weight:700;flex-shrink:0">02</span>
+        <span><strong style="color:var(--text)">OI spike monitor:</strong> Every 5 minutes, the bot scans for sudden OI increases (&gt;15% in 1 hour) on pairs with funding ≥ 0.3%. These are flagged as priority candidates and appear in the monitoring list.</span>
+      </div>
+      <div style="display:flex;gap:12px;padding:10px 14px;background:rgba(255,255,255,.025);border-radius:10px;font-size:.875rem;color:var(--text2)">
+        <span style="color:var(--gold);font-weight:700;flex-shrink:0">03</span>
+        <span><strong style="color:var(--text)">Pre-monitoring:</strong> Pairs with HIGH+ funding AND elevated OI enter the "monitoring" list before a trade is opened. The bot watches for the optimal entry window as the funding cycle approaches settlement.</span>
+      </div>
+      <div style="display:flex;gap:12px;padding:10px 14px;background:rgba(255,255,255,.025);border-radius:10px;font-size:.875rem;color:var(--text2)">
+        <span style="color:var(--gold);font-weight:700;flex-shrink:0">04</span>
+        <span><strong style="color:var(--text)">Alert enrichment:</strong> Every alert includes the current OI value and its percentage change vs. the previous cycle. A rising OI with negative funding is a classic long squeeze setup.</span>
+      </div>
+    </div>
+
+    <div style="background:rgba(212,168,67,.06);border:1px solid rgba(212,168,67,.15);border-radius:10px;padding:14px 18px;font-size:.85rem;color:var(--text2)">
+      <strong style="color:var(--gold2)">📐 OI + Funding matrix:</strong><br>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;font-size:.8rem">
+        <div style="padding:8px 12px;background:rgba(0,201,167,.08);border-radius:8px;border:1px solid rgba(0,201,167,.2)"><strong style="color:var(--teal2)">OI ↑ + Funding extreme</strong><br><span style="color:var(--text2)">Strongest setup. Imbalance building. High probability reversal.</span></div>
+        <div style="padding:8px 12px;background:rgba(212,168,67,.08);border-radius:8px;border:1px solid rgba(212,168,67,.2)"><strong style="color:var(--gold2)">OI stable + Funding extreme</strong><br><span style="color:var(--text2)">Good setup. Funding is paying but market not overextended.</span></div>
+        <div style="padding:8px 12px;background:rgba(245,158,11,.08);border-radius:8px;border:1px solid rgba(245,158,11,.2)"><strong style="color:var(--amber2)">OI ↓ + Funding extreme</strong><br><span style="color:var(--text2)">Caution. Reversal may already be happening. Tighter SL.</span></div>
+        <div style="padding:8px 12px;background:rgba(90,82,120,.15);border-radius:8px;border:1px solid rgba(90,82,120,.3)"><strong style="color:var(--text2)">OI ↓ + Funding normal</strong><br><span style="color:var(--text2)">No signal. Market unwinding, no edge.</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 08c. READING ALERTS -->
+  <div id="doc-alerts-explained" style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:20px;position:relative;overflow:hidden">
+    <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--p1),transparent)"></div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <span style="font-family:'DM Mono',monospace;font-size:.65rem;background:var(--p1);color:#fff;padding:3px 10px;border-radius:4px;font-weight:700">08c</span>
+      <span style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;color:var(--text)">Reading Alerts — every field explained</span>
+    </div>
+    <p style="color:var(--text2);font-size:.875rem;line-height:1.8;margin-bottom:20px">Every FundShot alert sent to Telegram contains a precise set of data. Here is what each field means and how to interpret it.</p>
+
+    <!-- Alert example visual -->
+    <div style="background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:20px;margin-bottom:20px;font-family:'DM Mono',monospace;font-size:.8rem;line-height:2">
+      <div style="color:var(--amber2);font-size:.9rem;font-weight:700;margin-bottom:4px">🎰 JACKPOT SHORT — DOODUSDT</div>
+      <div style="color:var(--text2)">📊 Funding: <span style="color:var(--red2)">-3.2800%</span> &nbsp;|&nbsp; ⏰ Settlement in: <span style="color:var(--gold2)">14m 32s</span></div>
+      <div style="color:var(--text2)">💧 OI: <span style="color:var(--teal2)">$18.4M</span> &nbsp;|&nbsp; OI Δ: <span style="color:var(--teal2)">+12.4%</span></div>
+      <div style="color:var(--text2)">💵 Price: <span style="color:var(--text)">$0.04821</span> &nbsp;|&nbsp; 24h vol: <span style="color:var(--text)">$2.1M</span></div>
+      <div style="color:var(--text2)">🎯 Suggested: <span style="color:var(--teal2)">LONG</span> &nbsp;|&nbsp; TP: <span style="color:var(--teal2)">+0.5%</span> &nbsp;|&nbsp; SL: <span style="color:var(--red2)">-6%</span></div>
+      <div style="color:var(--text3);font-size:.75rem;margin-top:4px">[chart attached]</div>
+    </div>
+
+    <!-- Field explanations -->
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:14px 16px;display:grid;grid-template-columns:160px 1fr;gap:16px">
+        <div>
+          <div style="font-family:'DM Mono',monospace;color:var(--amber2);font-weight:700;font-size:.85rem">🎰 Level + Direction</div>
+          <div style="font-size:.75rem;color:var(--text3);margin-top:2px">e.g. JACKPOT SHORT</div>
+        </div>
+        <div style="font-size:.85rem;color:var(--text2);line-height:1.6">Alert severity level (SOFT/HIGH/EXTREME/HARD/JACKPOT) and suggested trade direction. <strong style="color:var(--teal2)">LONG</strong> = funding is negative, shorts are overpaying. <strong style="color:var(--red2)">SHORT</strong> = funding is positive, longs are overpaying. The direction exploits the side that is paying the most.</div>
+      </div>
+      <div style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:14px 16px;display:grid;grid-template-columns:160px 1fr;gap:16px">
+        <div>
+          <div style="font-family:'DM Mono',monospace;color:var(--gold2);font-weight:700;font-size:.85rem">📊 Funding %</div>
+          <div style="font-size:.75rem;color:var(--text3);margin-top:2px">e.g. -3.2800%</div>
+        </div>
+        <div style="font-size:.85rem;color:var(--text2);line-height:1.6">The current annualized funding rate. Negative = shorts pay longs. Positive = longs pay shorts. The further from 0, the more extreme the market imbalance. Values beyond ±1% are rare — beyond ±3% they are exceptional.</div>
+      </div>
+      <div style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:14px 16px;display:grid;grid-template-columns:160px 1fr;gap:16px">
+        <div>
+          <div style="font-family:'DM Mono',monospace;color:var(--gold2);font-weight:700;font-size:.85rem">⏰ Settlement in</div>
+          <div style="font-size:.75rem;color:var(--text3);margin-top:2px">e.g. 14m 32s</div>
+        </div>
+        <div style="font-size:.85rem;color:var(--text2);line-height:1.6">Time until the next funding payment is settled. This is critical for timing. Entries <strong style="color:var(--text)">15–30 minutes before settlement</strong> capture the funding payment + the post-settlement reversal move. The pre-settlement alert fires automatically at this window.</div>
+      </div>
+      <div style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:14px 16px;display:grid;grid-template-columns:160px 1fr;gap:16px">
+        <div>
+          <div style="font-family:'DM Mono',monospace;color:var(--teal2);font-weight:700;font-size:.85rem">💧 OI + OI Δ</div>
+          <div style="font-size:.75rem;color:var(--text3);margin-top:2px">e.g. $18.4M +12.4%</div>
+        </div>
+        <div style="font-size:.85rem;color:var(--text2);line-height:1.6">Current total open interest in USD and its percentage change vs the previous scan (60 seconds ago). A positive Δ means new positions are being opened — more exposure building. Combined with extreme funding, this is the highest-conviction setup.</div>
+      </div>
+      <div style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:14px 16px;display:grid;grid-template-columns:160px 1fr;gap:16px">
+        <div>
+          <div style="font-family:'DM Mono',monospace;color:var(--text);font-weight:700;font-size:.85rem">💵 Price + Vol</div>
+          <div style="font-size:.75rem;color:var(--text3);margin-top:2px">e.g. $0.048 | $2.1M</div>
+        </div>
+        <div style="font-size:.85rem;color:var(--text2);line-height:1.6">Current mark price and 24h trading volume. Low volume pairs are more volatile and harder to exit cleanly. As a rule of thumb, prefer pairs with 24h volume &gt; $5M for auto-trading. Lower volume pairs can still be traded manually with smaller size.</div>
+      </div>
+      <div style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:14px 16px;display:grid;grid-template-columns:160px 1fr;gap:16px">
+        <div>
+          <div style="font-family:'DM Mono',monospace;color:var(--teal2);font-weight:700;font-size:.85rem">🎯 Suggested TP/SL</div>
+          <div style="font-size:.75rem;color:var(--text3);margin-top:2px">TP: +0.5% | SL: -6%</div>
+        </div>
+        <div style="font-size:.85rem;color:var(--text2);line-height:1.6">The bot's suggested take-profit and stop-loss based on the signal level. For manual trades these are starting points — adjust based on your risk tolerance. The auto-trader uses these values directly, modified by the trailing stop logic described in section 02.</div>
+      </div>
+      <div style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:14px 16px;display:grid;grid-template-columns:160px 1fr;gap:16px">
+        <div>
+          <div style="font-family:'DM Mono',monospace;color:var(--text3);font-weight:700;font-size:.85rem">📈 Chart</div>
+          <div style="font-size:.75rem;color:var(--text3);margin-top:2px">15m candlestick</div>
+        </div>
+        <div style="font-size:.85rem;color:var(--text2);line-height:1.6">Attached 15-minute candlestick chart of the pair with funding level marked. Use it to check recent price action before entering manually — a pair in a strong downtrend with negative funding is safer to go long than one that's already bounced 20%.</div>
+      </div>
+    </div>
+
+    <div style="margin-top:18px;background:rgba(0,201,167,.05);border:1px solid rgba(0,201,167,.15);border-radius:10px;padding:14px 18px;font-size:.85rem;color:var(--text2)">
+      <strong style="color:var(--teal2)">⚡ CLOSE alerts:</strong> When a monitored symbol drops below its threshold, you receive a <strong style="color:var(--text)">CLOSE [direction]</strong> alert. This means the funding opportunity has expired — if you have an open position, this is the signal to review your exit, especially if auto-trading is off.
     </div>
   </div>
 

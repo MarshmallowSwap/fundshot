@@ -108,6 +108,8 @@ async def get_or_create_user(chat_id: int, handle: str = "") -> User:
         raise
 
 
+OWNER_CHAT_ID = int(os.getenv("CHAT_ID", "0"))
+
 async def get_user(chat_id: int) -> Optional[User]:
     """Restituisce l'utente o None se non esiste."""
     db = get_client()

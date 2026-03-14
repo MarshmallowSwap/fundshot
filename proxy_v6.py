@@ -442,13 +442,16 @@ class ProxyHandler(BaseHTTPRequestHandler):
                     plan_exp = (_res.data or {}).get("plan_expires_at")
                 except Exception:
                     pass
+                import os as _os_me
+                _owner_cid = int(_os_me.getenv("CHAT_ID", "0"))
+                _is_owner  = user["chat_id"] == _owner_cid
                 self._json({
                     "ok":               True,
                     "chat_id":          user["chat_id"],
                     "username":         user.get("username", ""),
                     "first_name":       user.get("first_name", ""),
-                    "plan":             u.plan if u else user.get("plan", "free"),
-                    "plan_expires_at":  plan_exp,
+                    "plan":             "elite" if _is_owner else (u.plan if u else user.get("plan", "free")),
+                    "plan_expires_at":  None if _is_owner else plan_exp,
                     "active_exchanges": u.active_exchanges if u else [],
                 })
             except Exception as e:
