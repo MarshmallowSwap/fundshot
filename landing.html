@@ -1028,7 +1028,10 @@ footer {
             <div class="welcome-handle" id="wp-handle"></div>
           </div>
         </div>
-        <div class="welcome-plan-badge plan-free" id="wp-plan-badge">🆓 FREE</div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="welcome-plan-badge plan-free" id="wp-plan-badge">🆓 FREE</div>
+          <button class="btn-signout" onclick="logout(event)">Sign out</button>
+        </div>
       </div>
 
       <!-- Quick links -->
