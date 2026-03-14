@@ -1967,8 +1967,8 @@ PLAN_FEATURES = {
 }
 
 PLAN_PRICES = {
-    "pro":   {"recurring": 15, "oneshot": 20},
-    "elite": {"recurring": 40, "oneshot": 50},
+    "pro":   {"recurring": 20, "oneshot": 25},
+    "elite": {"recurring": 45, "oneshot": 55},
 }
 
 
@@ -2077,9 +2077,20 @@ async def upgrade_currency_cb(update: Update, context: ContextTypes.DEFAULT_TYPE
             from payments import create_payment, create_subscription, currency_display
             from db.supabase_client import save_payment, get_user, save_user_email
 
-            user      = await get_user(chat_id)
-            email     = context.user_data.get("upg_email", "")
-            price_label = PLAN_PRICES[plan][billing]
+            user        = await get_user(chat_id)
+            email       = context.user_data.get("upg_email", "")
+            base_price  = PLAN_PRICES[plan][billing]
+            # Applica sconto referral se presente
+            from referral import get_discount_for_user, apply_discount
+            discount_pct = await get_discount_for_user(user.id) if user else 0
+            price_label  = apply_discount(base_price, discount_pct)
+            if discount_pct > 0:
+                await query.edit_message_text(
+                    f"\U0001F381 *{int(discount_pct)}% referral discount applied!*\n"
+                    f"Original: ~~${base_price}~~ -> *${price_label}*",
+                    parse_mode="Markdown",
+                )
+                import asyncio; await asyncio.sleep(1.5)
             cur_label   = currency_display(currency)
             billing_lbl = "🔄 Recurring" if billing == "recurring" else "1️⃣ One-Shot"
             plan_lbl    = plan.capitalize()
@@ -2342,3 +2353,172 @@ def register(app):
     app.add_handler(CommandHandler("status",     status_cmd))
     app.add_handler(CommandHandler("test",       test_cmd))
     app.add_handler(CommandHandler("deletekeys", deletekeys_cmd))
+
+    # ── Referral ──────────────────────────────────────────────────────────────
+    app.add_handler(CommandHandler("referral",   cmd_referral))
+    app.add_handler(CommandHandler("setwallet",  cmd_setwallet))
+    app.add_handler(CommandHandler("addinf",     cmd_addinf))
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# /referral — Mostra link referral e statistiche
+# /setwallet — Imposta wallet USDT per payout
+# /addinf — Admin: promuove utente a influencer
+# ══════════════════════════════════════════════════════════════════════════════
+
+async def cmd_referral(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Mostra il link referral personale e le statistiche."""
+    import os
+    from db.supabase_client import get_user, get_or_create_referral_code
+    from referral import get_referral_info, REFERRAL_COMMISSION_PCT, PAYOUT_MIN_USD
+
+    chat_id = update.effective_chat.id
+    user    = await get_user(chat_id)
+    if not user:
+        await update.message.reply_text("⚠️ Use /start to register first.")
+        return
+
+    code = await get_or_create_referral_code(user.id, chat_id)
+    info = await get_referral_info(user.id)
+
+    bot_username = (await context.bot.get_me()).username
+    ref_link     = f"https://t.me/{bot_username}?start=ref_{code}"
+
+    is_inf = info.get("is_influencer", False)
+    inf_link = f"https://t.me/{bot_username}?start=inf_{code}" if is_inf else None
+
+    lines = [
+        f"{'👑' if is_inf else '🔗'} *{'Influencer' if is_inf else 'Referral'} Program*\n",
+        f"Your referral link:",
+        f"`{ref_link}`\n",
+    ]
+
+    if is_inf:
+        lines += [
+            f"🎁 Your influencer link:",
+            f"`{inf_link}`",
+            f"_(users who join via this link get 5% off forever)_\n",
+        ]
+
+    lines += [
+        f"📊 *Stats:*",
+        f"  Invited: `{info['total_invited']}`",
+        f"  Converted (paid): `{info['converted']}`",
+        f"  Pending: `{info['pending']}`\n",
+        f"💰 *Earnings:*",
+        f"  Balance: `${info['balance']:.2f} USDT`",
+        f"  Total earned: `${info['total_earned']:.2f} USDT`\n",
+        f"📌 *How it works:*",
+        f"  • You earn *{int(REFERRAL_COMMISSION_PCT)}%* on every payment",
+        f"  • Including renewals — forever",
+        f"  • Payout: automatic monthly (min ${PAYOUT_MIN_USD:.0f})\n",
+        f"Set your USDT wallet for payouts:\n`/setwallet YOUR_USDT_TRC20_ADDRESS`",
+    ]
+
+    await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
+
+
+async def cmd_setwallet(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Imposta il wallet USDT TRC20 per ricevere i payout referral."""
+    from db.supabase_client import get_user, save_referral_wallet
+
+    chat_id = update.effective_chat.id
+    if not context.args:
+        await update.message.reply_text(
+            "Usage: `/setwallet YOUR_USDT_TRC20_ADDRESS`\n\n"
+            "Example: `/setwallet TXxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`",
+            parse_mode="Markdown",
+        )
+        return
+
+    wallet = context.args[0].strip()
+    # Validazione base TRC20 (inizia con T, 34 caratteri)
+    if not (wallet.startswith("T") and len(wallet) == 34):
+        await update.message.reply_text(
+            "❌ Invalid USDT TRC20 address.\n"
+            "TRC20 addresses start with `T` and are 34 characters long.",
+            parse_mode="Markdown",
+        )
+        return
+
+    user = await get_user(chat_id)
+    if not user:
+        await update.message.reply_text("⚠️ Use /start to register first.")
+        return
+
+    await save_referral_wallet(user.id, wallet)
+    await update.message.reply_text(
+        f"✅ Wallet saved: `{wallet[:6]}...{wallet[-4:]}`\n\n"
+        "You'll receive USDT payouts here automatically each month.",
+        parse_mode="Markdown",
+    )
+
+
+async def cmd_addinf(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Admin only: promuove un utente a influencer."""
+    import os
+    from db.supabase_client import get_user, set_influencer
+
+    # Solo owner
+    chat_id = str(update.effective_chat.id)
+    owner   = str(os.getenv("CHAT_ID", ""))
+    if chat_id != owner:
+        await update.message.reply_text("⛔ Not authorized.")
+        return
+
+    if not context.args:
+        await update.message.reply_text(
+            "Usage: `/addinf @username` or `/addinf CHAT_ID`\n"
+            "Remove: `/addinf @username remove`",
+            parse_mode="Markdown",
+        )
+        return
+
+    target  = context.args[0].lstrip("@")
+    remove  = len(context.args) > 1 and context.args[1].lower() == "remove"
+
+    # Cerca utente per handle o chat_id
+    from db.supabase_client import get_client
+    db = get_client()
+    try:
+        if target.isdigit():
+            res = db.table("users").select("*").eq("chat_id", int(target)).single().execute()
+        else:
+            res = db.table("users").select("*").eq("telegram_handle", target).single().execute()
+        u = res.data
+    except Exception:
+        u = None
+
+    if not u:
+        await update.message.reply_text(f"❌ User `{target}` not found.", parse_mode="Markdown")
+        return
+
+    await set_influencer(u["id"], not remove)
+
+    action = "removed from" if remove else "added as"
+    await update.message.reply_text(
+        f"✅ `@{u.get('telegram_handle', target)}` {action} influencer.\n"
+        f"Chat ID: `{u['chat_id']}`",
+        parse_mode="Markdown",
+    )
+
+    # Notifica l'utente
+    try:
+        if not remove:
+            bot_username = (await context.bot.get_me()).username
+            from db.supabase_client import get_or_create_referral_code
+            code = await get_or_create_referral_code(u["id"], u["chat_id"])
+            inf_link = f"https://t.me/{bot_username}?start=inf_{code}"
+            await context.bot.send_message(
+                chat_id=u["chat_id"],
+                text=(
+                    "🎉 *You're now a FundShot Influencer!*\n\n"
+                    "Your special link gives users *5% off forever*:\n"
+                    f"`{inf_link}`\n\n"
+                    "You earn *10% commission* on every payment — forever.\n"
+                    "Use /referral to see your stats and set your payout wallet."
+                ),
+                parse_mode="Markdown",
+            )
+    except Exception as e:
+        logger.warning("addinf notify: %s", e)

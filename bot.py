@@ -927,6 +927,19 @@ async def cmd_posizioni_trader(update, context):
 
 
 # ── Daily digest: riepilogo giornaliero alle 08:00 IT ────────────────────────
+async def referral_payout_job(context):
+    """Job mensile il 1° del mese: processa i payout referral."""
+    bot: Bot = context.bot
+    try:
+        from referral import process_monthly_payouts
+        count = await process_monthly_payouts(bot)
+        logger.info("Referral payout job completato: %d payout processati", count)
+        if count > 0:
+            await send_to_owner(bot, f"💸 *Referral Payout* — {count} payout processati questo mese.")
+    except Exception as e:
+        logger.error("referral_payout_job: %s", e)
+
+
 async def plan_expiry_job(context):
     """
     Job giornaliero alle 09:00 IT:
@@ -1318,6 +1331,16 @@ def main():
         name="plan_expiry",
     )
     logger.info("Plan expiry job schedulato alle 09:00 IT")
+
+    # Scheduled: referral payout il 1° di ogni mese alle 10:00 IT
+    from telegram.ext import CommandHandler
+    app.job_queue.run_monthly(
+        referral_payout_job,
+        when=dt_time(hour=10, minute=0, second=0, tzinfo=TZ_IT),
+        day=1,
+        name="referral_payout",
+    )
+    logger.info("Referral payout job schedulato il 1° del mese alle 10:00 IT")
 
     # Job funding monitor (ogni 120s — evita sovrapposizioni)
     FUNDING_INTERVAL = max(JOB_INTERVAL, 120)

@@ -42,3 +42,32 @@ ALTER TABLE payments ENABLE ROW LEVEL SECURITY;
 -- Aggiunge email e subscription plan IDs alla tabella users
 ALTER TABLE users
   ADD COLUMN IF NOT EXISTS email TEXT DEFAULT NULL;
+
+-- ── Referral system ───────────────────────────────────────────────────────────
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS referral_code    TEXT UNIQUE DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS referred_by      TEXT DEFAULT NULL;  -- referral_code del referrer
+
+CREATE TABLE IF NOT EXISTS referrals (
+  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  referrer_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  referred_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  status           TEXT DEFAULT 'pending' CHECK (status IN ('pending','converted','rewarded')),
+  reward_days      INT DEFAULT 0,
+  created_at       TIMESTAMPTZ DEFAULT now(),
+  converted_at     TIMESTAMPTZ DEFAULT NULL,
+  UNIQUE(referred_user_id)  -- ogni utente può avere un solo referrer
+);
+
+CREATE INDEX IF NOT EXISTS idx_referrals_referrer ON referrals(referrer_user_id);
+CREATE INDEX IF NOT EXISTS idx_referrals_status   ON referrals(status);
+
+ALTER TABLE referrals ENABLE ROW LEVEL SECURITY;
+
+-- Colonne referral su users
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS is_influencer             BOOLEAN DEFAULT false,
+  ADD COLUMN IF NOT EXISTS referral_balance_usd      FLOAT DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS referral_total_earned_usd FLOAT DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS referral_discount_pct     FLOAT DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS referral_wallet_usdt      TEXT DEFAULT NULL;

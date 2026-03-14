@@ -294,6 +294,19 @@ class ProxyHandler(BaseHTTPRequestHandler):
                         expires_at=expires,
                     ))
 
+                    # Commissione referral (10% al referrer)
+                    try:
+                        from referral import add_commission
+                        commission = asyncio.run(add_commission(
+                            payment_user_id=payment["user_id"],
+                            amount_usd=payment["amount_usd"],
+                        ))
+                        if commission > 0:
+                            log.info("Commissione referral: %.4f USDT per pagamento user=%s",
+                                     commission, payment["user_id"])
+                    except Exception as e_ref:
+                        log.warning("add_commission: %s", e_ref)
+
                     # Notifica Telegram
                     try:
                         import os

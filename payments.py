@@ -28,14 +28,14 @@ NOWPAY_BASE = "https://api.nowpayments.io/v1"
 PLANS = {
     "pro": {
         "name": "Pro",
-        "recurring": 15.0,
-        "oneshot":   20.0,
+        "recurring": 20.0,
+        "oneshot":   25.0,
         "duration_days": 30,
     },
     "elite": {
         "name": "Elite",
-        "recurring": 40.0,
-        "oneshot":   50.0,
+        "recurring": 45.0,
+        "oneshot":   55.0,
         "duration_days": 30,
     },
 }

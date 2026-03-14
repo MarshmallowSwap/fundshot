@@ -483,3 +483,78 @@ async def save_user_email(user_id: str, email: str) -> bool:
     except Exception as e:
         logger.error("save_user_email: %s", e)
         return False
+
+
+async def get_or_create_referral_code(user_id: str, chat_id: int) -> str:
+    """Restituisce o crea il codice referral dell'utente."""
+    import hashlib as _hl
+    db = get_client()
+    try:
+        res = db.table("users").select("referral_code").eq("id", user_id).single().execute()
+        code = (res.data or {}).get("referral_code")
+        if code:
+            return code
+        code = _hl.sha256(f"fs_ref_{chat_id}".encode()).hexdigest()[:8].upper()
+        db.table("users").update({"referral_code": code}).eq("id", user_id).execute()
+        return code
+    except Exception as e:
+        logger.error("get_or_create_referral_code: %s", e)
+        return ""
+
+
+async def get_user_by_referral_code(code: str) -> Optional["User"]:
+    """Trova l'utente dato il codice referral."""
+    db = get_client()
+    try:
+        res = db.table("users").select("*").eq("referral_code", code.upper()).single().execute()
+        if not res.data:
+            return None
+        d = res.data
+        return User(id=d["id"], chat_id=d["chat_id"],
+                    telegram_handle=d.get("telegram_handle", ""),
+                    plan=d.get("plan", "free"),
+                    active_exchanges=d.get("active_exchanges") or [])
+    except Exception:
+        return None
+
+
+async def record_referral(referrer_user_id: str, referred_user_id: str,
+                           discount_pct: float = 0) -> bool:
+    """Registra un referral. Se discount_pct > 0 lo salva sull'utente invitato."""
+    db = get_client()
+    try:
+        db.table("referrals").upsert({
+            "referrer_user_id": referrer_user_id,
+            "referred_user_id": referred_user_id,
+            "status":           "pending",
+        }, on_conflict="referred_user_id").execute()
+        if discount_pct > 0:
+            db.table("users").update({
+                "referral_discount_pct": discount_pct
+            }).eq("id", referred_user_id).execute()
+        return True
+    except Exception as e:
+        logger.error("record_referral: %s", e)
+        return False
+
+
+async def set_influencer(user_id: str, is_influencer: bool = True) -> bool:
+    """Promuove/rimuove un utente come influencer."""
+    db = get_client()
+    try:
+        db.table("users").update({"is_influencer": is_influencer}).eq("id", user_id).execute()
+        return True
+    except Exception as e:
+        logger.error("set_influencer: %s", e)
+        return False
+
+
+async def save_referral_wallet(user_id: str, wallet: str) -> bool:
+    """Salva il wallet USDT TRC20 per i payout referral."""
+    db = get_client()
+    try:
+        db.table("users").update({"referral_wallet_usdt": wallet}).eq("id", user_id).execute()
+        return True
+    except Exception as e:
+        logger.error("save_referral_wallet: %s", e)
+        return False
