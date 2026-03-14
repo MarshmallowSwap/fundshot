@@ -74,6 +74,44 @@ TRADING_DEMO = os.getenv("TRADING_DEMO", "false").lower() == "true"
 
 
 # ── Helper: invia messaggio Telegram ─────────────────────────────────────────
+# ── Alert counter per Free users ──────────────────────────────────────────────
+# { chat_id_str → {"count": int, "date": "YYYY-MM-DD", "warned": bool} }
+_alert_counters: dict[str, dict] = {}
+FREE_ALERT_LIMIT = 10
+
+
+def _check_alert_limit(chat_id_str: str, plan: str) -> tuple[bool, bool]:
+    """
+    Controlla il limite alert giornaliero per utenti Free.
+    Ritorna (can_send, show_upgrade_msg).
+    - can_send=True  → invia l'alert normalmente
+    - can_send=False → non inviare l'alert
+    - show_upgrade_msg=True → invia il messaggio di upgrade (solo una volta al giorno)
+    """
+    if plan != "free":
+        return True, False
+
+    today = datetime.now(TZ_IT).strftime("%Y-%m-%d")
+    entry = _alert_counters.get(chat_id_str)
+
+    # Reset se nuovo giorno
+    if not entry or entry["date"] != today:
+        _alert_counters[chat_id_str] = {"count": 0, "date": today, "warned": False}
+        entry = _alert_counters[chat_id_str]
+
+    entry["count"] += 1
+
+    if entry["count"] <= FREE_ALERT_LIMIT:
+        return True, False  # dentro il limite
+
+    # Oltre il limite
+    if not entry["warned"]:
+        entry["warned"] = True
+        return False, True  # mostra upgrade msg una volta
+
+    return False, False  # silenzio dopo il primo warning
+
+
 async def send_alert(bot: Bot, text: str, target_chat_id=None, symbol: str = None,
                      rate: float = None, exchange: str = None):
     """Invia alert a un utente specifico o a tutti gli utenti registrati su Supabase."""
@@ -112,6 +150,46 @@ async def send_alert(bot: Bot, text: str, target_chat_id=None, symbol: str = Non
 
     for cid in recipients:
         try:
+            # ── Controlla piano e limite alert ───────────────────────────────
+            try:
+                from db.supabase_client import get_user
+                from datetime import timezone
+                user = await get_user(int(cid))
+                user_plan = "free"
+                if user and user.plan != "free":
+                    # Verifica scadenza
+                    from db.supabase_client import get_client as _gc
+                    _res = _gc().table("users").select("plan_expires_at").eq("id", user.id).single().execute()
+                    _exp = (_res.data or {}).get("plan_expires_at")
+                    if _exp:
+                        from datetime import datetime as _dt
+                        _exp_dt = _dt.fromisoformat(_exp.replace("Z", "+00:00"))
+                        if _dt.now(timezone.utc) <= _exp_dt:
+                            user_plan = user.plan
+                        # else: piano scaduto → free
+                    else:
+                        user_plan = user.plan
+            except Exception:
+                user_plan = "free"
+
+            can_send, show_upgrade = _check_alert_limit(cid, user_plan)
+
+            if show_upgrade:
+                await bot.send_message(
+                    chat_id=cid,
+                    text=(
+                        "⚡ *You've reached your 10 free alerts for today.*\n\n"
+                        "Upgrade to *Pro* to get unlimited alerts, auto-trading and more.\n\n"
+                        "👉 Use /upgrade to activate Pro from $15/month."
+                    ),
+                    parse_mode="Markdown",
+                )
+                continue
+
+            if not can_send:
+                continue
+
+            # ── Invia alert ───────────────────────────────────────────────────
             if chart_buf:
                 chart_buf.seek(0)
                 await bot.send_photo(
