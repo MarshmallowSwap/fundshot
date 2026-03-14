@@ -1776,8 +1776,8 @@ async def rischio_settings(update, context):
             f"  📂 Max posizioni simult.: `{r['max_positions']}`",
             f"  💰 Max % capitale/trade:  `{r['max_pct_per_trade']:.1f}%`",
             "",
-            "_Usa: /rischio\_settings <param> <valore>_",
-            "_Es:  /rischio\_settings max\_leverage 15_",
+            "_Usa: /rischio_settings <param> <valore>_",
+            "_Es:  /rischio_settings max_leverage 15_",
         ]
         await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
         return
@@ -1797,7 +1797,7 @@ async def rischio_settings(update, context):
     if param not in valid:
         await update.message.reply_text(
             f"❌ Parametro sconosciuto: `{param}`\n"
-            f"Disponibili: max\_leverage, max\_positions, max\_pct\_per\_trade",
+            "Disponibili: max_leverage, max_positions, max_pct_per_trade",
             parse_mode="Markdown"
         )
         return
