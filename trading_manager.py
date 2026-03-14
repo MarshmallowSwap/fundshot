@@ -174,14 +174,14 @@ class FundingTrader:
 
     async def should_open(self, symbol: str, rate: float) -> tuple[bool, str]:
         if abs(rate) < self.cfg["min_funding_abs"]:
-            return False, "funding basso"
+            return False, "funding too low"
         level = self.get_level(rate)
         if not level:
-            return False, "nessun livello"
+            return False, "no level matched"
         if self.persistence.get(symbol, 0) < self.cfg["min_persistence"]:
-            return False, "persistenza insufficiente"
+            return False, "insufficient persistence"
         if self.mins_to_next_reset() < self.cfg["mins_before_reset"]:
-            return False, "troppo vicino al reset"
+            return False, "too close to reset"
         if symbol in self.positions:
             return False, "position already open"
         cooldown = self.cfg["reopen_cooldown"]
@@ -191,17 +191,17 @@ class FundingTrader:
                 return False, f"cooldown ({int((cooldown-elapsed)/60)} min)"
             del self._recently_closed[symbol]
         if len(self.positions) >= self.cfg["max_positions"]:
-            return False, "max posizioni raggiunte"
+            return False, "max positions reached"
 
         # ── Limite giornaliero per piano Pro (5 pos/day) ──────────────────────
         plan = await self._get_plan()
         if plan == "free":
-            return False, "piano free — auto-trading non disponibile"
+            return False, "free plan — auto-trading not available, use /upgrade"
         if plan == "pro":
             PRO_DAILY_LIMIT = 5
             daily = self._daily_positions_count()
             if daily >= PRO_DAILY_LIMIT:
-                return False, f"limite giornaliero Pro raggiunto ({PRO_DAILY_LIMIT}/day) — upgrade a Elite per posizioni illimitate"
+                return False, f"Pro daily limit reached ({PRO_DAILY_LIMIT} positions/day) — upgrade to Elite for unlimited"
 
         return True, "ok"
 
