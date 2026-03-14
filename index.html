@@ -543,6 +543,33 @@ nav {
 @media(max-width:700px){ .settings-4col{grid-template-columns:1fr!important} }
 @media(max-width:520px){ .stats-grid{grid-template-columns:1fr} .nav-center{display:none} .page{padding:18px 12px} }
 
+
+/* ── Upgrade banners ──────────────────────────────────────────────────────── */
+.upgrade-banner {
+  background: linear-gradient(135deg, rgba(201,168,76,.08), rgba(123,108,255,.06));
+  border: 1px solid rgba(201,168,76,.2);
+  border-radius: 10px;
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.upgrade-banner.hidden { display: none; }
+.ub-left { display: flex; align-items: center; gap: 10px; }
+.ub-icon { font-size: 20px; }
+.ub-text { font-size: 13px; color: var(--text2); line-height: 1.4; }
+.ub-text strong { color: var(--text); }
+.ub-btn {
+  background: var(--gold); color: #07050a;
+  border: none; border-radius: 6px;
+  padding: 7px 16px; font-size: 12px; font-weight: 700;
+  cursor: pointer; text-decoration: none; white-space: nowrap;
+  display: inline-block;
+}
+.ub-btn:hover { background: var(--gold-lt); }
 /* ── Plan gate overlay ────────────────────────────────────── */
 .plan-lock {
   position: absolute; inset: 0; z-index: 50;
@@ -612,6 +639,19 @@ nav {
 <!-- ═══════════════════════════════════════════ -->
 <div class="page active" id="page-dashboard">
   <div class="slabel">Panoramica mercato</div>
+
+  <!-- Upgrade banner Free users -->
+  <div class="upgrade-banner hidden" id="banner-dashboard">
+    <div class="ub-left">
+      <div class="ub-icon">⚡</div>
+      <div class="ub-text">
+        <strong>You're on the Free plan</strong> — 10 alerts/day, no auto-trading.<br>
+        Upgrade to Pro and let the bot trade for you automatically.
+      </div>
+    </div>
+    <a href="https://t.me/FundShot_bot?start=upgrade_pro" target="_blank" class="ub-btn">Upgrade to Pro $20/mo →</a>
+  </div>
+
   <div class="stats-grid">
     <div class="sc a"><div class="sc-label">Funding Estremi</div><div class="sc-val" id="s0">—</div><div class="sc-sub">|rate| ≥ 1.00%</div><div class="sc-glyph">🔥</div></div>
     <div class="sc b"><div class="sc-label">Top Rate</div><div class="sc-val" id="s1">—</div><div class="sc-sub" id="s1s">—</div><div class="sc-glyph">📈</div></div>
@@ -664,6 +704,18 @@ nav {
 <!-- PAGE: FUNDING                               -->
 <!-- ═══════════════════════════════════════════ -->
 <div class="page" id="page-funding">
+  <!-- Upgrade banner Free users -->
+  <div class="upgrade-banner hidden" id="banner-funding">
+    <div class="ub-left">
+      <div class="ub-icon">⏰</div>
+      <div class="ub-text">
+        <strong>Free plan: 10 alerts/day</strong> — Pre-settlement alerts not included.<br>
+        Pro gets unlimited alerts + advance warning before each funding cycle.
+      </div>
+    </div>
+    <a href="https://t.me/FundShot_bot?start=upgrade_pro" target="_blank" class="ub-btn">Unlock Unlimited Alerts →</a>
+  </div>
+
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:12px">
     <div class="slabel" style="margin-bottom:0">Tutti i Funding Rates · Bybit Perpetual USDT</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -694,6 +746,18 @@ nav {
     </div>
   </div>
   <div id="pos-warn" class="warn" style="display:none"></div>
+
+  <!-- Upgrade banner Free users -->
+  <div class="upgrade-banner hidden" id="banner-positions">
+    <div class="ub-left">
+      <div class="ub-icon">🤖</div>
+      <div class="ub-text">
+        <strong>Auto-trading disabled</strong> — You're watching positions manually.<br>
+        Pro users let the bot open and manage trades automatically on extreme funding rates.
+      </div>
+    </div>
+    <a href="https://t.me/FundShot_bot?start=upgrade_pro" target="_blank" class="ub-btn">Activate Auto-Trading →</a>
+  </div>
 
   <!-- WALLET ROW -->
   <div class="g2eq" id="wallet-row">
@@ -3510,17 +3574,15 @@ async function initPlanGate() {
 function applyPlanLocks() {
   const planOrder = { free: 0, pro: 1, elite: 2 };
   const userLevel = planOrder[_userPlan] || 0;
+  const isFree    = userLevel < 1;
 
+  // ── Overlay lock su Trading (hard gate) ───────────────────────────────────
   PRO_PAGES.forEach(pageId => {
     const page = document.getElementById('page-' + pageId);
     if (!page) return;
-
-    // Rimuovi lock esistente se c'è
     const existing = page.querySelector('.plan-lock');
     if (existing) existing.remove();
-
-    if (userLevel < 1) {
-      // Free → aggiungi overlay lock
+    if (isFree) {
       page.style.position = 'relative';
       const overlay = document.createElement('div');
       overlay.className = 'plan-lock';
@@ -3542,6 +3604,24 @@ function applyPlanLocks() {
       page.appendChild(overlay);
     }
   });
+
+  // ── Soft banners sulle altre pagine (solo Free) ───────────────────────────
+  const banners = ['banner-dashboard', 'banner-positions', 'banner-funding'];
+  banners.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (isFree) {
+      el.classList.remove('hidden');
+    } else {
+      el.classList.add('hidden');
+    }
+  });
+
+  // ── Navbar Trading tab: mostra lucchetto per Free ─────────────────────────
+  const tradingTab = document.getElementById('nav-trading');
+  if (tradingTab) {
+    tradingTab.innerHTML = isFree ? '🔒 Trading' : '⚡ Trading';
+  }
 }
 
 function gotoGated(id, btn) {
