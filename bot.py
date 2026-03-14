@@ -910,6 +910,107 @@ async def cmd_posizioni_trader(update, context):
 
 
 # ── Daily digest: riepilogo giornaliero alle 08:00 IT ────────────────────────
+async def plan_expiry_job(context):
+    """
+    Job giornaliero alle 09:00 IT:
+    - Notifica utenti con piano in scadenza tra 3 giorni
+    - Downgrade automatico a Free per piani scaduti
+    """
+    bot: Bot = context.bot
+    from datetime import datetime, timedelta, timezone
+    from db.supabase_client import get_client as _gc, update_user_plan
+
+    try:
+        db  = _gc()
+        now = datetime.now(timezone.utc)
+
+        # Recupera tutti gli utenti con piano Pro/Elite
+        res = db.table("users").select(
+            "id,chat_id,telegram_handle,plan,plan_expires_at,billing_type"
+        ).in_("plan", ["pro", "elite"]).execute()
+
+        users = res.data or []
+        logger.info("plan_expiry_job: %d utenti con piano attivo", len(users))
+
+        for u in users:
+            try:
+                exp_str = u.get("plan_expires_at")
+                if not exp_str:
+                    continue
+
+                exp_dt  = datetime.fromisoformat(exp_str.replace("Z", "+00:00"))
+                chat_id = u.get("chat_id")
+                plan    = u.get("plan", "free")
+                billing = u.get("billing_type", "oneshot")
+                days_left = (exp_dt - now).days
+
+                # ── Scaduto → downgrade a Free ────────────────────────────────
+                if now > exp_dt:
+                    await update_user_plan(
+                        user_id=u["id"],
+                        plan="free",
+                        billing_type=None,
+                        expires_at=None,
+                    )
+                    try:
+                        await bot.send_message(
+                            chat_id=chat_id,
+                            text=(
+                                f"⚠️ *Your {plan.capitalize()} plan has expired.*\n\n"
+                                "You've been moved to the Free plan.\n"
+                                "Use /upgrade to renew and keep all your features."
+                            ),
+                            parse_mode="Markdown",
+                        )
+                    except Exception as e:
+                        logger.warning("plan_expiry notify expired %s: %s", chat_id, e)
+                    logger.info("Piano scaduto → Free: chat_id=%s", chat_id)
+                    continue
+
+                # ── Scade tra 3 giorni → notifica ─────────────────────────────
+                if days_left == 3:
+                    billing_lbl = "🔄 recurring" if billing == "recurring" else "1️⃣ one-shot"
+                    prices = {"pro": {"recurring": 15, "oneshot": 20},
+                              "elite": {"recurring": 40, "oneshot": 50}}
+                    price = prices.get(plan, {}).get(billing or "oneshot", 0)
+                    try:
+                        await bot.send_message(
+                            chat_id=chat_id,
+                            text=(
+                                f"⏰ *Your {plan.capitalize()} plan expires in 3 days.*\n\n"
+                                f"📅 Expiry: `{exp_dt.strftime('%d/%m/%Y')}`\n"
+                                f"💳 Billing: {billing_lbl}\n\n"
+                                f"Renew now for ${price} to keep auto-trading and all features.\n\n"
+                                "👉 Use /upgrade to renew."
+                            ),
+                            parse_mode="Markdown",
+                        )
+                        logger.info("Piano in scadenza notificato: chat_id=%s days_left=%d", chat_id, days_left)
+                    except Exception as e:
+                        logger.warning("plan_expiry notify 3days %s: %s", chat_id, e)
+
+                # ── Scade domani → ultima notifica ────────────────────────────
+                elif days_left == 1:
+                    try:
+                        await bot.send_message(
+                            chat_id=chat_id,
+                            text=(
+                                f"🚨 *Your {plan.capitalize()} plan expires tomorrow!*\n\n"
+                                "Renew now to avoid losing access to auto-trading.\n\n"
+                                "👉 /upgrade"
+                            ),
+                            parse_mode="Markdown",
+                        )
+                    except Exception as e:
+                        logger.warning("plan_expiry notify 1day %s: %s", chat_id, e)
+
+            except Exception as e:
+                logger.error("plan_expiry_job user %s: %s", u.get("chat_id"), e)
+
+    except Exception as e:
+        logger.error("plan_expiry_job: %s", e)
+
+
 async def daily_digest_job(context):
     """Invia digest mattutino alle 08:00 ora italiana."""
     bot: Bot = context.bot
@@ -1181,6 +1282,14 @@ def main():
         name="daily_digest",
     )
     logger.info("Daily digest schedulato alle 08:00 IT")
+
+    # Scheduled: plan expiry check alle 09:00 IT
+    app.job_queue.run_daily(
+        plan_expiry_job,
+        time=dt_time(hour=9, minute=0, second=0, tzinfo=TZ_IT),
+        name="plan_expiry",
+    )
+    logger.info("Plan expiry job schedulato alle 09:00 IT")
 
     # Job funding monitor (ogni 120s — evita sovrapposizioni)
     FUNDING_INTERVAL = max(JOB_INTERVAL, 120)

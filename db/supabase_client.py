@@ -386,19 +386,20 @@ async def get_user_trades(
 async def update_user_plan(
     user_id: str,
     plan: str,
-    billing_type: str,
-    expires_at,          # datetime object
+    billing_type,          # str | None
+    expires_at,            # datetime | None
     subscription_id: str = "",
 ) -> bool:
-    """Aggiorna piano utente dopo pagamento confermato."""
+    """Aggiorna piano utente dopo pagamento confermato o scadenza."""
     db = get_client()
     try:
-        db.table("users").update({
-            "plan":             plan,
-            "billing_type":     billing_type,
-            "plan_expires_at":  expires_at.isoformat() if hasattr(expires_at, "isoformat") else str(expires_at),
-            "subscription_id":  subscription_id,
-        }).eq("id", user_id).execute()
+        data = {
+            "plan":            plan,
+            "billing_type":    billing_type,
+            "plan_expires_at": expires_at.isoformat() if expires_at and hasattr(expires_at, "isoformat") else None,
+            "subscription_id": subscription_id,
+        }
+        db.table("users").update(data).eq("id", user_id).execute()
         logger.info("Piano aggiornato: user=%s plan=%s expires=%s", user_id, plan, expires_at)
         return True
     except Exception as e:
