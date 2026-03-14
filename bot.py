@@ -1134,7 +1134,6 @@ def main():
 
     # Registra wizard upgrade piani
     app.add_handler(commands.build_upgrade_handler())
-    app.add_handler(CommandHandler("plan", commands.cmd_plan))
 
     # Registra handler comandi (da commands.py)
     commands.inject_bot_commands(cmd_stats, cmd_posizioni_trader)
@@ -1146,6 +1145,7 @@ def main():
     app.add_handler(CommandHandler("test_oi",          cmd_test_oi))
     app.add_handler(CommandHandler("posizioni_trader", cmd_posizioni_trader))
     app.add_handler(CommandHandler("autotrader",       cmd_autotrader_toggle))
+    app.add_handler(CommandHandler("plan",             commands.cmd_plan))
 
     logger.info(
         "🚀 FundShot Bot avviato — interval=%ds | soglie=%s | trading=%s",
