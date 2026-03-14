@@ -38,6 +38,58 @@ logger = logging.getLogger(__name__)
 EXCHANGE_EMOJI = {"bybit": "🟡", "binance": "🟠", "okx": "🔵", "hyperliquid": "🟣"}
 EXCHANGE_NAME  = {"bybit": "Bybit", "binance": "Binance", "okx": "OKX", "hyperliquid": "Hyperliquid"}
 
+# ── Plan gate ─────────────────────────────────────────────────────────────────
+
+async def _get_user_plan(chat_id) -> str:
+    """Ritorna il piano attuale dell'utente (free/pro/elite)."""
+    try:
+        from db.supabase_client import get_user, get_client
+        from datetime import datetime, timezone
+        user = await get_user(chat_id)
+        if not user:
+            return "free"
+        if user.plan == "free":
+            return "free"
+        # Verifica scadenza
+        db  = get_client()
+        res = db.table("users").select("plan_expires_at").eq("id", user.id).single().execute()
+        exp = (res.data or {}).get("plan_expires_at")
+        if exp:
+            exp_dt = datetime.fromisoformat(exp.replace("Z", "+00:00"))
+            if datetime.now(timezone.utc) > exp_dt:
+                return "free"  # scaduto
+        return user.plan
+    except Exception:
+        return "free"
+
+
+async def _require_plan(update, min_plan: str = "pro") -> bool:
+    """
+    Verifica che l'utente abbia il piano minimo richiesto.
+    Ritorna True se OK, False e invia messaggio se non autorizzato.
+    """
+    chat_id = update.effective_chat.id
+    plan    = await _get_user_plan(chat_id)
+    order   = {"free": 0, "pro": 1, "elite": 2}
+    if order.get(plan, 0) >= order.get(min_plan, 1):
+        return True
+
+    plan_labels = {"pro": "⚡ Pro", "elite": "👑 Elite"}
+    required    = plan_labels.get(min_plan, min_plan.capitalize())
+    prices      = {"pro": "$15/mo", "elite": "$40/mo"}
+    price       = prices.get(min_plan, "")
+
+    await update.message.reply_text(
+        f"\U0001F512 *{required} required*\n\n"
+        f"This feature is available from the *{required}* plan ({price}).\n\n"
+        f"Your current plan: *{plan.capitalize()}*\n\n"
+        "Use /upgrade to unlock all features.",
+        parse_mode="Markdown",
+    )
+    return False
+
+
+
 def _user_exchanges(chat_id) -> list:
     """Lista degli exchange configurati per questo utente (da registry)."""
     ucs = [uc for uc in _registry.all_clients() if str(uc.chat_id) == str(chat_id)]
@@ -1256,6 +1308,8 @@ async def top10(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ══════════════════════════════════════════════════════════════════════════════
 
 async def backtest_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not await _require_plan(update, "pro"):
+        return
     """
     /backtest <SYMBOL>         — Report completo su un simbolo (30gg)
     /backtest top10            — Classifica top 10 simboli più volatili
@@ -1703,6 +1757,8 @@ _risk_params = {
 }
 
 async def rischio_settings(update, context):
+    if not await _require_plan(update, "pro"):
+        return
     """Mostra e modifica i parametri di rischio.
     Uso:
       /rischio_settings                      → mostra parametri
@@ -2152,6 +2208,8 @@ def inject_bot_commands(cmd_trading_fn, cmd_aperte_fn):
 
 async def cmd_trading(update, context):
     """Statistiche auto-trading — delega a bot.py."""
+    if not await _require_plan(update, "pro"):
+        return
     if _bot_cmd_trading:
         await _bot_cmd_trading(update, context)
     else:
@@ -2159,6 +2217,8 @@ async def cmd_trading(update, context):
 
 async def cmd_aperte(update, context):
     """Posizioni auto-trader aperte — delega a bot.py."""
+    if not await _require_plan(update, "pro"):
+        return
     if _bot_cmd_aperte:
         await _bot_cmd_aperte(update, context)
     else:

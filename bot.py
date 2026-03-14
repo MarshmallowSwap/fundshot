@@ -622,6 +622,11 @@ async def cmd_autotrader_toggle(update, context):
     """Abilita o disabilita l'auto-trader a runtime. Solo owner."""
     global TRADING_ENABLED, _funding_trader, _bybit_trader
 
+    # Plan gate — Pro required
+    from commands import _require_plan
+    if not await _require_plan(update, "pro"):
+        return
+
     # Solo owner
     chat_id = str(update.effective_chat.id)
     if chat_id != str(os.getenv("CHAT_ID", CHAT_ID)):
