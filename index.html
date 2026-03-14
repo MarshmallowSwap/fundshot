@@ -592,11 +592,37 @@ nav {
 .plan-lock-title { font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
 .plan-lock-sub { font-size: 14px; color: var(--text2); margin-bottom: 24px; line-height: 1.6; }
 .plan-lock-btn {
-  display: inline-block; background: var(--gold); color: #07050a;
-  padding: 12px 28px; border-radius: 8px; font-weight: 700;
-  text-decoration: none; font-size: 14px; cursor: pointer; border: none;
+  display: inline-block;
+  background: var(--gold);
+  color: #07050a !important;
+  padding: 14px 32px;
+  border-radius: 8px;
+  font-weight: 800;
+  font-size: 15px;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  margin-top: 8px;
+  letter-spacing: .01em;
+  box-shadow: 0 4px 20px rgba(201,168,76,.4);
 }
-.plan-lock-btn:hover { background: var(--gold-lt); }
+.plan-lock-btn:hover {
+  background: var(--gold-lt);
+  box-shadow: 0 6px 28px rgba(201,168,76,.6);
+  transform: translateY(-1px);
+}
+.plan-lock-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 12px;
+}
+.plan-lock-sub {
+  font-size: 15px;
+  color: #c0b8d8;
+  margin-bottom: 20px;
+  line-height: 1.6;
+}
 .plan-badge-free  { background: rgba(90,84,117,.3); color: #a09ab8; }
 .plan-badge-pro   { background: rgba(201,168,76,.15); color: var(--gold); }
 .plan-badge-elite { background: rgba(123,108,255,.2); color: #7b6cff; }
