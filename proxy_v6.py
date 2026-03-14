@@ -569,6 +569,86 @@ class ProxyHandler(BaseHTTPRequestHandler):
                 self._json({"ok": False, "error": str(e)}, 500)
             return
 
+        # ── Admin endpoints (owner only) ─────────────────────────────────────
+        if p.startswith("/api/admin/"):
+            user = self._auth()
+            if not user:
+                return
+            owner_id = int(os.getenv("CHAT_ID", "0"))
+            if user.get("chat_id") != owner_id:
+                self._json({"ok": False, "error": "Forbidden"}, 403)
+                return
+            import asyncio
+            from db.supabase_client import get_client as _adm_gc
+
+            if p == "/api/admin/stats":
+                try:
+                    db = _adm_gc()
+                    # Utenti totali
+                    u_res  = db.table("users").select("id,plan,created_at").execute()
+                    users  = u_res.data or []
+                    # Pagamenti
+                    p_res  = db.table("payments").select("*").eq("status","confirmed").execute()
+                    pays   = p_res.data or []
+                    # Referral
+                    r_res  = db.table("referrals").select("*").execute()
+                    refs   = r_res.data or []
+
+                    total_rev = sum(float(p.get("amount_usd",0) or 0) for p in pays)
+                    plans_cnt = {"free":0,"pro":0,"elite":0}
+                    for u in users:
+                        plans_cnt[u.get("plan","free")] = plans_cnt.get(u.get("plan","free"),0)+1
+
+                    self._json({
+                        "ok": True,
+                        "users_total":    len(users),
+                        "plans":          plans_cnt,
+                        "payments_count": len(pays),
+                        "revenue_total":  round(total_rev, 2),
+                        "referrals":      len(refs),
+                        "referrals_conv": sum(1 for r in refs if r["status"]!="pending"),
+                    })
+                except Exception as e:
+                    self._json({"ok": False, "error": str(e)}, 500)
+                return
+
+            if p == "/api/admin/users":
+                try:
+                    db = _adm_gc()
+                    res = db.table("users").select(
+                        "id,chat_id,telegram_handle,plan,created_at,plan_expires_at,"
+                        "billing_type,active_exchanges,is_influencer,"
+                        "referral_code,referral_balance_usd,referral_total_earned_usd"
+                    ).order("created_at", desc=True).limit(200).execute()
+                    self._json({"ok": True, "users": res.data or []})
+                except Exception as e:
+                    self._json({"ok": False, "error": str(e)}, 500)
+                return
+
+            if p == "/api/admin/payments":
+                try:
+                    db = _adm_gc()
+                    res = db.table("payments").select("*").order("created_at", desc=True).limit(100).execute()
+                    self._json({"ok": True, "payments": res.data or []})
+                except Exception as e:
+                    self._json({"ok": False, "error": str(e)}, 500)
+                return
+
+            if p == "/api/admin/payouts":
+                try:
+                    db = _adm_gc()
+                    res = db.table("users").select(
+                        "id,chat_id,telegram_handle,referral_balance_usd,"
+                        "referral_total_earned_usd,referral_wallet_usdt,is_influencer"
+                    ).gt("referral_balance_usd", 0).order("referral_balance_usd", desc=True).execute()
+                    self._json({"ok": True, "payouts": res.data or []})
+                except Exception as e:
+                    self._json({"ok": False, "error": str(e)}, 500)
+                return
+
+            self._json({"ok": False, "error": "Admin endpoint not found"}, 404)
+            return
+
         if p == "/api/user/stats":
             user = self._auth()
             if not user:

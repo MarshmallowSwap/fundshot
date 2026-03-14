@@ -1,9 +1,13 @@
 {
   "version": 2,
   "builds": [
-    { "src": "landing.html", "use": "@vercel/static" }
+    { "src": "landing.html", "use": "@vercel/static" },
+    { "src": "admin.html",   "use": "@vercel/static" },
+    { "src": "index.html",   "use": "@vercel/static" }
   ],
   "routes": [
+    { "src": "/admin", "dest": "/admin.html" },
+    { "src": "/dashboard", "dest": "/index.html" },
     { "src": "/", "dest": "/landing.html" },
     { "src": "/(.*)", "dest": "/landing.html" }
   ]

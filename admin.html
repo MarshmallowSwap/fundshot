@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FundShot Admin</title>
+<style>
+  :root {
+    --bg:     #07050a; --bg2: #0f0d16; --bg3: #1a1726;
+    --border: #251f3d; --text: #e8e0ff; --text2: #a09ab8; --text3: #5a5475;
+    --gold:   #c9a84c; --gold-lt: #e8c97a;
+    --green:  #00d4aa; --red: #ff4d6d; --blue: #7b6cff;
+    --teal:   #00b4d8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', -apple-system, sans-serif; min-height: 100vh; }
+
+  /* Nav */
+  nav { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 0 24px; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 15px; color: var(--gold); }
+  .badge-admin { background: var(--red); color: #fff; font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: 700; letter-spacing: 1px; }
+  .nav-right { display: flex; align-items: center; gap: 16px; }
+  .nav-user { font-size: 12px; color: var(--text2); }
+  .btn-logout { background: transparent; border: 1px solid var(--border); color: var(--text2); padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+  .btn-logout:hover { border-color: var(--red); color: var(--red); }
+
+  /* Layout */
+  .container { max-width: 1400px; margin: 0 auto; padding: 28px 24px; }
+
+  /* Login */
+  #login-screen { display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 56px); }
+  .login-box { background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 40px; text-align: center; max-width: 400px; width: 100%; }
+  .login-box h2 { color: var(--gold); margin-bottom: 8px; }
+  .login-box p { color: var(--text2); font-size: 14px; margin-bottom: 28px; }
+  .inp { width: 100%; background: var(--bg3); border: 1px solid var(--border); color: var(--text); padding: 10px 14px; border-radius: 8px; font-size: 14px; margin-bottom: 12px; }
+  .inp:focus { outline: none; border-color: var(--gold); }
+  .btn-primary { width: 100%; background: var(--gold); color: #07050a; border: none; padding: 12px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 14px; }
+  .btn-primary:hover { background: var(--gold-lt); }
+  .err { color: var(--red); font-size: 13px; margin-top: 8px; min-height: 20px; }
+
+  /* Dashboard */
+  #admin-screen { display: none; }
+
+  /* Stats grid */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 28px; }
+  .stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 20px; position: relative; overflow: hidden; }
+  .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+  .stat-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .stat-value { font-size: 28px; font-weight: 700; color: var(--text); }
+  .stat-sub { font-size: 12px; color: var(--text2); margin-top: 4px; }
+  .stat-icon { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); font-size: 28px; opacity: .08; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 4px; background: var(--bg2); padding: 4px; border-radius: 10px; margin-bottom: 20px; border: 1px solid var(--border); width: fit-content; }
+  .tab { padding: 7px 18px; border-radius: 7px; border: none; background: transparent; color: var(--text2); cursor: pointer; font-size: 13px; font-weight: 500; transition: all .2s; }
+  .tab.active { background: var(--bg3); color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,.3); }
+
+  /* Table */
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+  .card-title { font-size: 13px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { font-size: 10px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; padding: 0 12px 10px; border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap; }
+  td { padding: 10px 12px; border-bottom: 1px solid rgba(37,31,61,.5); color: var(--text); white-space: nowrap; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(123,108,255,.04); }
+
+  /* Badges */
+  .plan-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; letter-spacing: .5px; }
+  .plan-free  { background: rgba(90,84,117,.3); color: var(--text2); }
+  .plan-pro   { background: rgba(201,168,76,.15); color: var(--gold); }
+  .plan-elite { background: rgba(123,108,255,.2); color: var(--blue); }
+  .status-ok  { color: var(--green); }
+  .status-err { color: var(--red); }
+
+  /* Search */
+  .search-wrap { margin-bottom: 16px; }
+  .search-inp { background: var(--bg3); border: 1px solid var(--border); color: var(--text); padding: 8px 14px; border-radius: 8px; font-size: 13px; width: 280px; }
+  .search-inp:focus { outline: none; border-color: var(--gold); }
+
+  /* Loading */
+  .loading { display: flex; align-items: center; gap: 10px; color: var(--text2); font-size: 13px; padding: 20px; }
+  .spin { width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--gold); border-radius: 50%; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .empty { color: var(--text3); font-size: 13px; padding: 20px; text-align: center; }
+
+  /* Payout */
+  .payout-row { background: rgba(201,168,76,.05); }
+  .copy-btn { background: transparent; border: 1px solid var(--border); color: var(--text2); padding: 3px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; }
+  .copy-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  @media (max-width: 600px) { .stats-grid { grid-template-columns: 1fr 1fr; } th, td { padding: 8px; } }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">
+    ⚡ FundShot
+    <span class="badge-admin">ADMIN</span>
+  </div>
+  <div class="nav-right">
+    <span class="nav-user" id="nav-user"></span>
+    <button class="btn-logout" onclick="logout()">Sign out</button>
+  </div>
+</nav>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div style="font-size:48px;margin-bottom:16px">⚡</div>
+    <h2>FundShot Admin</h2>
+    <p>Access restricted to administrators.</p>
+    <input class="inp" id="token-inp" type="password" placeholder="Paste your JWT token..." autocomplete="off">
+    <button class="btn-primary" onclick="loginWithToken()">Access Dashboard</button>
+    <div class="err" id="login-err"></div>
+    <div style="margin-top:20px;font-size:12px;color:var(--text3)">
+      Get your token by logging in at <a href="https://fundshot.app" style="color:var(--gold)">fundshot.app</a>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN DASHBOARD -->
+<div id="admin-screen">
+  <div class="container">
+
+    <!-- Stats -->
+    <div class="stats-grid" id="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Total Users</div>
+        <div class="stat-value" id="st-users">—</div>
+        <div class="stat-icon">👥</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Pro Users</div>
+        <div class="stat-value" id="st-pro">—</div>
+        <div class="stat-icon">⚡</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Elite Users</div>
+        <div class="stat-value" id="st-elite">—</div>
+        <div class="stat-icon">👑</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Revenue</div>
+        <div class="stat-value" id="st-rev">—</div>
+        <div class="stat-sub" id="st-rev-sub"></div>
+        <div class="stat-icon">💰</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Payments</div>
+        <div class="stat-value" id="st-pays">—</div>
+        <div class="stat-icon">💳</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Referrals</div>
+        <div class="stat-value" id="st-refs">—</div>
+        <div class="stat-sub" id="st-refs-sub"></div>
+        <div class="stat-icon">🔗</div>
+      </div>
+    </div>
+
+    <!-- Navigation tabs -->
+    <div class="tabs">
+      <button class="tab active" onclick="showSection('users',this)">👥 Users</button>
+      <button class="tab" onclick="showSection('payments',this)">💳 Payments</button>
+      <button class="tab" onclick="showSection('payouts',this)">💸 Payouts</button>
+    </div>
+
+    <!-- Users -->
+    <div class="section active" id="section-users">
+      <div class="card">
+        <div class="card-title">👥 Users <span id="users-count" style="color:var(--text3);font-size:11px"></span></div>
+        <div class="search-wrap">
+          <input class="search-inp" id="user-search" placeholder="Search by handle or chat_id..." oninput="filterUsers()">
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Handle</th>
+                <th>Chat ID</th>
+                <th>Plan</th>
+                <th>Billing</th>
+                <th>Expires</th>
+                <th>Exchanges</th>
+                <th>Influencer</th>
+                <th>Ref Balance</th>
+                <th>Joined</th>
+              </tr>
+            </thead>
+            <tbody id="users-tbody">
+              <tr><td colspan="9"><div class="loading"><div class="spin"></div>Loading...</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payments -->
+    <div class="section" id="section-payments">
+      <div class="card">
+        <div class="card-title">💳 Payments <span id="payments-count" style="color:var(--text3);font-size:11px"></span></div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Chat ID</th>
+                <th>Plan</th>
+                <th>Billing</th>
+                <th>Amount</th>
+                <th>Currency</th>
+                <th>Status</th>
+                <th>Payment ID</th>
+              </tr>
+            </thead>
+            <tbody id="payments-tbody">
+              <tr><td colspan="8"><div class="loading"><div class="spin"></div>Loading...</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payouts -->
+    <div class="section" id="section-payouts">
+      <div class="card">
+        <div class="card-title">
+          💸 Pending Payouts
+          <span id="payout-total" style="margin-left:auto;color:var(--gold);font-size:13px;font-weight:700"></span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Handle</th>
+                <th>Chat ID</th>
+                <th>Influencer</th>
+                <th>Balance</th>
+                <th>Total Earned</th>
+                <th>Wallet (TRC20)</th>
+              </tr>
+            </thead>
+            <tbody id="payouts-tbody">
+              <tr><td colspan="6"><div class="loading"><div class="spin"></div>Loading...</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const PROXY = 'https://api.fundshot.app';
+let _token = '';
+let _allUsers = [];
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+function getToken() { return _token || localStorage.getItem('admin_token') || ''; }
+
+async function loginWithToken() {
+  const t = document.getElementById('token-inp').value.trim();
+  if (!t) { showErr('Paste your JWT token'); return; }
+  // Verifica che sia l'owner
+  try {
+    const r = await fetch(PROXY + '/api/admin/stats', {
+      headers: { 'Authorization': 'Bearer ' + t }
+    });
+    if (r.status === 403) { showErr('Not authorized — admin only'); return; }
+    if (!r.ok) { showErr('Invalid token'); return; }
+    _token = t;
+    localStorage.setItem('admin_token', t);
+    showAdmin();
+  } catch(e) { showErr('Connection error: ' + e.message); }
+}
+
+function showErr(msg) { document.getElementById('login-err').textContent = msg; }
+
+function logout() {
+  localStorage.removeItem('admin_token');
+  _token = '';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('admin-screen').style.display = 'none';
+}
+
+async function adminFetch(path) {
+  const r = await fetch(PROXY + path, {
+    headers: { 'Authorization': 'Bearer ' + getToken() }
+  });
+  return r.json();
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+async function showAdmin() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('admin-screen').style.display = 'block';
+  document.getElementById('nav-user').textContent = '🔑 Admin';
+  loadStats();
+  loadUsers();
+  loadPayments();
+  loadPayouts();
+}
+
+// ── Stats ─────────────────────────────────────────────────────────────────────
+async function loadStats() {
+  try {
+    const d = await adminFetch('/api/admin/stats');
+    if (!d.ok) return;
+    document.getElementById('st-users').textContent = d.users_total;
+    document.getElementById('st-pro').textContent   = d.plans.pro || 0;
+    document.getElementById('st-elite').textContent = d.plans.elite || 0;
+    document.getElementById('st-rev').textContent   = '$' + d.revenue_total.toFixed(2);
+    document.getElementById('st-rev-sub').textContent = d.payments_count + ' payments';
+    document.getElementById('st-pays').textContent  = d.payments_count;
+    document.getElementById('st-refs').textContent  = d.referrals;
+    document.getElementById('st-refs-sub').textContent = d.referrals_conv + ' converted';
+  } catch(e) { console.error('stats:', e); }
+}
+
+// ── Users ─────────────────────────────────────────────────────────────────────
+async function loadUsers() {
+  try {
+    const d = await adminFetch('/api/admin/users');
+    if (!d.ok) return;
+    _allUsers = d.users || [];
+    document.getElementById('users-count').textContent = '(' + _allUsers.length + ')';
+    renderUsers(_allUsers);
+  } catch(e) { console.error('users:', e); }
+}
+
+function filterUsers() {
+  const q = document.getElementById('user-search').value.toLowerCase();
+  const filtered = _allUsers.filter(u =>
+    (u.telegram_handle||'').toLowerCase().includes(q) ||
+    String(u.chat_id).includes(q)
+  );
+  renderUsers(filtered);
+}
+
+function renderUsers(users) {
+  const tb = document.getElementById('users-tbody');
+  if (!users.length) { tb.innerHTML = '<tr><td colspan="9"><div class="empty">No users found</div></td></tr>'; return; }
+  tb.innerHTML = users.map(u => {
+    const plan    = u.plan || 'free';
+    const exp     = u.plan_expires_at ? new Date(u.plan_expires_at).toLocaleDateString('en-GB') : '—';
+    const exps    = u.active_exchanges ? u.active_exchanges.join(', ') : '—';
+    const joined  = new Date(u.created_at).toLocaleDateString('en-GB');
+    const bal     = parseFloat(u.referral_balance_usd || 0).toFixed(2);
+    const infIcon = u.is_influencer ? '👑' : '—';
+    const billing = u.billing_type || '—';
+    return `<tr>
+      <td>@${u.telegram_handle || '—'}</td>
+      <td><code>${u.chat_id}</code></td>
+      <td><span class="plan-badge plan-${plan}">${plan.toUpperCase()}</span></td>
+      <td>${billing}</td>
+      <td>${exp}</td>
+      <td>${exps}</td>
+      <td>${infIcon}</td>
+      <td style="color:${bal>0?'var(--gold)':'var(--text3)'}">$${bal}</td>
+      <td style="color:var(--text3)">${joined}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Payments ──────────────────────────────────────────────────────────────────
+async function loadPayments() {
+  try {
+    const d = await adminFetch('/api/admin/payments');
+    if (!d.ok) return;
+    const pays = d.payments || [];
+    document.getElementById('payments-count').textContent = '(' + pays.length + ')';
+    const tb = document.getElementById('payments-tbody');
+    if (!pays.length) { tb.innerHTML = '<tr><td colspan="8"><div class="empty">No payments yet</div></td></tr>'; return; }
+    tb.innerHTML = pays.map(p => {
+      const date   = new Date(p.created_at).toLocaleDateString('en-GB');
+      const plan   = p.plan || '—';
+      const status = p.status;
+      const stCls  = status === 'confirmed' ? 'status-ok' : status === 'failed' ? 'status-err' : '';
+      return `<tr>
+        <td style="color:var(--text3)">${date}</td>
+        <td><code>${p.chat_id}</code></td>
+        <td><span class="plan-badge plan-${plan}">${plan.toUpperCase()}</span></td>
+        <td>${p.billing_type||'—'}</td>
+        <td style="color:var(--gold)">$${parseFloat(p.amount_usd||0).toFixed(2)}</td>
+        <td>${(p.currency||'—').toUpperCase()}</td>
+        <td class="${stCls}">${status}</td>
+        <td style="color:var(--text3);font-size:11px">${(p.nowpay_id||'—').slice(0,12)}...</td>
+      </tr>`;
+    }).join('');
+  } catch(e) { console.error('payments:', e); }
+}
+
+// ── Payouts ───────────────────────────────────────────────────────────────────
+async function loadPayouts() {
+  try {
+    const d = await adminFetch('/api/admin/payouts');
+    if (!d.ok) return;
+    const payouts = d.payouts || [];
+    const total   = payouts.reduce((s,p) => s + parseFloat(p.referral_balance_usd||0), 0);
+    document.getElementById('payout-total').textContent = payouts.length
+      ? `Total to send: $${total.toFixed(4)} USDT`
+      : '';
+    const tb = document.getElementById('payouts-tbody');
+    if (!payouts.length) { tb.innerHTML = '<tr><td colspan="6"><div class="empty">No pending payouts 🎉</div></td></tr>'; return; }
+    tb.innerHTML = payouts.map(p => {
+      const bal     = parseFloat(p.referral_balance_usd||0).toFixed(4);
+      const earned  = parseFloat(p.referral_total_earned_usd||0).toFixed(4);
+      const wallet  = p.referral_wallet_usdt || '';
+      const walletDisplay = wallet
+        ? `${wallet.slice(0,6)}...${wallet.slice(-4)} <button class="copy-btn" onclick="copy('${wallet}')">copy</button>`
+        : '<span style="color:var(--red)">❌ no wallet</span>';
+      return `<tr class="${wallet?'payout-row':''}">
+        <td>@${p.telegram_handle||'—'}</td>
+        <td><code>${p.chat_id}</code></td>
+        <td>${p.is_influencer?'👑 Yes':'—'}</td>
+        <td style="color:var(--gold);font-weight:700">$${bal}</td>
+        <td style="color:var(--text2)">$${earned}</td>
+        <td>${walletDisplay}</td>
+      </tr>`;
+    }).join('');
+  } catch(e) { console.error('payouts:', e); }
+}
+
+// ── Sections ──────────────────────────────────────────────────────────────────
+function showSection(name, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('section-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+function copy(txt) {
+  navigator.clipboard.writeText(txt).then(() => {
+    const old = event.target.textContent;
+    event.target.textContent = 'copied!';
+    setTimeout(() => event.target.textContent = old, 1500);
+  });
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+window.onload = () => {
+  const saved = localStorage.getItem('admin_token');
+  if (saved) {
+    _token = saved;
+    showAdmin();
+  }
+};
+</script>
+</body>
+</html>
