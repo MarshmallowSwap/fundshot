@@ -160,6 +160,64 @@ def currency_display(currency: str) -> str:
 
 # ── Subscription (Recurring) ──────────────────────────────────────────────────
 
+def _get_jwt_token() -> str:
+    """
+    Ottiene JWT token autenticandosi con email/password NOWPayments.
+    Richiede NOWPAY_EMAIL e NOWPAY_PASSWORD nel .env
+    """
+    email    = os.getenv("NOWPAY_EMAIL", "")
+    password = os.getenv("NOWPAY_PASSWORD", "")
+    if not email or not password:
+        raise ValueError("NOWPAY_EMAIL e NOWPAY_PASSWORD richiesti per le subscription. Aggiungili al .env")
+
+    payload = json.dumps({"email": email, "password": password}).encode()
+    req = urllib.request.Request(
+        NOWPAY_BASE + "/auth",
+        data=payload,
+        headers={
+            "Content-Type": "application/json",
+            "User-Agent":   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=15) as r:
+            data = json.loads(r.read())
+            token = data.get("token", "")
+            if not token:
+                raise ValueError(f"JWT token non ricevuto: {data}")
+            logger.info("NOWPayments JWT ottenuto con successo")
+            return token
+    except urllib.error.HTTPError as e:
+        raise RuntimeError(f"Auth NOWPayments fallita: {e.code} {e.read().decode()}")
+
+
+def _request_jwt(method: str, path: str, body: dict = None) -> dict:
+    """HTTP request con JWT Bearer per endpoint subscription."""
+    token = _get_jwt_token()
+    url   = NOWPAY_BASE + path
+    data  = json.dumps(body).encode() if body else None
+    req   = urllib.request.Request(
+        url,
+        data=data,
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Content-Type":  "application/json",
+            "Accept":        "application/json",
+            "User-Agent":    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        },
+        method=method,
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=15) as r:
+            return json.loads(r.read())
+    except urllib.error.HTTPError as e:
+        body_err = e.read().decode()
+        logger.error("NOWPayments JWT %s %s → %s: %s", method, path, e.code, body_err)
+        raise RuntimeError(f"NOWPayments error {e.code}: {body_err}")
+
+
+
 # Plan IDs NOWPayments — creati una volta sola (vedi setup_subscription_plans)
 _SUBSCRIPTION_PLAN_IDS: dict[str, str] = {}
 
@@ -194,7 +252,7 @@ def setup_subscription_plans() -> dict:
     # Crea i piani
     for plan_key, plan_cfg in PLANS.items():
         try:
-            result = _request("POST", "/subscriptions/plans", {
+            result = _request_jwt("POST", "/subscriptions/plans", {
                 "title":            f"FundShot {plan_cfg['name']} — Monthly",
                 "interval_day":     30,
                 "amount":           plan_cfg["recurring"],
@@ -226,7 +284,7 @@ def create_subscription(
     if not plan_id:
         raise ValueError(f"Subscription plan ID non trovato per {plan}. Chiamare setup_subscription_plans() prima.")
 
-    result = _request("POST", "/subscriptions", {
+    result = _request_jwt("POST", "/subscriptions", {
         "subscription_plan_id": plan_id,
         "email":               email,
     })
