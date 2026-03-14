@@ -149,6 +149,24 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     chat_id = update.effective_chat.id
     handle  = update.effective_user.username or ""
 
+    # ── Deep link: /start upgrade_pro o /start upgrade_elite ─────────────────
+    args = context.args
+    if args and args[0] in ("upgrade_pro", "upgrade_elite"):
+        plan = "pro" if args[0] == "upgrade_pro" else "elite"
+        from commands import cmd_upgrade, UPG_PLAN, _kb_plans, PLAN_FEATURES, PLAN_PRICES
+        prices = PLAN_PRICES[plan]
+        await update.message.reply_text(
+            f"🚀 *Upgrade to {plan.capitalize()}*\n\n"
+            + PLAN_FEATURES[plan]
+            + f"\n💰 *Recurring:* ${prices['recurring']}/month\n"
+            f"💰 *One-Shot:*  ${prices['oneshot']} / 30 days\n\n"
+            "Choose billing type:",
+            parse_mode="Markdown",
+            reply_markup=_kb_billing(),
+        )
+        context.user_data["upg_plan"] = plan
+        return UPG_BILLING
+
     user       = await get_or_create_user(chat_id, handle)
     configured = user.active_exchanges if user else []
 
@@ -472,6 +490,11 @@ async def cmd_deletekeys(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ── Build ConversationHandler ─────────────────────────────────────────────────
 
 def build_onboarding_handler() -> ConversationHandler:
+    # Import stati upgrade per gestire deep link da landing
+    from commands import (
+        UPG_BILLING, UPG_CURRENCY,
+        upgrade_billing_cb, upgrade_currency_cb,
+    )
     return ConversationHandler(
         entry_points=[CommandHandler("start", start)],
         states={
@@ -481,6 +504,9 @@ def build_onboarding_handler() -> ConversationHandler:
             ST_WAIT_KEY:        [MessageHandler(filters.TEXT & ~filters.COMMAND, receive_api_key)],
             ST_WAIT_SECRET:     [MessageHandler(filters.TEXT & ~filters.COMMAND, receive_api_secret)],
             ST_WAIT_PASSPHRASE: [MessageHandler(filters.TEXT & ~filters.COMMAND, receive_passphrase)],
+            # Stati upgrade — usati quando arriva dal deep link landing page
+            UPG_BILLING:        [CallbackQueryHandler(upgrade_billing_cb,  pattern="^upg_")],
+            UPG_CURRENCY:       [CallbackQueryHandler(upgrade_currency_cb, pattern="^upg_")],
         },
         fallbacks=[CommandHandler("start", start)],
         per_chat=True,
