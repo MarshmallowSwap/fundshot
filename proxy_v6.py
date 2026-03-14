@@ -426,37 +426,50 @@ class ProxyHandler(BaseHTTPRequestHandler):
                 return
             try:
                 import asyncio
+                from urllib.parse import parse_qs, urlparse
                 from db.supabase_client import get_user, get_credentials
+                from user_registry import registry as _reg
+                from exchanges import make_client
+
+                qs_params = parse_qs(urlparse(self.path).query)
+                exchange  = (qs_params.get("exchange", ["bybit"])[0]).lower()
+
                 u    = asyncio.run(get_user(user["chat_id"]))
-                cred = asyncio.run(get_credentials(u.id, "bybit")) if u else None
+                cred = asyncio.run(get_credentials(u.id, exchange)) if u else None
                 if not cred or not cred.api_key:
-                    self._json({"ok": True, "positions": [], "msg": "API key non configurata"})
+                    self._json({"ok": True, "positions": [], "exchange": exchange,
+                                "msg": f"No {exchange} API key configured"})
                     return
-                cached = cache_get(f"positions_{user['chat_id']}")
+
+                cache_key = f"positions_{user['chat_id']}_{exchange}"
+                cached = cache_get(cache_key)
                 if cached:
                     self._json(cached)
                     return
-                d     = bybit_get_auth(
-                    "/v5/position/list",
-                    {"category": "linear", "settleCoin": "USDT"},
-                    cred.api_key, cred.api_secret,
+
+                client = make_client(
+                    exchange=exchange,
+                    api_key=cred.api_key,
+                    api_secret=cred.api_secret,
                     demo=(cred.environment == "demo"),
+                    testnet=False,
                 )
-                items = d.get("result", {}).get("list", [])
-                pos   = [
+                positions = asyncio.run(client.get_positions())
+                pos = [
                     {
-                        "symbol":       x["symbol"],
-                        "side":         x["side"],
-                        "size":         x["size"],
-                        "avgPrice":     x["avgPrice"],
-                        "markPrice":    x["markPrice"],
-                        "unrealisedPnl": x["unrealisedPnl"],
-                        "leverage":     x["leverage"],
+                        "symbol":        p.symbol,
+                        "side":          p.side,
+                        "size":          str(p.size),
+                        "avgPrice":      str(p.entry_price),
+                        "markPrice":     str(p.mark_price),
+                        "unrealisedPnl": str(p.unrealized_pnl),
+                        "leverage":      str(p.leverage),
+                        "liqPrice":      str(p.liq_price),
                     }
-                    for x in items if float(x.get("size", 0)) != 0
+                    for p in positions
                 ]
-                result = {"ok": True, "positions": pos, "exchange": "bybit", "env": cred.environment}
-                cache_set(f"positions_{user['chat_id']}", result)
+                result = {"ok": True, "positions": pos, "exchange": exchange, "env": cred.environment}
+                cache_set(cache_key, result)
                 self._json(result)
             except Exception as e:
                 self._json({"ok": False, "error": str(e)}, 500)
@@ -468,34 +481,61 @@ class ProxyHandler(BaseHTTPRequestHandler):
                 return
             try:
                 import asyncio
+                from urllib.parse import parse_qs, urlparse
                 from db.supabase_client import get_user, get_credentials
+                from exchanges import make_client
+
+                qs_params = parse_qs(urlparse(self.path).query)
+                exchange  = (qs_params.get("exchange", ["bybit"])[0]).lower()
+
                 u    = asyncio.run(get_user(user["chat_id"]))
-                cred = asyncio.run(get_credentials(u.id, "bybit")) if u else None
+                cred = asyncio.run(get_credentials(u.id, exchange)) if u else None
                 if not cred or not cred.api_key:
-                    self._json({"ok": False, "error": "API key non configurata"})
+                    self._json({"ok": False, "error": f"No {exchange} API key configured"})
                     return
-                cached = cache_get(f"wallet_{user['chat_id']}")
+
+                cache_key = f"wallet_{user['chat_id']}_{exchange}"
+                cached = cache_get(cache_key)
                 if cached:
                     self._json(cached)
                     return
-                d = bybit_get_auth(
-                    "/v5/account/wallet-balance",
-                    {"accountType": "UNIFIED"},
-                    cred.api_key, cred.api_secret,
+
+                client = make_client(
+                    exchange=exchange,
+                    api_key=cred.api_key,
+                    api_secret=cred.api_secret,
                     demo=(cred.environment == "demo"),
+                    testnet=False,
                 )
-                a = d.get("result", {}).get("list", [{}])[0]
+                wb = asyncio.run(client.get_wallet_balance())
+                if not wb:
+                    self._json({"ok": False, "error": "Cannot fetch wallet"})
+                    return
+
                 result = {
-                    "ok":          True,
-                    "equity":      a.get("totalEquity", "0"),
-                    "available":   a.get("totalAvailableBalance", "0"),
-                    "unrealisedPnl": a.get("totalPerpUPL", "0"),
-                    "walletBal":   a.get("totalWalletBalance", "0"),
-                    "exchange":    "bybit",
-                    "env":         cred.environment,
+                    "ok":           True,
+                    "equity":       str(wb.total_equity),
+                    "available":    str(wb.available_balance),
+                    "unrealisedPnl": str(wb.unrealized_pnl),
+                    "exchange":     exchange,
+                    "env":          cred.environment,
                 }
-                cache_set(f"wallet_{user['chat_id']}", result)
+                cache_set(cache_key, result)
                 self._json(result)
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)}, 500)
+            return
+
+        if p == "/api/user/exchanges":
+            user = self._auth()
+            if not user:
+                return
+            try:
+                import asyncio
+                from db.supabase_client import get_user
+                u = asyncio.run(get_user(user["chat_id"]))
+                exchanges = u.active_exchanges if u else []
+                self._json({"ok": True, "exchanges": exchanges})
             except Exception as e:
                 self._json({"ok": False, "error": str(e)}, 500)
             return

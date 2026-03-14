@@ -656,21 +656,27 @@ nav {
 <!-- PAGE: POSIZIONI                             -->
 <!-- ═══════════════════════════════════════════ -->
 <div class="page" id="page-positions">
-  <div class="slabel">Wallet & Posizioni</div>
-  <div id="pos-warn" class="warn">⚠️ API Key non configurata — vai su <strong>Settings</strong> e inserisci le chiavi Bybit.</div>
+  <div class="slabel" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+    <span>Wallet & Positions</span>
+    <div id="exchange-selector" style="display:flex;gap:8px;align-items:center">
+      <span style="font-size:11px;color:var(--text3)">Exchange:</span>
+      <!-- populated by JS -->
+    </div>
+  </div>
+  <div id="pos-warn" class="warn" style="display:none"></div>
 
   <!-- WALLET ROW -->
   <div class="g2eq" id="wallet-row">
     <div class="card">
       <div class="ch">
-        <div class="ct">💼 Wallet Unified</div>
+        <div class="ct">💼 Wallet</div>
         <button class="btn btn-ghost btn-sm" onclick="loadPrivate()">↺</button>
       </div>
       <div id="wallet-wrap"><div class="empty-state"><div class="ei">🔑</div>Configura API Key nelle Settings</div></div>
     </div>
     <div class="card">
       <div class="ch">
-        <div class="ct">📂 Posizioni Aperte</div>
+        <div class="ct">📂 Open Positions</div>
         <span class="badge" id="pos-cnt">—</span>
       </div>
       <div id="pos-wrap"><div class="empty-state"><div class="ei">📊</div>Configura API Key nelle Settings</div></div>
@@ -2464,9 +2470,10 @@ function updateMonitoringCard(mon) {
 }
 async function loadWallet(){
   const el=qs('wallet-wrap'); if(!el) return;
-  el.innerHTML='<div class="loading"><div class="spin"></div>Caricamento wallet...</div>';
+  const ex = window._activeExchange || 'bybit';
+  el.innerHTML='<div class="loading"><div class="spin"></div>Loading wallet...</div>';
   try{
-    const r=await priv('/v5/account/wallet-balance',{accountType:'UNIFIED'});
+    const r=await authFetch('/api/user/wallet?exchange='+ex);
     // proxy ritorna {ok, equity, available, margin, unrealisedPnl, ...}
     const a = r.equity !== undefined ? r : (r.list?.[0] || {});
     const eq=parseFloat(r.equity || a.totalEquity||0).toFixed(2);
@@ -2493,10 +2500,10 @@ async function loadWallet(){
 // ─── POSITIONS ───
 async function loadPositions(){
   const el=qs('pos-wrap'), cnt=qs('pos-cnt'); if(!el) return;
-  el.innerHTML='<div class="loading"><div class="spin"></div>Caricamento posizioni...</div>';
+  const ex = window._activeExchange || 'bybit';
+  el.innerHTML='<div class="loading"><div class="spin"></div>Loading positions...</div>';
   try{
-    const r=await priv('/v5/position/list',{category:'linear',settleCoin:'USDT'});
-    // proxy ritorna {ok, positions:[...]}
+    const r=await authFetch('/api/user/positions?exchange='+ex);
     const list=(r.positions || r.list||[]).filter(p=>parseFloat(p.size)>0);
     cnt.textContent=list.length+' attive';
 
@@ -2546,12 +2553,68 @@ async function loadPositions(){
 
 function initPositionsPage(){
   const w=qs('pos-warn');
-  if(!S.k){w.style.display='block';return;}
   w.style.display='none';
+  initExchangeSelector();
   initChart();
   loadWallet();
   loadPositions();
   fetchResults();
+}
+
+// ── Exchange selector ────────────────────────────────────────────────────────
+window._activeExchange = 'bybit';
+
+const EXCHANGE_META_JS = {
+  bybit:   { emoji: '🟡', name: 'Bybit'   },
+  binance: { emoji: '🟠', name: 'Binance' },
+  okx:     { emoji: '🔵', name: 'OKX'     },
+};
+
+async function initExchangeSelector() {
+  const container = document.getElementById('exchange-selector');
+  if (!container) return;
+  try {
+    const token = localStorage.getItem('fs_token');
+    if (!token) return;
+    const r = await fetch(proxyBase() + '/api/user/exchanges', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await r.json();
+    const exchanges = data.exchanges || ['bybit'];
+
+    container.innerHTML = exchanges.map(ex => {
+      const m = EXCHANGE_META_JS[ex] || { emoji: '🏦', name: ex };
+      const active = ex === window._activeExchange ? 'style="border-color:var(--gold);color:var(--gold)"' : '';
+      return `<button class="btn btn-ghost btn-sm" ${active}
+        onclick="switchExchange('${ex}')"
+        id="ex-btn-${ex}">${m.emoji} ${m.name}</button>`;
+    }).join('');
+  } catch(e) {
+    console.warn('initExchangeSelector:', e);
+  }
+}
+
+function switchExchange(ex) {
+  window._activeExchange = ex;
+  // Aggiorna stile bottoni
+  document.querySelectorAll('[id^="ex-btn-"]').forEach(btn => {
+    btn.style.borderColor = '';
+    btn.style.color = '';
+  });
+  const active = document.getElementById('ex-btn-' + ex);
+  if (active) { active.style.borderColor = 'var(--gold)'; active.style.color = 'var(--gold)'; }
+  // Ricarica dati
+  loadWallet();
+  loadPositions();
+}
+
+async function authFetch(path) {
+  const token = localStorage.getItem('fs_token');
+  const url   = proxyBase() + path;
+  const res   = await fetch(url, {
+    headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+  });
+  return res.json();
 }
 
 // ─── CONFIG DEFAULTS ───
