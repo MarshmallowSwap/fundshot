@@ -263,7 +263,9 @@ def setup_subscription_plans() -> dict:
             })
             logger.info("NOWPayments subscription plan response (%s): %s", plan_key, result)
             # NOWPayments può usare 'id', 'plan_id', o avere i dati in 'data'
+            # Risposta NOWPayments: { "result": { "id": "...", ... } }
             plan_id = str(
+                (result.get("result") or {}).get("id") or
                 result.get("id") or
                 result.get("plan_id") or
                 (result.get("data") or {}).get("id", "") or
