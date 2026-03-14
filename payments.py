@@ -20,8 +20,13 @@ import urllib.error
 
 logger = logging.getLogger(__name__)
 
-NOWPAY_API_KEY = os.getenv("NOWPAY_API_KEY", "")
-NOWPAY_IPN_SECRET = os.getenv("NOWPAY_IPN_SECRET", "")
+# Letti lazy ad ogni chiamata — così load_dotenv() è già stato eseguito
+def _api_key() -> str:
+    return os.getenv("NOWPAY_API_KEY", "")
+
+def _ipn_secret() -> str:
+    return os.getenv("NOWPAY_IPN_SECRET", "")
+
 NOWPAY_BASE = "https://api.nowpayments.io/v1"
 
 # ── Prezzi piani ──────────────────────────────────────────────────────────────
@@ -61,7 +66,7 @@ def _request(method: str, path: str, body: dict = None) -> dict:
         url,
         data=data,
         headers={
-            "x-api-key":    NOWPAY_API_KEY,
+            "x-api-key":    _api_key(),
             "Content-Type": "application/json",
             "Accept":       "application/json",
             "User-Agent":   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -133,11 +138,11 @@ def verify_ipn_signature(payload_bytes: bytes, received_sig: str) -> bool:
     """
     Verifica la firma HMAC-SHA512 del webhook IPN di NOWPayments.
     """
-    if not NOWPAY_IPN_SECRET:
+    if not _ipn_secret():
         logger.warning("NOWPAY_IPN_SECRET non configurato — skip verifica")
         return True
     expected = hmac.new(
-        NOWPAY_IPN_SECRET.encode(),
+        _ipn_secret().encode(),
         payload_bytes,
         hashlib.sha512,
     ).hexdigest()
@@ -165,7 +170,17 @@ def setup_subscription_plans() -> dict:
     Da chiamare una volta all'avvio.
     Ritorna { "pro": plan_id, "elite": plan_id }
     """
+    from dotenv import load_dotenv
+    load_dotenv()  # assicura che .env sia caricato
+
     global _SUBSCRIPTION_PLAN_IDS
+
+    api_key = _api_key()
+    if not api_key:
+        logger.warning("setup_subscription_plans: NOWPAY_API_KEY non trovata nel .env")
+        return {}
+
+    logger.info("setup_subscription_plans: API key trovata (%s...)", api_key[:8])
 
     # Prova a leggere da env (se già creati)
     pro_id   = os.getenv("NOWPAY_PLAN_PRO", "")
