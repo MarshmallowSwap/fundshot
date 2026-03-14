@@ -706,6 +706,7 @@ nav {
     <div id="user-badge" style="display:none;align-items:center;gap:8px;font-size:12px">
       <span id="nav-username" style="color:var(--text2)"></span>
       <span id="nav-plan-badge" style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700"></span>
+      <button onclick="dashLogout()" style="background:transparent;border:1px solid rgba(255,77,109,.3);color:var(--red2);padding:3px 10px;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s" onmouseover="this.style.background='rgba(255,77,109,.1)'" onmouseout="this.style.background='transparent'">Sign out</button>
     </div>
     <div class="refresh-bar"><div class="refresh-fill" id="rfill" style="width:100%"></div></div>
     <span class="countdown" id="countdown">60s</span>
@@ -919,19 +920,44 @@ nav {
     <!-- API KEYS -->
     <div class="card">
       <div class="ch">
-        <div class="ct">🔑 API Keys Bybit</div>
-        <button class="btn btn-primary btn-sm" onclick="saveAll()">💾 Salva tutto</button>
+        <div class="ct">🔑 Exchange API Keys</div>
+        <span class="badge" id="keys-count-badge">0 configured</span>
       </div>
-      <div class="inp-group"><div class="inp-label">API Key</div><input class="inp" id="ink" type="text" placeholder="Bybit API Key..." autocomplete="off"></div>
-      <div class="inp-group"><div class="inp-label">API Secret</div><input class="inp" id="ins" type="password" placeholder="API Secret..." autocomplete="off"></div>
-      <div class="inp-group">
-        <div class="inp-label">Ambiente</div>
-        <select class="inp" id="ine" style="cursor:pointer">
-          <option value="mainnet">🔴 Mainnet (Live)</option>
-          <option value="testnet">🧪 Testnet (Demo)</option>
-        </select>
+
+      <!-- Exchange selector tabs -->
+      <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap">
+        <button onclick="selectExchangeTab('bybit',this)"   id="tab-bybit"   class="exch-tab-btn active-exch">🟡 Bybit</button>
+        <button onclick="selectExchangeTab('binance',this)" id="tab-binance" class="exch-tab-btn">🟠 Binance</button>
+        <button onclick="selectExchangeTab('okx',this)"     id="tab-okx"     class="exch-tab-btn">🔵 OKX</button>
       </div>
+
+      <!-- Exchange status bar -->
+      <div id="exch-status-bar" style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap"></div>
+
+      <!-- Form inputs (cambia per exchange) -->
+      <div id="exch-form">
+        <div class="inp-group"><div class="inp-label" id="lbl-key">API Key</div><input class="inp" id="ink" type="text" placeholder="API Key..." autocomplete="off"></div>
+        <div class="inp-group"><div class="inp-label" id="lbl-secret">API Secret</div><input class="inp" id="ins" type="password" placeholder="API Secret..." autocomplete="off"></div>
+        <div class="inp-group" id="passphrase-group" style="display:none">
+          <div class="inp-label">Passphrase</div>
+          <input class="inp" id="inp-passphrase" type="password" placeholder="OKX Passphrase..." autocomplete="off">
+        </div>
+        <div class="inp-group">
+          <div class="inp-label">Mode</div>
+          <select class="inp" id="ine" style="cursor:pointer">
+            <option value="mainnet">🔴 Live (Mainnet)</option>
+            <option value="testnet">🧪 Demo (Testnet)</option>
+          </select>
+        </div>
+      </div>
+
       <div id="key-msg" style="font-size:11px;min-height:18px;margin-top:2px"></div>
+
+      <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+        <button class="btn btn-primary btn-sm" onclick="saveExchangeKeys()">💾 Save keys</button>
+        <button class="btn btn-ghost btn-sm" onclick="testExchangeKeys()">🔧 Test connection</button>
+        <button class="btn btn-ghost btn-sm" style="border-color:rgba(255,77,109,.3);color:var(--red2)" onclick="deleteExchangeKeys()">🗑 Remove keys</button>
+      </div>
     </div>
 
     <!-- ALERT THRESHOLDS -->
@@ -3772,6 +3798,14 @@ const _counterObs = new IntersectionObserver(entries => {
 }, { threshold: .5 });
 const _statsGrid = document.querySelector('.stats-grid');
 if (_statsGrid) _counterObs.observe(_statsGrid);
+
+// ─── DASHBOARD LOGOUT ───
+function dashLogout() {
+  ['fs_token','fs_user','admin_token','fk_k','fk_s','fk_e','fk_cfg','fk_pnl',
+   'fk_partial','fk_sess','fk_guard_lock','fk_cooldown_end','fk_cons_loss',
+   'fk_daily_loss','fk_guard_log','_auto_redirect'].forEach(k => localStorage.removeItem(k));
+  window.location.href = 'https://fundshot.app';
+}
 
 // ─── INIT ───
 initPlanGate();
