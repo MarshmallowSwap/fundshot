@@ -345,7 +345,7 @@ h1{animation:fadeUp .6s .2s both}
       <p>Use your existing Telegram account. No password to remember.</p>
       <div class="tg-login-wrap">
         <div id="tg-widget-container">
-          <a href="#" id="tg-btn-placeholder" onclick="showTgInfo(event)">
+          <a href="#" id="tg-btn-placeholder" onclick="onPlaceholderClick(event)">
             <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.012 9.48c-.148.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.19 14.806l-2.95-.92c-.642-.202-.655-.642.136-.95l11.526-4.445c.534-.194 1.003.13.66.757z"/></svg>
             Continue with Telegram
           </a>
@@ -392,25 +392,40 @@ function toast(msg, icon='ℹ️', dur=4000) {
   setTimeout(() => t.classList.remove('show'), dur);
 }
 
+let _widgetInjected = false;
+
 function injectTelegramWidget() {
-  const container = document.getElementById('tg-widget-container');
+  if (_widgetInjected) return;
+  _widgetInjected = true;
+  const container   = document.getElementById('tg-widget-container');
   const placeholder = document.getElementById('tg-btn-placeholder');
   const script = document.createElement('script');
   script.async = true;
-  script.src = 'https://telegram.org/js/telegram-widget.js?22';
-  script.setAttribute('data-telegram-login', BOT_USERNAME);
-  script.setAttribute('data-size', 'large');
-  script.setAttribute('data-radius', '8');
-  script.setAttribute('data-onauth', 'onTelegramAuth(user)');
-  script.setAttribute('data-request-access', 'write');
-  script.setAttribute('data-lang', 'en');
-  // Nasconde placeholder solo dopo che lo script è caricato
+  script.src   = 'https://telegram.org/js/telegram-widget.js?22';
+  script.setAttribute('data-telegram-login',  BOT_USERNAME);
+  script.setAttribute('data-size',            'large');
+  script.setAttribute('data-radius',          '8');
+  script.setAttribute('data-onauth',          'onTelegramAuth(user)');
+  script.setAttribute('data-request-access',  'write');
+  script.setAttribute('data-lang',            'en');
   script.onload = () => {
     setTimeout(() => {
       if (placeholder) placeholder.style.display = 'none';
     }, 800);
   };
   container.appendChild(script);
+}
+
+// Inietta il widget solo al click — non automaticamente
+function onPlaceholderClick(e) {
+  e.preventDefault();
+  const placeholder = document.getElementById('tg-btn-placeholder');
+  if (placeholder) {
+    placeholder.style.opacity = '0.6';
+    placeholder.style.pointerEvents = 'none';
+  }
+  _widgetInjected = false; // reset per re-inject post-logout
+  injectTelegramWidget();
 }
 
 window.onTelegramAuth = async function(user) {
@@ -466,15 +481,18 @@ function logout(e) {
 
   document.getElementById('user-panel').classList.remove('show');
 
-  // Mostra il placeholder mentre il widget si carica
+  // Mostra il placeholder (NON re-inietta il widget — Telegram ricorda la sessione via cookie)
   const placeholder = document.getElementById('tg-btn-placeholder');
-  if (placeholder) placeholder.style.display = 'inline-flex';
-
-  // Distrugge e re-inietta il widget Telegram (rimuove cache sessione)
+  if (placeholder) {
+    placeholder.style.display = 'inline-flex';
+    placeholder.style.opacity = '1';
+    placeholder.style.pointerEvents = 'auto';
+  }
+  // Distrugge il widget esistente (sarà re-iniettato al prossimo click)
   const container = document.getElementById('tg-widget-container');
   container.innerHTML = '';
   document.querySelectorAll('iframe[name^="telegram"]').forEach(el => el.remove());
-  setTimeout(() => injectTelegramWidget(), 200);
+  _widgetInjected = false;
 
   toast('Signed out', '👋');
 }
@@ -506,9 +524,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const token  = localStorage.getItem('fs_token');
   if (stored && token) {
     try { showUserPanel(JSON.parse(stored)); } catch(e) {}
-  } else {
-    setTimeout(injectTelegramWidget, 500);
   }
+  // Non auto-inietta il widget — l'utente clicca il placeholder per attivarlo
+  // Questo evita il problema "Log in as Tommy" dopo il logout
 });
 </script>
 </body>
