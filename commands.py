@@ -324,14 +324,11 @@ async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "━━━━━━━━━━━━━━━━━━━━━\n"
         "💼 *ACCOUNT*\n"
         "/saldo — Wallet balance per exchange\n"
-        "/posizioni — Open positions with PnL\n"
-        "/rischio — Risk analysis + liquidation distance\n"
-        "/summary — Portfolio quick overview\n\n"
+        "/posizioni — Open positions with PnL\n\n"
 
         "━━━━━━━━━━━━━━━━━━━━━\n"
         "🤖 *AUTO-TRADING* ⚡\n"
-        "/autotrader — Toggle auto-trader on/off\n"
-        "/trading — Bot stats and open positions\n\n"
+        "/autotrader — Toggle auto-trader on/off\n\n"
 
         "━━━━━━━━━━━━━━━━━━━━━\n"
         "🎯 *WATCHLIST*\n"
@@ -351,8 +348,7 @@ async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "━━━━━━━━━━━━━━━━━━━━━\n"
         "⚙️ *SETTINGS*\n"
         "/start — Configure exchange API keys\n"
-        "/deletekeys — Remove your API keys\n"
-        "/status — Bot status and uptime\n\n"
+        "/deletekeys — Remove your API keys\n\n"
 
         "━━━━━━━━━━━━━━━━━━━━━\n"
         "🔔 *Alert levels:*\n"

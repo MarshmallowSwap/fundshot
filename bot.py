@@ -1265,31 +1265,30 @@ async def _setup_bot_menu(bot):
     from telegram import BotCommand, MenuButtonCommands
 
     bot_commands = [
-        # ── Funding Rate ─────────────────────────────────────────────────────
-        BotCommand("top10",     "🔥 Top 10 SHORT + LONG funding rates"),
-        BotCommand("storico",   "📅 Storico funding — /storico SYM [7g]"),
-        BotCommand("backtest",  "🧪 Simula P&L 30gg — /backtest SYM|top10|watchlist"),
-        # ── Account ──────────────────────────────────────────────────────────
-        BotCommand("saldo",     "💼 Balance and equity"),
-        BotCommand("posizioni", "📂 Posizioni aperte con PnL%"),
-        BotCommand("rischio",   "⚠️ Analisi rischio e distanza liquidazione"),
-        BotCommand("summary",   "📊 Riepilogo rapido portafoglio"),
-        # ── Auto-Trading ─────────────────────────────────────────────────────
-        BotCommand("trading",   "🤖 Statistiche auto-trader"),
-        BotCommand("aperte",    "📂 Open positions from auto-trader"),
-        # ── Watchlist & Alert ─────────────────────────────────────────────────
-        BotCommand("watchlist", "👁 Stato watchlist completo"),
-        BotCommand("watch",     "➕ Aggiungi simboli — /watch BTC ETH SOL"),
-        BotCommand("unwatch",   "➖ Rimuovi simboli — /unwatch all per reset"),
-        BotCommand("mute",      "🔇 Silenzia alert per un simbolo"),
-        BotCommand("unmute",    "🔔 Riattiva alert per un simbolo"),
-        BotCommand("alerts",    "⚙️ Soglie custom — /alerts SYM livello valore"),
-        # ── Sistema ──────────────────────────────────────────────────────────
-        BotCommand("start",     "🚀 Setup credenziali API Bybit"),
-        BotCommand("status",    "📡 Stato bot, uptime, alert attivi"),
-        BotCommand("test",      "🔧 Test connessione Bybit"),
-        BotCommand("help",      "📋 Lista completa dei comandi"),
-        BotCommand("deletekeys","🗑 Elimina le tue API key"),
+        # ── Funding Rate ──────────────────────────────────────────────────────
+        BotCommand("top10",      "🔥 Top 10 SHORT + LONG funding rates"),
+        BotCommand("storico",    "📅 Funding history — /storico SYM [7g]"),
+        BotCommand("backtest",   "🧪 Simulate 30-day P&L ⚡ Pro"),
+        # ── Account ───────────────────────────────────────────────────────────
+        BotCommand("saldo",      "💼 Wallet balance per exchange"),
+        BotCommand("posizioni",  "📂 Open positions with PnL"),
+        # ── Auto-Trading ──────────────────────────────────────────────────────
+        BotCommand("autotrader", "🤖 Toggle auto-trader on/off ⚡ Pro"),
+        # ── Watchlist ─────────────────────────────────────────────────────────
+        BotCommand("watchlist",  "👁 Full watchlist status"),
+        BotCommand("watch",      "➕ Add symbols — /watch BTC ETH SOL"),
+        BotCommand("unwatch",    "➖ Remove symbols — /unwatch all"),
+        BotCommand("mute",       "🔇 Mute alerts for a symbol"),
+        BotCommand("unmute",     "🔔 Reactivate alerts for a symbol"),
+        # ── Subscription ──────────────────────────────────────────────────────
+        BotCommand("plan",       "💳 Your plan, expiry and billing"),
+        BotCommand("upgrade",    "⚡ Upgrade to Pro or Elite"),
+        BotCommand("referral",   "🔗 Your referral link + earnings"),
+        BotCommand("setwallet",  "💸 Set USDT wallet for payouts"),
+        # ── Settings ──────────────────────────────────────────────────────────
+        BotCommand("start",      "🚀 Configure exchange API keys"),
+        BotCommand("deletekeys", "🗑 Remove your API keys"),
+        BotCommand("help",       "📋 All commands"),
     ]
 
     try:
