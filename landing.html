@@ -452,18 +452,21 @@ function showUserPanel(data) {
 
 function logout(e) {
   e.preventDefault();
-  localStorage.removeItem('fs_token');
-  localStorage.removeItem('fs_user');
+  // Pulisce tutti i token e dati sessione
+  const keys = ['fs_token','fs_user','admin_token',
+                 'fk_k','fk_s','fk_e','fk_cfg','fk_pnl',
+                 'fk_partial','fk_sess','fk_guard_lock',
+                 'fk_cooldown_end','fk_cons_loss','fk_daily_loss','fk_guard_log'];
+  keys.forEach(k => localStorage.removeItem(k));
+
   document.getElementById('user-panel').classList.remove('show');
-  // Distrugge il widget e lo re-inietta fresco (rimuove cache sessione Telegram)
+
+  // Distrugge e re-inietta il widget Telegram (rimuove cache sessione)
   const container = document.getElementById('tg-widget-container');
   container.innerHTML = '';
-  // Rimuove eventuali iframe Telegram rimasti nel DOM
   document.querySelectorAll('iframe[name^="telegram"]').forEach(el => el.remove());
-  // Re-inietta il widget dopo un tick
-  setTimeout(() => {
-    injectTelegramWidget();
-  }, 100);
+  setTimeout(() => injectTelegramWidget(), 100);
+
   toast('Signed out', '👋');
 }
 
