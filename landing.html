@@ -355,6 +355,7 @@ h1{animation:fadeUp .6s .2s both}
           <div class="user-details" id="user-details"></div>
           <div class="user-actions">
             <a href="#" class="btn-dash" id="dash-link">📊 Open Dashboard</a>
+            <a href="/admin" class="btn-dash" id="admin-link" style="display:none;background:rgba(255,77,109,.1);border-color:rgba(255,77,109,.3);color:#ff4d6d">⚙️ Admin Panel</a>
             <a href="#" class="btn-out" onclick="logout(event)">Sign out</a>
           </div>
         </div>
@@ -380,7 +381,8 @@ h1{animation:fadeUp .6s .2s both}
 <script>
 const PROXY_URL    = 'https://api.fundshot.app';
 const DASH_URL     = 'https://fundshot.app';
-const BOT_USERNAME = 'FundShot_bot';
+const BOT_USERNAME  = 'FundShot_bot';
+const OWNER_CHAT_ID = 444059323;  // Tommy — vedi CHAT_ID nel .env
 
 function toast(msg, icon='ℹ️', dur=4000) {
   const t = document.getElementById('toast');
@@ -433,7 +435,18 @@ function showUserPanel(data) {
     '🆔 chat_id: ' + data.chat_id,
     '💎 Plan: ' + (data.plan || 'free').toUpperCase(),
   ].join('<br>');
-  document.getElementById('dash-link').href = DASH_URL + '?fs_token=' + localStorage.getItem('fs_token');
+  document.getElementById('dash-link').href = DASH_URL + '/dashboard?fs_token=' + localStorage.getItem('fs_token');
+  // Mostra admin link solo per owner
+  const adminLink = document.getElementById('admin-link');
+  if (adminLink) {
+    if (data.chat_id === OWNER_CHAT_ID) {
+      adminLink.style.display = 'block';
+      // Salva token anche per admin panel
+      localStorage.setItem('admin_token', localStorage.getItem('fs_token'));
+    } else {
+      adminLink.style.display = 'none';
+    }
+  }
   panel.classList.add('show');
 }
 
