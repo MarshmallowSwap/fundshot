@@ -151,3 +151,77 @@ def is_payment_confirmed(status: str) -> bool:
 
 def currency_display(currency: str) -> str:
     return CURRENCIES.get(currency.lower(), currency.upper())
+
+
+# ── Subscription (Recurring) ──────────────────────────────────────────────────
+
+# Plan IDs NOWPayments — creati una volta sola (vedi setup_subscription_plans)
+_SUBSCRIPTION_PLAN_IDS: dict[str, str] = {}
+
+
+def setup_subscription_plans() -> dict:
+    """
+    Crea i piani subscription su NOWPayments se non esistono già.
+    Da chiamare una volta all'avvio.
+    Ritorna { "pro": plan_id, "elite": plan_id }
+    """
+    global _SUBSCRIPTION_PLAN_IDS
+
+    # Prova a leggere da env (se già creati)
+    pro_id   = os.getenv("NOWPAY_PLAN_PRO", "")
+    elite_id = os.getenv("NOWPAY_PLAN_ELITE", "")
+
+    if pro_id and elite_id:
+        _SUBSCRIPTION_PLAN_IDS = {"pro": pro_id, "elite": elite_id}
+        logger.info("Subscription plans caricati da env: pro=%s elite=%s", pro_id, elite_id)
+        return _SUBSCRIPTION_PLAN_IDS
+
+    # Crea i piani
+    for plan_key, plan_cfg in PLANS.items():
+        try:
+            result = _request("POST", "/subscriptions/plans", {
+                "title":            f"FundShot {plan_cfg['name']} — Monthly",
+                "interval_day":     30,
+                "amount":           plan_cfg["recurring"],
+                "currency":         "usd",
+                "ipn_callback_url": "https://api.fundshot.app/api/payments/webhook",
+                "success_url":      "https://fundshot.app?payment=success",
+                "cancel_url":       "https://fundshot.app?payment=cancelled",
+            })
+            plan_id = str(result.get("id", ""))
+            if plan_id:
+                _SUBSCRIPTION_PLAN_IDS[plan_key] = plan_id
+                logger.info("Subscription plan creato: %s → id=%s", plan_key, plan_id)
+        except Exception as e:
+            logger.error("setup_subscription_plans %s: %s", plan_key, e)
+
+    return _SUBSCRIPTION_PLAN_IDS
+
+
+def create_subscription(
+    email: str,
+    plan: str,
+) -> dict:
+    """
+    Aggiunge un subscriber al piano subscription NOWPayments.
+    NOWPayments invierà un'email con il link di pagamento.
+    Ritorna { subscription_id, payment_url }
+    """
+    plan_id = _SUBSCRIPTION_PLAN_IDS.get(plan)
+    if not plan_id:
+        raise ValueError(f"Subscription plan ID non trovato per {plan}. Chiamare setup_subscription_plans() prima.")
+
+    result = _request("POST", "/subscriptions", {
+        "subscription_plan_id": plan_id,
+        "email":               email,
+    })
+    return {
+        "subscription_id": str(result.get("id", "")),
+        "payment_url":     result.get("payment_url", ""),
+        "status":          result.get("status", "pending"),
+    }
+
+
+def get_subscription_plans() -> dict:
+    """Ritorna i plan IDs caricati."""
+    return _SUBSCRIPTION_PLAN_IDS.copy()

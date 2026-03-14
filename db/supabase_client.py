@@ -472,3 +472,14 @@ async def get_user_by_id(user_id: str) -> Optional["User"]:
     except Exception as e:
         logger.error("get_user_by_id: %s", e)
         return None
+
+
+async def save_user_email(user_id: str, email: str) -> bool:
+    """Salva l'email dell'utente su Supabase."""
+    db = get_client()
+    try:
+        db.table("users").update({"email": email}).eq("id", user_id).execute()
+        return True
+    except Exception as e:
+        logger.error("save_user_email: %s", e)
+        return False

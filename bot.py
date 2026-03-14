@@ -1080,6 +1080,17 @@ async def post_init(app):
     app.bot_data["symbols_count"] = 0
     app.bot_data["trades_opened"] = 0
 
+    # Setup NOWPayments subscription plans (una volta all'avvio)
+    try:
+        from payments import setup_subscription_plans
+        plans = setup_subscription_plans()
+        if plans:
+            logger.info("NOWPayments subscription plans: %s", plans)
+        else:
+            logger.warning("NOWPayments subscription plans non creati — controlla NOWPAY_API_KEY")
+    except Exception as e:
+        logger.warning("setup_subscription_plans: %s", e)
+
     use_dynamic = os.getenv("USE_DYNAMIC_THRESHOLDS", "false").lower() == "true"
     window_h    = int(os.getenv("DYNAMIC_WINDOW_HOURS", 24))
     logger.info(

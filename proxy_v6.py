@@ -269,8 +269,24 @@ class ProxyHandler(BaseHTTPRequestHandler):
                 )
 
                 if payment and is_payment_confirmed(status):
-                    # Aggiorna piano utente
-                    expires = datetime.now(timezone.utc) + timedelta(days=30)
+                    # Aggiorna piano utente (+30 giorni dalla scadenza attuale se non scaduto)
+                    from db.supabase_client import get_client as _gc2
+                    from datetime import datetime as _dt2
+                    try:
+                        _res2 = _gc2().table("users").select("plan_expires_at").eq("id", payment["user_id"]).single().execute()
+                        _exp2 = (_res2.data or {}).get("plan_expires_at")
+                        if _exp2:
+                            _exp_dt2 = _dt2.fromisoformat(_exp2.replace("Z", "+00:00"))
+                            # Se piano ancora attivo, estendi dalla scadenza
+                            if _exp_dt2 > datetime.now(timezone.utc):
+                                expires = _exp_dt2 + timedelta(days=30)
+                            else:
+                                expires = datetime.now(timezone.utc) + timedelta(days=30)
+                        else:
+                            expires = datetime.now(timezone.utc) + timedelta(days=30)
+                    except Exception:
+                        expires = datetime.now(timezone.utc) + timedelta(days=30)
+
                     asyncio.run(update_user_plan(
                         user_id=payment["user_id"],
                         plan=payment["plan"],

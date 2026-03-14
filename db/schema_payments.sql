@@ -38,3 +38,7 @@ CREATE OR REPLACE TRIGGER trg_payments_updated_at
 
 -- RLS
 ALTER TABLE payments ENABLE ROW LEVEL SECURITY;
+
+-- Aggiunge email e subscription plan IDs alla tabella users
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS email TEXT DEFAULT NULL;

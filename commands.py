@@ -1914,7 +1914,8 @@ async def deletekeys_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     UPG_PLAN,
     UPG_BILLING,
     UPG_CURRENCY,
-) = range(100, 103)
+    UPG_EMAIL,
+) = range(100, 104)
 
 
 def _kb_plans() -> InlineKeyboardMarkup:
@@ -2026,6 +2027,19 @@ async def upgrade_billing_cb(update: Update, context: ContextTypes.DEFAULT_TYPE)
         plan    = context.user_data.get("upg_plan", "pro")
         price   = PLAN_PRICES[plan][billing]
         label   = "🔄 Monthly Recurring" if billing == "recurring" else "1️⃣ One-Shot 30 days"
+
+        if billing == "recurring":
+            # Per il recurring serve l'email — NOWPayments invia invoice automatiche
+            await query.edit_message_text(
+                f"💳 *{plan.capitalize()} — {label}*\n"
+                f"Amount: `${price} USD/month`\n\n"
+                "📧 To set up automatic renewal, enter your email address.\n"
+                "NOWPayments will send you a monthly invoice automatically.\n\n"
+                "_Send your email or type /skip to pay manually each month:_",
+                parse_mode="Markdown",
+            )
+            return UPG_EMAIL
+
         await query.edit_message_text(
             f"💳 *{plan.capitalize()} — {label}*\n"
             f"Amount: `${price} USD`\n\n"
@@ -2060,51 +2074,84 @@ async def upgrade_currency_cb(update: Update, context: ContextTypes.DEFAULT_TYPE
         await query.edit_message_text("⏳ Generating payment address...")
 
         try:
-            from payments import create_payment, currency_display
-            import asyncio
-            from db.supabase_client import save_payment, get_user
+            from payments import create_payment, create_subscription, currency_display
+            from db.supabase_client import save_payment, get_user, save_user_email
 
-            result = create_payment(
-                chat_id=chat_id,
-                plan=plan,
-                billing_type=billing,
-                currency=currency,
-            )
-
-            # Salva su Supabase
-            user = await get_user(chat_id)
-            if user:
-                await save_payment(
-                    user_id=user.id,
-                    chat_id=chat_id,
-                    nowpay_id=str(result["payment_id"]),
-                    plan=plan,
-                    billing_type=billing,
-                    amount_usd=result["amount_usd"],
-                    currency=currency,
-                    pay_address=result["pay_address"],
-                    pay_amount=result.get("pay_amount", 0),
-                    status="pending",
-                )
-
+            user      = await get_user(chat_id)
+            email     = context.user_data.get("upg_email", "")
             price_label = PLAN_PRICES[plan][billing]
             cur_label   = currency_display(currency)
             billing_lbl = "🔄 Recurring" if billing == "recurring" else "1️⃣ One-Shot"
             plan_lbl    = plan.capitalize()
 
-            msg = (
-                f"💳 *{plan_lbl} — {billing_lbl}*\n\n"
-                f"Send exactly:\n"
-                f"`{result['pay_amount']} {result['pay_currency']}`\n\n"
-                f"To this address:\n"
-                f"`{result['pay_address']}`\n\n"
-                f"💵 ≈ ${price_label} USD\n"
-                f"🪙 Network: {cur_label}\n"
-                f"⏱ Payment expires in ~20 minutes\n\n"
-                f"✅ Your plan will be activated *automatically* after confirmation.\n"
-                f"_Payment ID: `{result['payment_id']}`_"
-            )
-            await query.edit_message_text(msg, parse_mode="Markdown")
+            # ── Recurring con email → NOWPayments subscription ────────────────
+            if billing == "recurring" and email:
+                # Salva email su Supabase
+                if user:
+                    await save_user_email(user.id, email)
+
+                sub = create_subscription(email=email, plan=plan)
+
+                # Salva subscription su Supabase
+                if user:
+                    await save_payment(
+                        user_id=user.id,
+                        chat_id=chat_id,
+                        nowpay_id=sub["subscription_id"],
+                        plan=plan,
+                        billing_type=billing,
+                        amount_usd=price_label,
+                        currency="subscription",
+                        status="pending",
+                    )
+
+                msg = (
+                    f"✅ *{plan_lbl} Subscription Created!*\n\n"
+                    f"📧 An invoice has been sent to:\n`{email}`\n\n"
+                    f"💰 Amount: `${price_label}/month`\n"
+                    f"🔄 Renewal: automatic every 30 days\n\n"
+                    f"Click the link in the email to complete the first payment.\n"
+                    f"Your plan activates automatically after confirmation.\n\n"
+                    f"_Subscription ID: `{sub['subscription_id']}`_"
+                )
+                await query.edit_message_text(msg, parse_mode="Markdown")
+
+            else:
+                # ── One-shot o recurring senza email → pagamento diretto ──────
+                result = create_payment(
+                    chat_id=chat_id,
+                    plan=plan,
+                    billing_type=billing,
+                    currency=currency,
+                )
+
+                if user:
+                    await save_payment(
+                        user_id=user.id,
+                        chat_id=chat_id,
+                        nowpay_id=str(result["payment_id"]),
+                        plan=plan,
+                        billing_type=billing,
+                        amount_usd=result["amount_usd"],
+                        currency=currency,
+                        pay_address=result["pay_address"],
+                        pay_amount=result.get("pay_amount", 0),
+                        status="pending",
+                    )
+
+                msg = (
+                    f"💳 *{plan_lbl} — {billing_lbl}*\n\n"
+                    f"Send exactly:\n"
+                    f"`{result['pay_amount']} {result['pay_currency']}`\n\n"
+                    f"To this address:\n"
+                    f"`{result['pay_address']}`\n\n"
+                    f"💵 ≈ ${price_label} USD\n"
+                    f"🪙 Network: {cur_label}\n"
+                    f"⏱ Payment expires in ~20 minutes\n\n"
+                    f"✅ Your plan will be activated *automatically* after confirmation.\n"
+                    f"_Payment ID: `{result['payment_id']}`_"
+                )
+                await query.edit_message_text(msg, parse_mode="Markdown")
 
         except Exception as e:
             await query.edit_message_text(
@@ -2178,12 +2225,50 @@ async def cmd_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
 
 
+async def receive_upgrade_email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Riceve l'email per il recurring billing."""
+    text = update.message.text.strip()
+
+    # /skip — procede senza email (pagamento manuale ogni mese)
+    if text.lower() in ("/skip", "skip"):
+        context.user_data["upg_email"] = ""
+        await update.message.reply_text(
+            "No problem — you can renew manually each month with /upgrade.\n\n"
+            "Choose your crypto:",
+            reply_markup=_kb_currencies(),
+        )
+        return UPG_CURRENCY
+
+    # Validazione email base
+    import re
+    if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", text):
+        await update.message.reply_text(
+            "❌ Invalid email. Please send a valid email address, or type /skip to continue without it.",
+        )
+        return UPG_EMAIL
+
+    context.user_data["upg_email"] = text
+    plan    = context.user_data.get("upg_plan", "pro")
+    billing = context.user_data.get("upg_billing", "recurring")
+    price   = PLAN_PRICES[plan][billing]
+
+    await update.message.reply_text(
+        f"✅ Email saved: `{text}`\n\n"
+        f"Choose your crypto to pay `${price}/month`:",
+        parse_mode="Markdown",
+        reply_markup=_kb_currencies(),
+    )
+    return UPG_CURRENCY
+
+
 def build_upgrade_handler() -> ConversationHandler:
     return ConversationHandler(
         entry_points=[CommandHandler("upgrade", cmd_upgrade)],
         states={
             UPG_PLAN:     [CallbackQueryHandler(upgrade_plan_cb,     pattern="^upg_")],
             UPG_BILLING:  [CallbackQueryHandler(upgrade_billing_cb,  pattern="^upg_")],
+            UPG_EMAIL:    [MessageHandler(filters.TEXT & ~filters.COMMAND, receive_upgrade_email),
+                           CommandHandler("skip", receive_upgrade_email)],
             UPG_CURRENCY: [CallbackQueryHandler(upgrade_currency_cb, pattern="^upg_")],
         },
         fallbacks=[CommandHandler("upgrade", cmd_upgrade)],
