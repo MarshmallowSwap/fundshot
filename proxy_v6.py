@@ -187,6 +187,145 @@ class ProxyHandler(BaseHTTPRequestHandler):
                 self._json({"ok": False, "error": str(e)}, 500)
             return
 
+        # ── Crea pagamento crypto ─────────────────────────────────────────────
+        if p == "/api/payments/create":
+            user = self._auth()
+            if not user:
+                return
+            try:
+                from payments import create_payment, PLANS
+                import asyncio
+                from db.supabase_client import save_payment, get_user
+
+                body      = self._body()
+                plan      = body.get("plan", "")
+                billing   = body.get("billing_type", "")
+                currency  = body.get("currency", "usdttrc20")
+
+                if plan not in PLANS:
+                    self._json({"ok": False, "error": "Invalid plan"}, 400)
+                    return
+                if billing not in ("recurring", "oneshot"):
+                    self._json({"ok": False, "error": "Invalid billing_type"}, 400)
+                    return
+
+                result = create_payment(
+                    chat_id=user["chat_id"],
+                    plan=plan,
+                    billing_type=billing,
+                    currency=currency,
+                )
+
+                # Salva pagamento pending su Supabase
+                asyncio.run(save_payment(
+                    user_id=user["user_id"],
+                    chat_id=user["chat_id"],
+                    nowpay_id=str(result["payment_id"]),
+                    plan=plan,
+                    billing_type=billing,
+                    amount_usd=result["amount_usd"],
+                    currency=currency,
+                    pay_address=result["pay_address"],
+                    pay_amount=result.get("pay_amount", 0),
+                    status="pending",
+                ))
+
+                self._json({"ok": True, **result})
+            except Exception as e:
+                log.error("payments/create: %s", e)
+                self._json({"ok": False, "error": str(e)}, 500)
+            return
+
+        # ── Webhook NOWPayments IPN ───────────────────────────────────────────
+        if p == "/api/payments/webhook":
+            try:
+                import asyncio
+                from payments import verify_ipn_signature, is_payment_confirmed
+                from db.supabase_client import (
+                    update_payment_status, update_user_plan,
+                    get_user_by_id,
+                )
+                from datetime import datetime, timedelta, timezone
+
+                raw_body = self.rfile.read(
+                    int(self.headers.get("Content-Length", 0))
+                )
+                sig = self.headers.get("x-nowpayments-sig", "")
+
+                if not verify_ipn_signature(raw_body, sig):
+                    log.warning("Webhook IPN: firma non valida")
+                    self._json({"ok": False, "error": "Invalid signature"}, 401)
+                    return
+
+                data       = json.loads(raw_body)
+                nowpay_id  = str(data.get("payment_id", ""))
+                status     = data.get("payment_status", "")
+                paid       = float(data.get("actually_paid", 0))
+
+                log.info("IPN webhook: payment_id=%s status=%s", nowpay_id, status)
+
+                payment = asyncio.run(
+                    update_payment_status(nowpay_id, status, paid)
+                )
+
+                if payment and is_payment_confirmed(status):
+                    # Aggiorna piano utente
+                    expires = datetime.now(timezone.utc) + timedelta(days=30)
+                    asyncio.run(update_user_plan(
+                        user_id=payment["user_id"],
+                        plan=payment["plan"],
+                        billing_type=payment["billing_type"],
+                        expires_at=expires,
+                    ))
+
+                    # Notifica Telegram
+                    try:
+                        import os
+                        from telegram import Bot
+                        bot = Bot(token=os.getenv("TELEGRAM_TOKEN", ""))
+                        plan_label    = payment["plan"].capitalize()
+                        billing_label = "🔄 Recurring" if payment["billing_type"] == "recurring" else "1️⃣ One-Shot"
+                        msg = (
+                            f"🎉 *Payment confirmed!*\n\n"
+                            f"✅ Plan: *{plan_label}*\n"
+                            f"💳 Billing: {billing_label}\n"
+                            f"💰 Paid: `{paid} {payment['currency'].upper()}`\n"
+                            f"📅 Expires: `{expires.strftime('%d/%m/%Y')}`\n\n"
+                            f"All Pro features are now unlocked.\n"
+                            f"Use /plan to see your subscription."
+                        )
+                        import asyncio as _aio
+                        _aio.run(bot.send_message(
+                            chat_id=payment["chat_id"],
+                            text=msg,
+                            parse_mode="Markdown",
+                        ))
+                    except Exception as e_tg:
+                        log.warning("Telegram notify: %s", e_tg)
+
+                    # Email conferma
+                    try:
+                        user = asyncio.run(get_user_by_id(payment["user_id"]))
+                        if user and user.telegram_handle:
+                            from email_service import send_payment_confirmed
+                            send_payment_confirmed(
+                                to_email=f"{user.telegram_handle}@users.noreply",
+                                username=user.telegram_handle,
+                                plan=payment["plan"],
+                                billing_type=payment["billing_type"],
+                                amount_usd=payment["amount_usd"],
+                                currency=payment["currency"],
+                                expires_at=expires.strftime("%d/%m/%Y"),
+                            )
+                    except Exception as e_em:
+                        log.warning("Email confirm: %s", e_em)
+
+                self._json({"ok": True})
+            except Exception as e:
+                log.error("payments/webhook: %s", e)
+                self._json({"ok": False, "error": str(e)}, 500)
+            return
+
         self._json({"ok": False, "error": "Not Found"}, 404)
 
     # ── GET ───────────────────────────────────────────────────────────────────

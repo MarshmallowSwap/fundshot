@@ -379,3 +379,95 @@ async def get_user_trades(
     except Exception as e:
         logger.error("get_user_trades: %s", e)
         return []
+
+
+# ── PAYMENTS ──────────────────────────────────────────────────────────────────
+
+async def update_user_plan(
+    user_id: str,
+    plan: str,
+    billing_type: str,
+    expires_at,          # datetime object
+    subscription_id: str = "",
+) -> bool:
+    """Aggiorna piano utente dopo pagamento confermato."""
+    db = get_client()
+    try:
+        db.table("users").update({
+            "plan":             plan,
+            "billing_type":     billing_type,
+            "plan_expires_at":  expires_at.isoformat() if hasattr(expires_at, "isoformat") else str(expires_at),
+            "subscription_id":  subscription_id,
+        }).eq("id", user_id).execute()
+        logger.info("Piano aggiornato: user=%s plan=%s expires=%s", user_id, plan, expires_at)
+        return True
+    except Exception as e:
+        logger.error("update_user_plan: %s", e)
+        return False
+
+
+async def save_payment(
+    user_id: str,
+    chat_id: int,
+    nowpay_id: str,
+    plan: str,
+    billing_type: str,
+    amount_usd: float,
+    currency: str,
+    pay_address: str = "",
+    pay_amount: float = 0,
+    status: str = "pending",
+) -> bool:
+    """Registra un pagamento nella tabella payments."""
+    db = get_client()
+    try:
+        db.table("payments").upsert({
+            "user_id":      user_id,
+            "chat_id":      chat_id,
+            "nowpay_id":    nowpay_id,
+            "plan":         plan,
+            "billing_type": billing_type,
+            "amount_usd":   amount_usd,
+            "currency":     currency,
+            "pay_address":  pay_address,
+            "pay_amount":   pay_amount,
+            "status":       status,
+        }, on_conflict="nowpay_id").execute()
+        return True
+    except Exception as e:
+        logger.error("save_payment: %s", e)
+        return False
+
+
+async def update_payment_status(nowpay_id: str, status: str, actually_paid: float = 0) -> Optional[dict]:
+    """Aggiorna lo status di un pagamento e ritorna i dati del pagamento."""
+    db = get_client()
+    try:
+        res = db.table("payments").update({
+            "status":        status,
+            "actually_paid": actually_paid,
+        }).eq("nowpay_id", nowpay_id).execute()
+        return res.data[0] if res.data else None
+    except Exception as e:
+        logger.error("update_payment_status: %s", e)
+        return None
+
+
+async def get_user_by_id(user_id: str) -> Optional["User"]:
+    """Recupera utente per UUID."""
+    db = get_client()
+    try:
+        res = db.table("users").select("*").eq("id", user_id).single().execute()
+        if not res.data:
+            return None
+        d = res.data
+        return User(
+            id=d["id"],
+            chat_id=d["chat_id"],
+            telegram_handle=d.get("telegram_handle", ""),
+            plan=d.get("plan", "free"),
+            active_exchanges=d.get("active_exchanges") or [],
+        )
+    except Exception as e:
+        logger.error("get_user_by_id: %s", e)
+        return None

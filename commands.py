@@ -1849,6 +1849,293 @@ async def deletekeys_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# /upgrade — Acquista piano Pro/Elite con crypto
+# /plan    — Visualizza piano attuale e scadenza
+# ══════════════════════════════════════════════════════════════════════════════
+
+# Stati ConversationHandler upgrade
+(
+    UPG_PLAN,
+    UPG_BILLING,
+    UPG_CURRENCY,
+) = range(100, 103)
+
+
+def _kb_plans() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("⚡ Pro",   callback_data="upg_plan_pro")],
+        [InlineKeyboardButton("👑 Elite", callback_data="upg_plan_elite")],
+        [InlineKeyboardButton("❌ Cancel", callback_data="upg_cancel")],
+    ])
+
+
+def _kb_billing() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔄 Monthly Recurring", callback_data="upg_bill_recurring")],
+        [InlineKeyboardButton("1️⃣ One-Shot 30 days",  callback_data="upg_bill_oneshot")],
+        [InlineKeyboardButton("⬅️ Back",               callback_data="upg_back_plan")],
+    ])
+
+
+def _kb_currencies() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("💵 USDT (TRC20 — cheapest)",  callback_data="upg_cur_usdttrc20")],
+        [InlineKeyboardButton("💵 USDT (SOL network)",       callback_data="upg_cur_usdtsol")],
+        [InlineKeyboardButton("₿  Bitcoin (BTC)",            callback_data="upg_cur_btc")],
+        [InlineKeyboardButton("Ξ  Ethereum (ETH)",           callback_data="upg_cur_eth")],
+        [InlineKeyboardButton("◎  Solana (SOL)",             callback_data="upg_cur_sol")],
+        [InlineKeyboardButton("⬡  BNB (BSC)",                callback_data="upg_cur_bnbbsc")],
+        [InlineKeyboardButton("💎 TON",                      callback_data="upg_cur_ton")],
+        [InlineKeyboardButton("⬅️ Back",                     callback_data="upg_back_billing")],
+    ])
+
+
+PLAN_FEATURES = {
+    "pro": (
+        "⚡ *Pro Plan*\n\n"
+        "✅ Auto-trading on all exchanges\n"
+        "✅ Pre-settlement alerts\n"
+        "✅ Backtest\n"
+        "✅ Custom thresholds\n"
+        "✅ Priority support\n"
+    ),
+    "elite": (
+        "👑 *Elite Plan*\n\n"
+        "✅ Everything in Pro\n"
+        "✅ Multi-account trading\n"
+        "✅ Advanced risk management\n"
+        "✅ API access\n"
+        "✅ Dedicated support\n"
+    ),
+}
+
+PLAN_PRICES = {
+    "pro":   {"recurring": 15, "oneshot": 20},
+    "elite": {"recurring": 40, "oneshot": 50},
+}
+
+
+async def cmd_upgrade(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    await update.message.reply_text(
+        "🚀 *Upgrade FundShot*\n\n"
+        "Choose the plan you want to activate:",
+        parse_mode="Markdown",
+        reply_markup=_kb_plans(),
+    )
+    return UPG_PLAN
+
+
+async def upgrade_plan_cb(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    query = update.callback_query
+    await query.answer()
+    data  = query.data
+
+    if data == "upg_cancel":
+        await query.edit_message_text("❌ Upgrade cancelled.")
+        return ConversationHandler.END
+
+    if data.startswith("upg_plan_"):
+        plan = data.replace("upg_plan_", "")
+        context.user_data["upg_plan"] = plan
+        prices = PLAN_PRICES[plan]
+        await query.edit_message_text(
+            PLAN_FEATURES[plan] +
+            f"\n💰 *Recurring:* ${prices['recurring']}/month\n"
+            f"💰 *One-Shot:*  ${prices['oneshot']} / 30 days\n\n"
+            "Choose billing type:",
+            parse_mode="Markdown",
+            reply_markup=_kb_billing(),
+        )
+        return UPG_BILLING
+
+    return UPG_PLAN
+
+
+async def upgrade_billing_cb(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    query = update.callback_query
+    await query.answer()
+    data  = query.data
+
+    if data == "upg_back_plan":
+        await query.edit_message_text(
+            "🚀 *Upgrade FundShot*\n\nChoose the plan:",
+            parse_mode="Markdown",
+            reply_markup=_kb_plans(),
+        )
+        return UPG_PLAN
+
+    if data.startswith("upg_bill_"):
+        billing = data.replace("upg_bill_", "")
+        context.user_data["upg_billing"] = billing
+        plan    = context.user_data.get("upg_plan", "pro")
+        price   = PLAN_PRICES[plan][billing]
+        label   = "🔄 Monthly Recurring" if billing == "recurring" else "1️⃣ One-Shot 30 days"
+        await query.edit_message_text(
+            f"💳 *{plan.capitalize()} — {label}*\n"
+            f"Amount: `${price} USD`\n\n"
+            "Choose your crypto:",
+            parse_mode="Markdown",
+            reply_markup=_kb_currencies(),
+        )
+        return UPG_CURRENCY
+
+    return UPG_BILLING
+
+
+async def upgrade_currency_cb(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    query = update.callback_query
+    await query.answer()
+    data  = query.data
+
+    if data == "upg_back_billing":
+        await query.edit_message_text(
+            "Choose billing type:",
+            parse_mode="Markdown",
+            reply_markup=_kb_billing(),
+        )
+        return UPG_BILLING
+
+    if data.startswith("upg_cur_"):
+        currency = data.replace("upg_cur_", "")
+        plan     = context.user_data.get("upg_plan", "pro")
+        billing  = context.user_data.get("upg_billing", "oneshot")
+        chat_id  = update.effective_chat.id
+
+        await query.edit_message_text("⏳ Generating payment address...")
+
+        try:
+            from payments import create_payment, currency_display
+            import asyncio
+            from db.supabase_client import save_payment, get_user
+
+            result = create_payment(
+                chat_id=chat_id,
+                plan=plan,
+                billing_type=billing,
+                currency=currency,
+            )
+
+            # Salva su Supabase
+            user = await get_user(chat_id)
+            if user:
+                await save_payment(
+                    user_id=user.id,
+                    chat_id=chat_id,
+                    nowpay_id=str(result["payment_id"]),
+                    plan=plan,
+                    billing_type=billing,
+                    amount_usd=result["amount_usd"],
+                    currency=currency,
+                    pay_address=result["pay_address"],
+                    pay_amount=result.get("pay_amount", 0),
+                    status="pending",
+                )
+
+            price_label = PLAN_PRICES[plan][billing]
+            cur_label   = currency_display(currency)
+            billing_lbl = "🔄 Recurring" if billing == "recurring" else "1️⃣ One-Shot"
+            plan_lbl    = plan.capitalize()
+
+            msg = (
+                f"💳 *{plan_lbl} — {billing_lbl}*\n\n"
+                f"Send exactly:\n"
+                f"`{result['pay_amount']} {result['pay_currency']}`\n\n"
+                f"To this address:\n"
+                f"`{result['pay_address']}`\n\n"
+                f"💵 ≈ ${price_label} USD\n"
+                f"🪙 Network: {cur_label}\n"
+                f"⏱ Payment expires in ~20 minutes\n\n"
+                f"✅ Your plan will be activated *automatically* after confirmation.\n"
+                f"_Payment ID: `{result['payment_id']}`_"
+            )
+            await query.edit_message_text(msg, parse_mode="Markdown")
+
+        except Exception as e:
+            await query.edit_message_text(
+                f"❌ Error generating payment: {e}\n\nPlease try again or contact support@fundshot.app"
+            )
+
+        return ConversationHandler.END
+
+    return UPG_CURRENCY
+
+
+async def cmd_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Mostra piano attuale, scadenza e stato."""
+    from db.supabase_client import get_user
+    from datetime import datetime, timezone
+
+    chat_id = update.effective_chat.id
+    user    = await get_user(chat_id)
+
+    if not user:
+        await update.message.reply_text("⚠️ Use /start to register first.")
+        return
+
+    plan = user.plan
+    plan_emoji = {"free": "🆓", "pro": "⚡", "elite": "👑"}.get(plan, "🆓")
+    plan_label = plan.capitalize()
+
+    # Leggi scadenza e billing_type da Supabase raw
+    try:
+        from db.supabase_client import get_client
+        db  = get_client()
+        res = db.table("users").select("plan_expires_at,billing_type").eq("id", user.id).single().execute()
+        raw = res.data or {}
+        expires_at   = raw.get("plan_expires_at")
+        billing_type = raw.get("billing_type")
+    except Exception:
+        expires_at   = None
+        billing_type = None
+
+    lines = [f"{plan_emoji} *Your FundShot Plan*\n"]
+    lines.append(f"Plan: *{plan_label}*")
+
+    if plan == "free":
+        lines += [
+            "",
+            "Upgrade to unlock:",
+            "⚡ Auto-trading",
+            "📊 Pre-settlement alerts",
+            "🔧 Custom thresholds",
+            "",
+            "Use /upgrade to activate Pro or Elite.",
+        ]
+    else:
+        if expires_at:
+            try:
+                exp = datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
+                now = datetime.now(timezone.utc)
+                days_left = (exp - now).days
+                exp_str   = exp.strftime("%d/%m/%Y")
+                status_emoji = "✅" if days_left > 3 else "⚠️"
+                lines.append(f"Expires: `{exp_str}` ({days_left}d left) {status_emoji}")
+            except Exception:
+                lines.append(f"Expires: `{expires_at}`")
+
+        if billing_type:
+            b_label = "🔄 Monthly Recurring" if billing_type == "recurring" else "1️⃣ One-Shot"
+            lines.append(f"Billing: {b_label}")
+
+        lines += ["", "Use /upgrade to renew or change plan."]
+
+    await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
+
+
+def build_upgrade_handler() -> ConversationHandler:
+    return ConversationHandler(
+        entry_points=[CommandHandler("upgrade", cmd_upgrade)],
+        states={
+            UPG_PLAN:     [CallbackQueryHandler(upgrade_plan_cb,     pattern="^upg_")],
+            UPG_BILLING:  [CallbackQueryHandler(upgrade_billing_cb,  pattern="^upg_")],
+            UPG_CURRENCY: [CallbackQueryHandler(upgrade_currency_cb, pattern="^upg_")],
+        },
+        fallbacks=[CommandHandler("upgrade", cmd_upgrade)],
+        per_chat=True,
+    )
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # /trading — Statistiche auto-trader (wrapper verso bot.py cmd_stats)
 # /aperte  — Posizioni aperte auto-trader (wrapper verso bot.py cmd_posizioni_trader)
 # Queste funzioni vengono iniettate da bot.py tramite inject_bot_commands()

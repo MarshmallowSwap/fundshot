@@ -1132,6 +1132,10 @@ def main():
     # Registra wizard onboarding SaaS — DEVE essere prima di commands.register()
     app.add_handler(onboarding.build_onboarding_handler())
 
+    # Registra wizard upgrade piani
+    app.add_handler(commands.build_upgrade_handler())
+    app.add_handler(CommandHandler("plan", commands.cmd_plan))
+
     # Registra handler comandi (da commands.py)
     commands.inject_bot_commands(cmd_stats, cmd_posizioni_trader)
     commands.register(app)
