@@ -77,14 +77,37 @@ def _kb_main(configured: list) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(rows)
 
 
-def _kb_exchanges(configured: list) -> InlineKeyboardMarkup:
+
+async def _get_user_plan(chat_id: int) -> str:
+    """Legge il piano utente da Supabase (con check scadenza)."""
+    try:
+        from db.supabase_client import get_user, get_client
+        from datetime import datetime, timezone
+        user = await get_user(chat_id)
+        if not user or user.plan == "free":
+            return "free"
+        db  = get_client()
+        res = db.table("users").select("plan_expires_at").eq("id", user.id).single().execute()
+        exp = (res.data or {}).get("plan_expires_at")
+        if exp:
+            exp_dt = datetime.fromisoformat(exp.replace("Z", "+00:00"))
+            if datetime.now(timezone.utc) > exp_dt:
+                return "free"
+        return user.plan
+    except Exception:
+        return "free"
+
+
+def _kb_exchanges(configured: list, plan: str = "free") -> InlineKeyboardMarkup:
     buttons = []
+    # Pro: 1 exchange max — se ne ha già uno, blocca gli altri
+    pro_limit_reached = (plan == "pro" and len(configured) >= 1)
+
     for ex in ["bybit", "binance", "okx", "hyperliquid"]:
         meta    = EXCHANGE_META.get(ex, {})
         enabled = ex in SUPPORTED_EXCHANGES
         already = ex in configured
         if already:
-            # Due bottoni affiancati: riconfigura | rimuovi
             buttons.append([
                 InlineKeyboardButton(
                     f"✅ {meta['emoji']} {meta['name']}",
@@ -92,6 +115,12 @@ def _kb_exchanges(configured: list) -> InlineKeyboardMarkup:
                 ),
                 InlineKeyboardButton("🗑", callback_data=f"onb_del_{ex}"),
             ])
+        elif pro_limit_reached and enabled:
+            # Pro ha già un exchange — mostra bloccato
+            buttons.append([InlineKeyboardButton(
+                f"🔒 {meta['emoji']} {meta['name']} — Elite only",
+                callback_data="onb_pro_limit",
+            )])
         elif enabled:
             buttons.append([InlineKeyboardButton(
                 f"{meta['emoji']} {meta['name']}",
@@ -149,10 +178,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         )
 
     # Apre direttamente la scelta exchange
+    plan = await _get_user_plan(chat_id)
     await update.message.reply_text(
         header,
         parse_mode="Markdown",
-        reply_markup=_kb_exchanges(configured),
+        reply_markup=_kb_exchanges(configured, plan),
     )
     return ST_CHOOSE_EXCHANGE
 
@@ -168,15 +198,23 @@ async def main_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
         chat_id    = update.effective_chat.id
         user       = await get_user(chat_id)
         configured = user.active_exchanges if user else []
+        plan       = await _get_user_plan(chat_id)
         await query.edit_message_text(
             "🏦 *Choose the exchange to configure:*",
             parse_mode="Markdown",
-            reply_markup=_kb_exchanges(configured),
+            reply_markup=_kb_exchanges(configured, plan),
         )
         return ST_CHOOSE_EXCHANGE
 
     if data == "onb_coming_soon":
         await query.answer("🚧 Coming soon!", show_alert=True)
+        return ST_CHOOSE_EXCHANGE
+
+    if data == "onb_pro_limit":
+        await query.answer(
+            "Pro plan supports 1 exchange. Upgrade to Elite for multi-exchange.",
+            show_alert=True,
+        )
         return ST_CHOOSE_EXCHANGE
 
     if data.startswith("onb_del_"):
@@ -207,10 +245,11 @@ async def main_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
         chat_id    = update.effective_chat.id
         user       = await get_user(chat_id)
         configured = user.active_exchanges if user else []
+        plan       = await _get_user_plan(chat_id)
         await query.edit_message_text(
             "🏦 *Choose the exchange to configure:*",
             parse_mode="Markdown",
-            reply_markup=_kb_exchanges(configured),
+            reply_markup=_kb_exchanges(configured, plan),
         )
         return ST_CHOOSE_EXCHANGE
 
@@ -228,10 +267,11 @@ async def exchange_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         chat_id    = update.effective_chat.id
         user       = await get_user(chat_id)
         configured = user.active_exchanges if user else []
+        plan       = await _get_user_plan(chat_id)
         await query.edit_message_text(
             "🏦 *Choose the exchange to configure:*",
             parse_mode="Markdown",
-            reply_markup=_kb_exchanges(configured),
+            reply_markup=_kb_exchanges(configured, plan),
         )
         return ST_CHOOSE_EXCHANGE
 
@@ -263,10 +303,11 @@ async def environment_callback(update: Update, context: ContextTypes.DEFAULT_TYP
         chat_id    = update.effective_chat.id
         user       = await get_user(chat_id)
         configured = user.active_exchanges if user else []
+        plan       = await _get_user_plan(chat_id)
         await query.edit_message_text(
             "🏦 *Choose the exchange to configure:*",
             parse_mode="Markdown",
-            reply_markup=_kb_exchanges(configured),
+            reply_markup=_kb_exchanges(configured, plan),
         )
         return ST_CHOOSE_EXCHANGE
 
