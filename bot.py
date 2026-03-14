@@ -1285,6 +1285,10 @@ async def _setup_bot_menu(bot):
         BotCommand("upgrade",    "⚡ Upgrade to Pro or Elite"),
         BotCommand("referral",   "🔗 Your referral link + earnings"),
         BotCommand("setwallet",  "💸 Set USDT wallet for payouts"),
+        # ── Admin (owner only) ────────────────────────────────────────────────
+        BotCommand("addinf",     "👑 Make a user Influencer (admin only)"),
+        BotCommand("payoutlist", "💸 List pending referral payouts (admin only)"),
+        BotCommand("clearpayouts","✅ Clear payouts after sending (admin only)"),
         # ── Settings ──────────────────────────────────────────────────────────
         BotCommand("start",      "🚀 Configure exchange API keys"),
         BotCommand("deletekeys", "🗑 Remove your API keys"),

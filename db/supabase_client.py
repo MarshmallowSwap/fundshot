@@ -84,7 +84,7 @@ async def get_or_create_user(chat_id: int, handle: str = "") -> User:
                 id=u["id"],
                 chat_id=u["chat_id"],
                 telegram_handle=u.get("telegram_handle", ""),
-                plan=u.get("plan", "free"),
+                plan="elite" if chat_id == OWNER_CHAT_ID else u.get("plan", "free"),
                 active_exchanges=u.get("active_exchanges", []),
             )
         # Crea nuovo utente
@@ -122,7 +122,7 @@ async def get_user(chat_id: int) -> Optional[User]:
             id=u["id"],
             chat_id=u["chat_id"],
             telegram_handle=u.get("telegram_handle", ""),
-            plan=u.get("plan", "free"),
+            plan="elite" if chat_id == OWNER_CHAT_ID else u.get("plan", "free"),
             active_exchanges=u.get("active_exchanges", []),
         )
     except Exception as e:
@@ -140,7 +140,7 @@ async def get_all_users() -> list[User]:
                 id=u["id"],
                 chat_id=u["chat_id"],
                 telegram_handle=u.get("telegram_handle", ""),
-                plan=u.get("plan", "free"),
+                plan="elite" if u["chat_id"] == OWNER_CHAT_ID else u.get("plan", "free"),
                 active_exchanges=u.get("active_exchanges", []),
             )
             for u in res.data
