@@ -469,20 +469,96 @@ section { position: relative; z-index: 1; padding: 120px 48px; }
 
 /* ── User panel ── */
 #user-panel {
-  display: none; background: rgba(0,201,167,.06);
-  border: 1px solid rgba(0,201,167,.2);
-  border-radius: 14px; padding: 20px 24px; text-align: left;
-  width: 100%;
+  display: none; width: 100%;
 }
 #user-panel.show { display: block; }
-.user-greeting { font-weight: 700; color: var(--teal); margin-bottom: 8px; }
-.user-details { font-family: 'DM Mono', monospace; font-size: .75rem; color: var(--muted); line-height: 1.8; margin-bottom: 16px; }
-.user-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* Welcome panel */
+.welcome-panel {
+  background: linear-gradient(135deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 20px; padding: 32px;
+  position: relative; overflow: hidden;
+  text-align: left;
+}
+.welcome-panel::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--teal), transparent);
+}
+.welcome-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
+}
+.welcome-user { display: flex; align-items: center; gap: 14px; }
+.welcome-avatar {
+  width: 48px; height: 48px; border-radius: 14px;
+  background: rgba(0,201,167,.1); border: 1px solid rgba(0,201,167,.2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem;
+}
+.welcome-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.1rem; color: var(--text); }
+.welcome-handle { font-family: 'DM Mono', monospace; font-size: .75rem; color: var(--muted); margin-top: 2px; }
+.welcome-plan-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border-radius: 8px; font-weight: 700;
+  font-size: .8rem; font-family: 'DM Mono', monospace; letter-spacing: .05em;
+}
+.plan-free  { background: rgba(90,82,120,.2); color: #a09ab8; border: 1px solid rgba(90,82,120,.3); }
+.plan-pro   { background: rgba(212,168,67,.12); color: var(--gold2); border: 1px solid rgba(212,168,67,.25); }
+.plan-elite { background: rgba(0,201,167,.12); color: var(--teal); border: 1px solid rgba(0,201,167,.25); }
+
+/* Quick links grid */
+.welcome-links {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 12px; margin-bottom: 20px;
+}
+.welcome-link {
+  display: flex; align-items: center; gap: 12px;
+  background: rgba(255,255,255,.025); border: 1px solid rgba(255,255,255,.07);
+  border-radius: 14px; padding: 16px 18px;
+  text-decoration: none; color: var(--text);
+  transition: all .25s cubic-bezier(.34,1.56,.64,1);
+  cursor: pointer;
+}
+.welcome-link:hover { border-color: rgba(212,168,67,.3); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.4); }
+.welcome-link.primary { border-color: rgba(212,168,67,.25); background: rgba(212,168,67,.06); }
+.welcome-link.primary:hover { border-color: rgba(212,168,67,.5); box-shadow: 0 8px 28px rgba(212,168,67,.15); }
+.wl-icon { font-size: 1.5rem; flex-shrink: 0; }
+.wl-label { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .9rem; }
+.wl-sub { font-size: .75rem; color: var(--muted); margin-top: 2px; }
+
+/* Upgrade CTA inside panel */
+.welcome-upgrade {
+  background: rgba(212,168,67,.06); border: 1px solid rgba(212,168,67,.15);
+  border-radius: 12px; padding: 14px 18px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  flex-wrap: wrap;
+}
+.welcome-upgrade p { font-size: .85rem; color: var(--muted); }
+.welcome-upgrade strong { color: var(--text); }
+.btn-upgrade-sm {
+  background: var(--gold); color: #05040a; border: none;
+  padding: 8px 18px; border-radius: 7px; font-size: .8rem;
+  font-weight: 700; cursor: pointer; text-decoration: none;
+  white-space: nowrap; transition: all .2s;
+}
+.btn-upgrade-sm:hover { background: var(--gold2); }
+
+/* Footer del panel */
+.welcome-footer { display: flex; justify-content: flex-end; margin-top: 16px; }
+.btn-signout {
+  background: transparent; border: none; color: var(--muted);
+  font-size: .8rem; cursor: pointer; padding: 4px 8px;
+  transition: color .2s; font-family: 'Syne', sans-serif;
+}
+.btn-signout:hover { color: var(--red); }
+
 .btn-dash, .btn-out {
   padding: 10px 20px; border-radius: 7px; font-size: .85rem;
   font-weight: 600; text-decoration: none; cursor: pointer;
   transition: all .2s; border: 1px solid var(--border);
-  color: var(--text); background: var(--card2);
+  color: var(--text); background: transparent;
 }
 .btn-dash:hover { border-color: var(--gold); color: var(--gold2); }
 .btn-out:hover { border-color: var(--red); color: var(--red); }
@@ -938,16 +1014,65 @@ footer {
 <!-- ═══ CTA / LOGIN ═══ -->
 <section class="cta-section" id="login">
 <div class="cta-inner fade-up">
-  <h2>One click.<br><em>No registration.</em></h2>
-  <p>Sign in with your existing Telegram account. Your credentials are verified securely — the bot never sees them in plain text.</p>
+  <h2>One click.<br><em>You're in.</em></h2>
+  <p>Sign in with Telegram — no password, no form, no friction. Your dashboard opens instantly.</p>
 
   <div id="user-panel">
-    <div class="user-greeting">✓ Signed in successfully!</div>
-    <div class="user-details" id="user-details"></div>
-    <div class="user-actions">
-      <a href="#" class="btn-dash" id="dash-link">📊 Open Dashboard</a>
-      <a href="/admin" class="btn-dash" id="admin-link" style="display:none;background:rgba(255,77,109,.08);border-color:rgba(255,77,109,.25);color:#ff4d6d">⚙️ Admin</a>
-      <a href="#" class="btn-out" onclick="logout(event)">Sign out</a>
+    <div class="welcome-panel">
+      <!-- Header: avatar + nome + piano -->
+      <div class="welcome-header">
+        <div class="welcome-user">
+          <div class="welcome-avatar">⚡</div>
+          <div>
+            <div class="welcome-name" id="wp-name">Welcome back</div>
+            <div class="welcome-handle" id="wp-handle"></div>
+          </div>
+        </div>
+        <div class="welcome-plan-badge plan-free" id="wp-plan-badge">🆓 FREE</div>
+      </div>
+
+      <!-- Quick links -->
+      <div class="welcome-links">
+        <a href="#" id="dash-link" class="welcome-link primary">
+          <div class="wl-icon">📊</div>
+          <div>
+            <div class="wl-label">Open Dashboard</div>
+            <div class="wl-sub">Funding rates, positions, trading</div>
+          </div>
+        </a>
+        <a href="https://t.me/FundShot_bot" target="_blank" class="welcome-link">
+          <div class="wl-icon">🤖</div>
+          <div>
+            <div class="wl-label">Open Bot</div>
+            <div class="wl-sub">Telegram alerts & commands</div>
+          </div>
+        </a>
+        <a href="#" id="admin-link" class="welcome-link" style="display:none;border-color:rgba(255,77,109,.2)">
+          <div class="wl-icon">⚙️</div>
+          <div>
+            <div class="wl-label" style="color:#ff4d6d">Admin Panel</div>
+            <div class="wl-sub">Users, revenue, payouts</div>
+          </div>
+        </a>
+        <a href="https://t.me/FundShot_bot?start=upgrade_pro" target="_blank" class="welcome-link" id="wp-upgrade-link">
+          <div class="wl-icon">⚡</div>
+          <div>
+            <div class="wl-label" style="color:var(--gold2)">Upgrade to Pro</div>
+            <div class="wl-sub">Unlock auto-trading · $20/mo</div>
+          </div>
+        </a>
+      </div>
+
+      <!-- Upgrade banner (solo Free) -->
+      <div class="welcome-upgrade" id="wp-upgrade-banner">
+        <p><strong>You're on the Free plan.</strong> 10 alerts/day · no auto-trading · no pre-settlement.</p>
+        <a href="https://t.me/FundShot_bot?start=upgrade_pro" target="_blank" class="btn-upgrade-sm">Upgrade to Pro →</a>
+      </div>
+
+      <!-- Footer -->
+      <div class="welcome-footer">
+        <button class="btn-signout" onclick="logout(event)">Sign out</button>
+      </div>
     </div>
   </div>
 
@@ -1063,33 +1188,71 @@ window.onTelegramAuth = async function(user) {
       chat_id: data.chat_id, username: data.username,
       first_name: data.first_name, plan: data.plan,
     }));
+    localStorage.setItem('_auto_redirect', '0'); // primo login: non fare redirect
+    data._firstLogin = true;
     showUserPanel(data);
-    toast('Welcome, ' + (data.first_name || data.username) + '! ⚡', '✅', 5000);
+    toast('Welcome, ' + (data.first_name || data.username) + '! ⚡', '✅', 4000);
   } catch(e) { toast('Network error — please retry', '❌'); }
 };
 
 function showUserPanel(data) {
   const panel = document.getElementById('user-panel');
   const wrap  = document.getElementById('tg-login-wrap');
-  const details = document.getElementById('user-details');
-  const planLabel = {free:'🆓 Free', pro:'⚡ Pro', elite:'👑 Elite'}[data.plan] || data.plan;
-  details.innerHTML = [
-    '👤 @' + (data.username || '—'),
-    '🆔 ' + data.chat_id,
-    '💎 ' + planLabel,
-  ].join('<br>');
-  document.getElementById('dash-link').href = DASH_URL + '/dashboard?fs_token=' + localStorage.getItem('fs_token');
+  const plan  = data.plan || 'free';
+
+  // Nome e handle
+  const nameEl   = document.getElementById('wp-name');
+  const handleEl = document.getElementById('wp-handle');
+  if (nameEl)   nameEl.textContent   = data.first_name || data.username || 'Welcome';
+  if (handleEl) handleEl.textContent = data.username ? '@' + data.username : '';
+
+  // Piano badge
+  const planBadge = document.getElementById('wp-plan-badge');
+  const planMap   = {
+    free:  { label: '🆓 FREE',      cls: 'plan-free'  },
+    pro:   { label: '⚡ PRO',       cls: 'plan-pro'   },
+    elite: { label: '👑 ELITE',     cls: 'plan-elite' },
+  };
+  if (planBadge) {
+    const pl = planMap[plan] || planMap.free;
+    planBadge.textContent = pl.label;
+    planBadge.className   = 'welcome-plan-badge ' + pl.cls;
+  }
+
+  // Dashboard link con token
+  const dashLink = document.getElementById('dash-link');
+  if (dashLink) dashLink.href = DASH_URL + '/dashboard?fs_token=' + localStorage.getItem('fs_token');
+
+  // Admin link (solo owner)
   const adminLink = document.getElementById('admin-link');
   if (adminLink) {
     if (data.chat_id === OWNER_CHAT_ID) {
-      adminLink.style.display = 'inline-block';
+      adminLink.style.display = 'flex';
+      adminLink.href = '/admin';
       localStorage.setItem('admin_token', localStorage.getItem('fs_token'));
     } else {
       adminLink.style.display = 'none';
     }
   }
+
+  // Upgrade link e banner — nascondi se Pro/Elite
+  const upgradeLink   = document.getElementById('wp-upgrade-link');
+  const upgradeBanner = document.getElementById('wp-upgrade-banner');
+  const isFree = plan === 'free';
+  if (upgradeLink)   upgradeLink.style.display   = isFree ? 'flex' : 'none';
+  if (upgradeBanner) upgradeBanner.style.display  = isFree ? 'flex' : 'none';
+
+  // Mostra panel, nascondi widget
   panel.classList.add('show');
   if (wrap) wrap.style.display = 'none';
+
+  // Auto-redirect alla dashboard dopo 2s se già loggato (non al primo login)
+  const isAutoLogin = !data._firstLogin;
+  if (isAutoLogin && localStorage.getItem('_auto_redirect') === '1') {
+    setTimeout(() => {
+      window.location.href = DASH_URL + '/dashboard?fs_token=' + localStorage.getItem('fs_token');
+    }, 1500);
+  }
 }
 
 function logout(e) {
@@ -1114,7 +1277,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const stored = localStorage.getItem('fs_user');
   const token  = localStorage.getItem('fs_token');
   if (stored && token) {
-    try { showUserPanel(JSON.parse(stored)); } catch(e) {}
+    try {
+      localStorage.setItem('_auto_redirect', '1'); // già loggato: abilita redirect
+      showUserPanel(JSON.parse(stored));
+    } catch(e) {}
   }
 });
 </script>
