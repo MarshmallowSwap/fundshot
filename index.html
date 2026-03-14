@@ -730,7 +730,7 @@ nav {
   <div class="slabel">Panoramica mercato</div>
 
   <!-- Upgrade banner Free users -->
-  <div class="upgrade-banner" id="banner-dashboard">
+  <div class="upgrade-banner" id="banner-dashboard" style="display:none">
     <div class="ub-left">
       <div class="ub-icon">⚡</div>
       <div class="ub-text">
@@ -794,7 +794,7 @@ nav {
 <!-- ═══════════════════════════════════════════ -->
 <div class="page" id="page-funding">
   <!-- Upgrade banner Free users -->
-  <div class="upgrade-banner" id="banner-funding">
+  <div class="upgrade-banner" id="banner-funding" style="display:none">
     <div class="ub-left">
       <div class="ub-icon">⏰</div>
       <div class="ub-text">
@@ -837,7 +837,7 @@ nav {
   <div id="pos-warn" class="warn" style="display:none"></div>
 
   <!-- Upgrade banner Free users -->
-  <div class="upgrade-banner" id="banner-positions">
+  <div class="upgrade-banner" id="banner-positions" style="display:none">
     <div class="ub-left">
       <div class="ub-icon">🤖</div>
       <div class="ub-text">
@@ -3637,43 +3637,40 @@ async function initPlanGate() {
   const urlToken  = urlParams.get('fs_token');
   if (urlToken) {
     localStorage.setItem('fs_token', urlToken);
-    // Pulisce URL senza ricaricare la pagina
     history.replaceState({}, '', window.location.pathname);
   }
 
   const token = localStorage.getItem('fs_token');
-  if (!token) return;
+  if (!token) {
+    // Nessun token → mostra banners Free, nessun lock (lock solo se loggato Free)
+    return;
+  }
 
   try {
-    const r = await fetch(proxyBase().replace(':8080','') + '/api/me', {
+    const r = await fetch('https://api.fundshot.app/api/me', {
       headers: { 'Authorization': 'Bearer ' + token }
     });
-    // Prova con HTTPS proxy
-    const apiUrl = 'https://api.fundshot.app/api/me';
-    const r2 = await fetch(apiUrl, {
-      headers: { 'Authorization': 'Bearer ' + token }
-    });
-    if (!r2.ok) return;
-    const data = await r2.json();
+    if (!r.ok) return;
+    const data = await r.json();
     if (!data.ok) return;
 
     _userPlan   = data.plan || 'free';
     _userName   = data.username || '';
-    _userChatId = data.chat_id || 0;
+    _userChatId = data.chat_id  || 0;
 
     // Mostra badge utente in navbar
-    const badge = document.getElementById('user-badge');
+    const badge  = document.getElementById('user-badge');
     const nameEl = document.getElementById('nav-username');
-    const planEl  = document.getElementById('nav-plan-badge');
+    const planEl = document.getElementById('nav-plan-badge');
     if (badge && nameEl && planEl) {
-      nameEl.textContent = _userName ? '@' + _userName : 'User';
-      const pl = PLAN_LABELS[_userPlan] || PLAN_LABELS.free;
+      nameEl.textContent  = _userName ? '@' + _userName : 'User';
+      const pl            = PLAN_LABELS[_userPlan] || PLAN_LABELS.free;
       planEl.textContent  = pl.label;
       planEl.className    = pl.cls;
       badge.style.display = 'flex';
     }
 
-    // Applica lock sulle pagine Pro
+    // Applica lock/banner in base al piano reale
     applyPlanLocks();
 
   } catch(e) {
