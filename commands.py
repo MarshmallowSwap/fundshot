@@ -288,47 +288,78 @@ async def deletekeys_callback(update: Update, context: ContextTypes.DEFAULT_TYPE
 # ══════════════════════════════════════════════════════════════════════════════
 
 async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    from db.supabase_client import get_user
+    chat_id = update.effective_chat.id
+    user    = await get_user(chat_id)
+    plan    = user.plan if user else "free"
+
+    # Verifica scadenza
+    if plan != "free":
+        try:
+            from db.supabase_client import get_client
+            from datetime import datetime, timezone
+            db  = get_client()
+            res = db.table("users").select("plan_expires_at").eq("id", user.id).single().execute()
+            exp = (res.data or {}).get("plan_expires_at")
+            if exp:
+                exp_dt = datetime.fromisoformat(exp.replace("Z", "+00:00"))
+                if datetime.now(timezone.utc) > exp_dt:
+                    plan = "free"
+        except Exception:
+            pass
+
+    plan_emoji = {"free": "🆓", "pro": "⚡", "elite": "👑"}.get(plan, "🆓")
+
     text = (
-        "🤖 *FUNDING KING BOT — Comandi*\n"
-        "━━━━━━━━━━━━━━━━━━━━━\n"
-        "📊 *FUNDING RATE*\n"
-        "/top10 — Top 10 SHORT + LONG in tempo reale\n"
-        "/storico `SYMBOL` — Ultimi 8 cicli di funding\n"
-        "/storico `SYMBOL 7g` — Storico 7 giorni + statistiche\n"
-        "/backtest `SYMBOL` — Simula P&L 30 giorni\n"
-        "/backtest `top10` — Backtest top 10 simboli\n"
-        "/backtest `watchlist` — Backtest tua watchlist\n\n"
+        f"⚡ *FundShot Bot — Commands*\n"
+        f"Your plan: {plan_emoji} *{plan.capitalize()}*\n"
+        "━━━━━━━━━━━━━━━━━━━━━\n\n"
+
+        "📊 *FUNDING RATES*\n"
+        "/top10 — Top 10 SHORT + LONG rates\n"
+        "/storico `SYMBOL` — Last 8 funding cycles\n"
+        "/storico `SYMBOL 7g` — 7-day history + stats\n"
+        "/backtest `SYMBOL` — Simulate 30-day P&L ⚡\n\n"
+
         "━━━━━━━━━━━━━━━━━━━━━\n"
         "💼 *ACCOUNT*\n"
-        "/saldo — Saldo e equity Bybit\n"
-        "/posizioni — Posizioni aperte con PnL%\n"
-        "/rischio — Analisi rischio e distanza liquidazione\n"
-        "/summary — Riepilogo rapido portafoglio\n\n"
+        "/saldo — Wallet balance per exchange\n"
+        "/posizioni — Open positions with PnL\n"
+        "/rischio — Risk analysis + liquidation distance\n"
+        "/summary — Portfolio quick overview\n\n"
+
         "━━━━━━━━━━━━━━━━━━━━━\n"
-        "🤖 *AUTO-TRADING*\n"
-        "/trading — Statistiche e posizioni bot\n"
-        "/aperte — Posizioni aperte dall\'auto-trader\n\n"
+        "🤖 *AUTO-TRADING* ⚡\n"
+        "/autotrader — Toggle auto-trader on/off\n"
+        "/trading — Bot stats and open positions\n\n"
+
         "━━━━━━━━━━━━━━━━━━━━━\n"
-        "🎯 *WATCHLIST & NOTIFICHE*\n"
-        "/watchlist — Stato completo watchlist\n"
-        "/watch `SYM` — Aggiungi simboli (es. BTC ETH SOL)\n"
-        "/unwatch `SYM` — Rimuovi | `/unwatch all` per reset\n"
-        "/mute `SYM` — Silenzia alert per simbolo\n"
-        "/unmute `SYM` — Riattiva alert\n"
-        "/alerts — Soglie custom per simbolo\n"
-        "/alerts `SYM livello valore` — Imposta soglia custom\n\n"
+        "🎯 *WATCHLIST*\n"
+        "/watchlist — Full watchlist status\n"
+        "/watch `BTC ETH SOL` — Add symbols\n"
+        "/unwatch `SYM` — Remove | `/unwatch all` reset\n"
+        "/mute `SYM` — Mute alerts for symbol\n"
+        "/unmute `SYM` — Reactivate alerts\n\n"
+
         "━━━━━━━━━━━━━━━━━━━━━\n"
-        "🔧 *SISTEMA*\n"
-        "/start — Setup credenziali API\n"
-        "/status — Stato bot, uptime, alert attivi\n"
-        "/test — Test connessione Bybit\n"
-        "/deletekeys — Elimina le tue API key\n\n"
+        "💳 *SUBSCRIPTION*\n"
+        "/plan — Your plan, expiry and billing\n"
+        "/upgrade — Upgrade to Pro or Elite\n"
+        "/referral — Your referral link + earnings\n"
+        "/setwallet — Set USDT wallet for payouts\n\n"
+
         "━━━━━━━━━━━━━━━━━━━━━\n"
-        "🔔 *Alert automatici:*\n"
+        "⚙️ *SETTINGS*\n"
+        "/start — Configure exchange API keys\n"
+        "/deletekeys — Remove your API keys\n"
+        "/status — Bot status and uptime\n\n"
+
+        "━━━━━━━━━━━━━━━━━━━━━\n"
+        "🔔 *Alert levels:*\n"
         "🎰 JACKPOT ≥ ±3% | 🔴 HARD ≥ ±2%\n"
         "🔥 EXTREME ≥ ±1.5% | 🚨 HIGH ≥ ±1%\n"
-        "⏰ PRE-SETTLEMENT 14min prima | 🚀 PUMP/DUMP ≥ ±5% in 1H\n"
-        "💧 Liquidazioni ≥ $100k"
+        "📊 SOFT ≥ ±0.1% | ⏰ Pre-settlement ⚡\n\n"
+        "_⚡ = Pro/Elite only_"
     )
     await update.message.reply_text(text, parse_mode="Markdown")
 
