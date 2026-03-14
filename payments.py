@@ -261,10 +261,19 @@ def setup_subscription_plans() -> dict:
                 "success_url":      "https://fundshot.app?payment=success",
                 "cancel_url":       "https://fundshot.app?payment=cancelled",
             })
-            plan_id = str(result.get("id", ""))
-            if plan_id:
+            logger.info("NOWPayments subscription plan response (%s): %s", plan_key, result)
+            # NOWPayments può usare 'id', 'plan_id', o avere i dati in 'data'
+            plan_id = str(
+                result.get("id") or
+                result.get("plan_id") or
+                (result.get("data") or {}).get("id", "") or
+                ""
+            )
+            if plan_id and plan_id not in ("None", ""):
                 _SUBSCRIPTION_PLAN_IDS[plan_key] = plan_id
                 logger.info("Subscription plan creato: %s → id=%s", plan_key, plan_id)
+            else:
+                logger.warning("Subscription plan %s: id non trovato: %s", plan_key, result)
         except Exception as e:
             logger.error("setup_subscription_plans %s: %s", plan_key, e)
 
