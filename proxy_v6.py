@@ -433,17 +433,23 @@ class ProxyHandler(BaseHTTPRequestHandler):
                 return
             try:
                 import asyncio
-                from db.supabase_client import get_user, get_credentials
-                u    = asyncio.run(get_user(user["chat_id"]))
-                cred = asyncio.run(get_credentials(u.id, "bybit")) if u else None
+                from db.supabase_client import get_user, get_client as _me_gc
+                u = asyncio.run(get_user(user["chat_id"]))
+                # Leggi plan_expires_at
+                plan_exp = None
+                try:
+                    _res = _me_gc().table("users").select("plan_expires_at").eq("id", u.id).single().execute()
+                    plan_exp = (_res.data or {}).get("plan_expires_at")
+                except Exception:
+                    pass
                 self._json({
                     "ok":               True,
                     "chat_id":          user["chat_id"],
                     "username":         user.get("username", ""),
-                    "plan":             user.get("plan", "free"),
+                    "first_name":       user.get("first_name", ""),
+                    "plan":             u.plan if u else user.get("plan", "free"),
+                    "plan_expires_at":  plan_exp,
                     "active_exchanges": u.active_exchanges if u else [],
-                    "bybit_configured": cred is not None,
-                    "bybit_env":        cred.environment if cred else None,
                 })
             except Exception as e:
                 self._json({"ok": False, "error": str(e)}, 500)

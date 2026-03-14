@@ -542,6 +542,32 @@ nav {
 @media(max-width:900px){ .stats-grid{grid-template-columns:1fr 1fr} .g2,.g2eq{grid-template-columns:1fr} .settings-3col{grid-template-columns:1fr!important} }
 @media(max-width:700px){ .settings-4col{grid-template-columns:1fr!important} }
 @media(max-width:520px){ .stats-grid{grid-template-columns:1fr} .nav-center{display:none} .page{padding:18px 12px} }
+
+/* ── Plan gate overlay ────────────────────────────────────── */
+.plan-lock {
+  position: absolute; inset: 0; z-index: 50;
+  background: rgba(7,5,10,.85);
+  backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 12px;
+}
+.plan-lock-box {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 16px; padding: 40px 32px; text-align: center;
+  max-width: 380px;
+}
+.plan-lock-icon { font-size: 48px; margin-bottom: 16px; }
+.plan-lock-title { font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+.plan-lock-sub { font-size: 14px; color: var(--text2); margin-bottom: 24px; line-height: 1.6; }
+.plan-lock-btn {
+  display: inline-block; background: var(--gold); color: #07050a;
+  padding: 12px 28px; border-radius: 8px; font-weight: 700;
+  text-decoration: none; font-size: 14px; cursor: pointer; border: none;
+}
+.plan-lock-btn:hover { background: var(--gold-lt); }
+.plan-badge-free  { background: rgba(90,84,117,.3); color: #a09ab8; }
+.plan-badge-pro   { background: rgba(201,168,76,.15); color: var(--gold); }
+.plan-badge-elite { background: rgba(123,108,255,.2); color: #7b6cff; }
 </style>
 </head>
 <body>
@@ -549,18 +575,22 @@ nav {
 <!-- ═══ NAV ═══ -->
 <nav>
   <div class="logo">
-    <div class="logo-icon">👑</div>
-    <span class="logo-text">FUNDING KING</span>
+    <div class="logo-icon">⚡</div>
+    <span class="logo-text">FUNDSHOT</span>
   </div>
   <div class="nav-center">
     <button class="np active" onclick="goto('dashboard',this)">Dashboard</button>
     <button class="np" onclick="goto('funding',this)">Funding</button>
     <button class="np" onclick="goto('positions',this)">Posizioni</button>
-    <button class="np" onclick="goto('trading',this)">⚡ Trading</button>
+    <button class="np" onclick="gotoGated('trading',this)" id="nav-trading">⚡ Trading</button>
     <button class="np" onclick="goto('settings',this)">Settings</button>
     <button class="np" onclick="goto('docs',this)">📖 Docs</button>
   </div>
   <div class="nav-right">
+    <div id="user-badge" style="display:none;align-items:center;gap:8px;font-size:12px">
+      <span id="nav-username" style="color:var(--text2)"></span>
+      <span id="nav-plan-badge" style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700"></span>
+    </div>
     <div class="refresh-bar"><div class="refresh-fill" id="rfill" style="width:100%"></div></div>
     <span class="countdown" id="countdown">60s</span>
     <div class="nav-status">
@@ -3412,7 +3442,119 @@ function startCountdown(){
   },1000);
 }
 
+
+// ── Plan gate ─────────────────────────────────────────────────────────────────
+let _userPlan  = 'free';
+let _userName  = '';
+let _userChatId = 0;
+
+const PLAN_LABELS = {
+  free:  { label: 'FREE',  cls: 'plan-badge-free'  },
+  pro:   { label: '⚡ PRO', cls: 'plan-badge-pro'   },
+  elite: { label: '👑 ELITE', cls: 'plan-badge-elite' },
+};
+
+// Pagine che richiedono Pro o superiore
+const PRO_PAGES = ['trading'];
+
+async function initPlanGate() {
+  // Leggi token dall'URL o localStorage
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlToken  = urlParams.get('fs_token');
+  if (urlToken) {
+    localStorage.setItem('fs_token', urlToken);
+    // Pulisce URL senza ricaricare la pagina
+    history.replaceState({}, '', window.location.pathname);
+  }
+
+  const token = localStorage.getItem('fs_token');
+  if (!token) return;
+
+  try {
+    const r = await fetch(proxyBase().replace(':8080','') + '/api/me', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    // Prova con HTTPS proxy
+    const apiUrl = 'https://api.fundshot.app/api/me';
+    const r2 = await fetch(apiUrl, {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (!r2.ok) return;
+    const data = await r2.json();
+    if (!data.ok) return;
+
+    _userPlan   = data.plan || 'free';
+    _userName   = data.username || '';
+    _userChatId = data.chat_id || 0;
+
+    // Mostra badge utente in navbar
+    const badge = document.getElementById('user-badge');
+    const nameEl = document.getElementById('nav-username');
+    const planEl  = document.getElementById('nav-plan-badge');
+    if (badge && nameEl && planEl) {
+      nameEl.textContent = _userName ? '@' + _userName : 'User';
+      const pl = PLAN_LABELS[_userPlan] || PLAN_LABELS.free;
+      planEl.textContent  = pl.label;
+      planEl.className    = pl.cls;
+      badge.style.display = 'flex';
+    }
+
+    // Applica lock sulle pagine Pro
+    applyPlanLocks();
+
+  } catch(e) {
+    console.warn('initPlanGate:', e);
+  }
+}
+
+function applyPlanLocks() {
+  const planOrder = { free: 0, pro: 1, elite: 2 };
+  const userLevel = planOrder[_userPlan] || 0;
+
+  PRO_PAGES.forEach(pageId => {
+    const page = document.getElementById('page-' + pageId);
+    if (!page) return;
+
+    // Rimuovi lock esistente se c'è
+    const existing = page.querySelector('.plan-lock');
+    if (existing) existing.remove();
+
+    if (userLevel < 1) {
+      // Free → aggiungi overlay lock
+      page.style.position = 'relative';
+      const overlay = document.createElement('div');
+      overlay.className = 'plan-lock';
+      overlay.innerHTML = `
+        <div class="plan-lock-box">
+          <div class="plan-lock-icon">🔒</div>
+          <div class="plan-lock-title">Pro Required</div>
+          <div class="plan-lock-sub">
+            Auto-trading, Money Management, Guardian and advanced analytics
+            are available from the <strong>Pro plan</strong>.
+          </div>
+          <a href="https://t.me/FundShot_bot?start=upgrade_pro" target="_blank" class="plan-lock-btn">
+            Upgrade to Pro — $20/mo →
+          </a>
+          <div style="margin-top:12px;font-size:12px;color:var(--text3)">
+            Already subscribed? <a href="https://fundshot.app" style="color:var(--gold)">Sign in again</a>
+          </div>
+        </div>`;
+      page.appendChild(overlay);
+    }
+  });
+}
+
+function gotoGated(id, btn) {
+  const planOrder = { free: 0, pro: 1, elite: 2 };
+  const userLevel = planOrder[_userPlan] || 0;
+  if (PRO_PAGES.includes(id) && userLevel < 1) {
+    // Mostra comunque la pagina ma con overlay lock
+  }
+  goto(id, btn);
+}
+
 // ─── INIT ───
+initPlanGate();
 loadPublic();
 fetchResults();
 fetchClosedPnl();
