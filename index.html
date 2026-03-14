@@ -572,11 +572,16 @@ nav {
 .ub-btn:hover { background: var(--gold-lt); }
 /* ── Plan gate overlay ────────────────────────────────────── */
 .plan-lock {
-  position: absolute; inset: 0; z-index: 50;
-  background: rgba(7,5,10,.85);
-  backdrop-filter: blur(4px);
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(7,5,10,.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   display: flex; align-items: center; justify-content: center;
-  border-radius: 12px;
+}
+#page-trading.locked-page > *:not(.plan-lock) {
+  filter: blur(6px);
+  pointer-events: none;
+  user-select: none;
 }
 .plan-lock-box {
   background: var(--bg2); border: 1px solid var(--border);
@@ -641,7 +646,7 @@ nav {
   <div class="slabel">Panoramica mercato</div>
 
   <!-- Upgrade banner Free users -->
-  <div class="upgrade-banner hidden" id="banner-dashboard">
+  <div class="upgrade-banner" id="banner-dashboard">
     <div class="ub-left">
       <div class="ub-icon">⚡</div>
       <div class="ub-text">
@@ -705,7 +710,7 @@ nav {
 <!-- ═══════════════════════════════════════════ -->
 <div class="page" id="page-funding">
   <!-- Upgrade banner Free users -->
-  <div class="upgrade-banner hidden" id="banner-funding">
+  <div class="upgrade-banner" id="banner-funding">
     <div class="ub-left">
       <div class="ub-icon">⏰</div>
       <div class="ub-text">
@@ -748,7 +753,7 @@ nav {
   <div id="pos-warn" class="warn" style="display:none"></div>
 
   <!-- Upgrade banner Free users -->
-  <div class="upgrade-banner hidden" id="banner-positions">
+  <div class="upgrade-banner" id="banner-positions">
     <div class="ub-left">
       <div class="ub-icon">🤖</div>
       <div class="ub-text">
@@ -3583,11 +3588,11 @@ function applyPlanLocks() {
     const existing = page.querySelector('.plan-lock');
     if (existing) existing.remove();
     if (isFree) {
-      page.style.position = 'relative';
+      page.classList.add('locked-page');
       const overlay = document.createElement('div');
       overlay.className = 'plan-lock';
       overlay.innerHTML = `
-        <div class="plan-lock-box">
+        <div class="plan-lock-box" style="position:relative;z-index:201">
           <div class="plan-lock-icon">🔒</div>
           <div class="plan-lock-title">Pro Required</div>
           <div class="plan-lock-sub">
@@ -3602,19 +3607,17 @@ function applyPlanLocks() {
           </div>
         </div>`;
       page.appendChild(overlay);
+    } else {
+      page.classList.remove('locked-page');
     }
   });
 
-  // ── Soft banners sulle altre pagine (solo Free) ───────────────────────────
+  // ── Soft banners: visibili per Free, nascosti per Pro/Elite ─────────────
   const banners = ['banner-dashboard', 'banner-positions', 'banner-funding'];
   banners.forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
-    if (isFree) {
-      el.classList.remove('hidden');
-    } else {
-      el.classList.add('hidden');
-    }
+    el.style.display = isFree ? 'flex' : 'none';
   });
 
   // ── Navbar Trading tab: mostra lucchetto per Free ─────────────────────────
@@ -3625,12 +3628,9 @@ function applyPlanLocks() {
 }
 
 function gotoGated(id, btn) {
-  const planOrder = { free: 0, pro: 1, elite: 2 };
-  const userLevel = planOrder[_userPlan] || 0;
-  if (PRO_PAGES.includes(id) && userLevel < 1) {
-    // Mostra comunque la pagina ma con overlay lock
-  }
   goto(id, btn);
+  // Riapplica lock nel caso il piano sia Free
+  applyPlanLocks();
 }
 
 // ─── INIT ───
