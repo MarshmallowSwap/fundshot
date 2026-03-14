@@ -2355,9 +2355,11 @@ def register(app):
     app.add_handler(CommandHandler("deletekeys", deletekeys_cmd))
 
     # ── Referral ──────────────────────────────────────────────────────────────
-    app.add_handler(CommandHandler("referral",   cmd_referral))
-    app.add_handler(CommandHandler("setwallet",  cmd_setwallet))
-    app.add_handler(CommandHandler("addinf",     cmd_addinf))
+    app.add_handler(CommandHandler("referral",    cmd_referral))
+    app.add_handler(CommandHandler("setwallet",   cmd_setwallet))
+    app.add_handler(CommandHandler("addinf",      cmd_addinf))
+    app.add_handler(CommandHandler("payoutlist",  cmd_payoutlist))
+    app.add_handler(CommandHandler("clearpayouts", cmd_clearpayouts))
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -2522,3 +2524,107 @@ async def cmd_addinf(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
     except Exception as e:
         logger.warning("addinf notify: %s", e)
+
+
+async def cmd_payoutlist(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Admin only: lista dei payout referral da fare questo mese."""
+    import os
+    from db.supabase_client import get_client
+
+    chat_id = str(update.effective_chat.id)
+    owner   = str(os.getenv("CHAT_ID", ""))
+    if chat_id != owner:
+        await update.message.reply_text("⛔ Not authorized.")
+        return
+
+    db = get_client()
+    try:
+        res = db.table("users").select(
+            "chat_id,telegram_handle,referral_balance_usd,referral_wallet_usdt,is_influencer"
+        ).gt("referral_balance_usd", 0).order("referral_balance_usd", desc=True).execute()
+
+        users = res.data or []
+
+        if not users:
+            await update.message.reply_text("✅ No pending payouts this month.")
+            return
+
+        total = sum(float(u.get("referral_balance_usd", 0) or 0) for u in users)
+        lines = [f"💸 *Referral Payout List* — {len(users)} pending\n"]
+
+        for u in users:
+            balance  = float(u.get("referral_balance_usd", 0) or 0)
+            wallet   = u.get("referral_wallet_usdt") or "⚠️ NO WALLET"
+            handle   = u.get("telegram_handle") or str(u.get("chat_id"))
+            inf_tag  = " 👑" if u.get("is_influencer") else ""
+            has_wal  = "✅" if u.get("referral_wallet_usdt") else "❌"
+
+            lines.append(
+                f"{has_wal} @{handle}{inf_tag}\n"
+                f"   Amount: `${balance:.4f} USDT`\n"
+                f"   Wallet: `{wallet}`"
+            )
+
+        lines += [
+            f"\n{'─'*20}",
+            f"💰 Total to send: `${total:.4f} USDT`",
+            "",
+            "After sending, use /clearpayouts to reset balances.",
+        ]
+
+        await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
+
+    except Exception as e:
+        await update.message.reply_text(f"❌ Error: {e}")
+
+
+async def cmd_clearpayouts(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Admin only: azzera i balance referral dopo aver fatto i pagamenti."""
+    import os
+    from db.supabase_client import get_client
+
+    chat_id = str(update.effective_chat.id)
+    owner   = str(os.getenv("CHAT_ID", ""))
+    if chat_id != owner:
+        await update.message.reply_text("⛔ Not authorized.")
+        return
+
+    db = get_client()
+    try:
+        res = db.table("users").select("id,chat_id,telegram_handle,referral_balance_usd").gt(
+            "referral_balance_usd", 0
+        ).execute()
+        users = res.data or []
+
+        if not users:
+            await update.message.reply_text("Nothing to clear.")
+            return
+
+        # Azzera balance di tutti
+        for u in users:
+            db.table("users").update({"referral_balance_usd": 0.0}).eq("id", u["id"]).execute()
+
+        # Notifica ogni utente
+        for u in users:
+            try:
+                bal = float(u.get("referral_balance_usd", 0) or 0)
+                await context.bot.send_message(
+                    chat_id=u["chat_id"],
+                    text=(
+                        f"💸 *Referral Payout Sent!*\n\n"
+                        f"Amount: `${bal:.4f} USDT`\n\n"
+                        f"Check your wallet — payment sent this month.\n"
+                        f"Keep referring to earn more! /referral"
+                    ),
+                    parse_mode="Markdown",
+                )
+            except Exception:
+                pass
+
+        await update.message.reply_text(
+            f"✅ Cleared {len(users)} balances.\n"
+            f"All users notified of their payout."
+        )
+
+    except Exception as e:
+        await update.message.reply_text(f"❌ Error: {e}")
