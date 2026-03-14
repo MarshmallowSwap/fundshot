@@ -108,6 +108,39 @@ class FundingTrader:
         self._recently_closed: dict[str, float] = {}
         self.results:          list[dict] = []
 
+        # Contatore posizioni giornaliere (per limite Pro = 5/day)
+        self._daily_positions: dict[str, int] = {}   # {"YYYY-MM-DD": count}
+
+    def _daily_positions_count(self) -> int:
+        """Posizioni aperte oggi."""
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        return self._daily_positions.get(today, 0)
+
+    def _increment_daily_positions(self):
+        """Incrementa il contatore giornaliero."""
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        self._daily_positions[today] = self._daily_positions.get(today, 0) + 1
+
+    async def _get_plan(self) -> str:
+        """Legge il piano attuale dell'utente da Supabase."""
+        try:
+            from db.supabase_client import get_client as _gc
+            from datetime import datetime as _dt
+            db  = _gc()
+            res = db.table("users").select("plan,plan_expires_at").eq("id", self.user_id).single().execute()
+            d   = res.data or {}
+            plan = d.get("plan", "free")
+            if plan == "free":
+                return "free"
+            exp = d.get("plan_expires_at")
+            if exp:
+                exp_dt = _dt.fromisoformat(exp.replace("Z", "+00:00"))
+                if _dt.now(timezone.utc) > exp_dt:
+                    return "free"
+            return plan
+        except Exception:
+            return "free"
+
     # ── LIVELLO FUNDING ───────────────────────────────────────────────────────
 
     def get_level(self, rate: float) -> Optional[str]:
@@ -159,6 +192,17 @@ class FundingTrader:
             del self._recently_closed[symbol]
         if len(self.positions) >= self.cfg["max_positions"]:
             return False, "max posizioni raggiunte"
+
+        # ── Limite giornaliero per piano Pro (5 pos/day) ──────────────────────
+        plan = await self._get_plan()
+        if plan == "free":
+            return False, "piano free — auto-trading non disponibile"
+        if plan == "pro":
+            PRO_DAILY_LIMIT = 5
+            daily = self._daily_positions_count()
+            if daily >= PRO_DAILY_LIMIT:
+                return False, f"limite giornaliero Pro raggiunto ({PRO_DAILY_LIMIT}/day) — upgrade a Elite per posizioni illimitate"
+
         return True, "ok"
 
     # ── APERTURA TRADE ────────────────────────────────────────────────────────
@@ -227,6 +271,7 @@ class FundingTrader:
             order_id=result.order_id,
         )
         self.positions[symbol] = pos
+        self._increment_daily_positions()  # traccia per limite Pro
 
         emoji = {"jackpot":"🎰","hard":"🔴","extreme":"🔥","high":"🚨","soft":"📊"}.get(level,"📊")
         strat = (
