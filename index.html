@@ -1612,6 +1612,7 @@ nav {
       <a href="#doc-levels" style="color:var(--p2);font-size:.875rem;text-decoration:none;display:flex;align-items:center;gap:8px;padding:4px 0"><span style="color:var(--text3);font-family:monospace;font-size:.8rem">02</span> Alert Levels</a>
       <a href="#doc-commands" style="color:var(--p2);font-size:.875rem;text-decoration:none;display:flex;align-items:center;gap:8px;padding:4px 0"><span style="color:var(--text3);font-family:monospace;font-size:.8rem">06</span> Telegram Commands</a>
       <a href="#doc-trading" style="color:var(--p2);font-size:.875rem;text-decoration:none;display:flex;align-items:center;gap:8px;padding:4px 0"><span style="color:var(--text3);font-family:monospace;font-size:.8rem">03</span> Auto-Trading</a>
+      <a href="#doc-guardian" style="color:var(--p2);font-size:.875rem;text-decoration:none;display:flex;align-items:center;gap:8px;padding:4px 0"><span style="color:var(--text3);font-family:monospace;font-size:.8rem">03b</span> Guardian &amp; Dashboard Cards</a>
       <a href="#doc-referral" style="color:var(--p2);font-size:.875rem;text-decoration:none;display:flex;align-items:center;gap:8px;padding:4px 0"><span style="color:var(--text3);font-family:monospace;font-size:.8rem">07</span> Referral Program</a>
       <a href="#doc-exchanges" style="color:var(--p2);font-size:.875rem;text-decoration:none;display:flex;align-items:center;gap:8px;padding:4px 0"><span style="color:var(--text3);font-family:monospace;font-size:.8rem">04</span> Supported Exchanges</a>
       <a href="#doc-glossary" style="color:var(--p2);font-size:.875rem;text-decoration:none;display:flex;align-items:center;gap:8px;padding:4px 0"><span style="color:var(--text3);font-family:monospace;font-size:.8rem">08</span> Glossary</a>
@@ -1695,6 +1696,125 @@ nav {
       </div>
     </div>
     <div style="background:rgba(245,158,11,.05);border:1px solid rgba(245,158,11,.15);border-radius:10px;padding:14px 18px;font-size:.85rem;color:var(--text2)"><strong style="color:var(--amber2)">💡 Direction:</strong> Positive funding → bot opens <strong style="color:var(--red2)">SHORT</strong>. Negative funding → bot opens <strong style="color:var(--teal2)">LONG</strong>. Goal: capture mean reversion while earning funding payments.</div>
+  </div>
+
+  <!-- 03b. SETUP + GUARDIAN + MM + PNL -->
+  <div id="doc-guardian" style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:20px;position:relative;overflow:hidden">
+    <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--p1),transparent)"></div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+      <span style="font-family:'DM Mono',monospace;font-size:.65rem;background:var(--p1);color:#fff;padding:3px 10px;border-radius:4px;font-weight:700">03b</span>
+      <span style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;color:var(--text)">Setup, Guardian &amp; Dashboard Cards <span style="font-size:.7rem;background:rgba(255,193,7,.1);color:var(--amber2);padding:2px 8px;border-radius:4px;font-family:'DM Mono',monospace;font-weight:400;margin-left:4px">⚡ Pro / Elite</span></span>
+    </div>
+    <p style="color:var(--text3);font-size:.8rem;font-family:'DM Mono',monospace;letter-spacing:.05em;margin-bottom:20px">The Trading dashboard gives you full control over three interconnected systems: Money Management, Guardian and PnL tracking.</p>
+
+    <!-- MONEY MANAGEMENT -->
+    <div style="margin-bottom:24px">
+      <div style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--gold);letter-spacing:.15em;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:8px">
+        <span style="width:20px;height:1px;background:var(--gold);opacity:.5;display:inline-block"></span>
+        💰 Money Management — position sizing
+      </div>
+      <p style="color:var(--text2);font-size:.875rem;line-height:1.8;margin-bottom:14px">Before enabling auto-trading, configure how much capital the bot can risk per trade. These three parameters define position size:</p>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px">
+        <div style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:16px">
+          <div style="font-size:.7rem;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">Trade size</div>
+          <div style="font-family:'DM Mono',monospace;font-size:1.1rem;font-weight:700;color:var(--gold2);margin-bottom:4px">e.g. 50 USDT</div>
+          <div style="font-size:.8rem;color:var(--text2)">Notional size of each position. Multiplied by leverage to get the actual margin allocated.</div>
+        </div>
+        <div style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:16px">
+          <div style="font-size:.7rem;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">Leverage</div>
+          <div style="font-family:'DM Mono',monospace;font-size:1.1rem;font-weight:700;color:var(--gold2);margin-bottom:4px">e.g. 5×</div>
+          <div style="font-size:.8rem;color:var(--text2)">Multiplier applied to trade size. Higher leverage = larger exposure, higher risk. Stay ≤ 10× on volatile pairs.</div>
+        </div>
+        <div style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:16px">
+          <div style="font-size:.7rem;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">Max positions</div>
+          <div style="font-family:'DM Mono',monospace;font-size:1.1rem;font-weight:700;color:var(--gold2);margin-bottom:4px">e.g. 4</div>
+          <div style="font-size:.8rem;color:var(--text2)">Maximum concurrent open trades. Prevents over-exposure when many signals fire simultaneously.</div>
+        </div>
+      </div>
+      <div style="background:rgba(212,168,67,.06);border:1px solid rgba(212,168,67,.15);border-radius:10px;padding:14px 18px;font-size:.85rem;color:var(--text2)">
+        <strong style="color:var(--gold2)">📐 Example calculation:</strong><br>
+        Trade size <code style="background:rgba(0,0,0,.3);padding:1px 6px;border-radius:4px">50 USDT</code> × Leverage <code style="background:rgba(0,0,0,.3);padding:1px 6px;border-radius:4px">5×</code> = <strong style="color:var(--text)">250 USDT position size</strong>.
+        Max drawdown per trade with SL -6% = <strong style="color:var(--red2)">-15 USDT</strong> (6% of 250).
+        With 4 max positions, worst case simultaneous loss = <strong style="color:var(--red2)">-60 USDT</strong>.
+        Always set trade size so that total worst-case loss is ≤ 5% of your account balance.
+      </div>
+    </div>
+
+    <!-- GUARDIAN -->
+    <div style="margin-bottom:24px">
+      <div style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--teal2);letter-spacing:.15em;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:8px">
+        <span style="width:20px;height:1px;background:var(--teal2);opacity:.5;display:inline-block"></span>
+        🛡️ Guardian — the risk engine that protects your capital
+      </div>
+      <p style="color:var(--text2);font-size:.875rem;line-height:1.8;margin-bottom:14px">Guardian is FundShot's proprietary automated risk system — a feature no competitor offers. It monitors your bot's performance in real time and automatically <strong style="color:var(--text)">pauses trading</strong> when it detects danger, then resumes when conditions normalize. You don't need to watch the screen. Guardian watches for you.</p>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
+        <div style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:16px;display:grid;grid-template-columns:180px 1fr;gap:16px;align-items:start">
+          <div>
+            <div style="font-weight:700;color:var(--text);margin-bottom:4px">📉 Max Drawdown</div>
+            <div style="font-family:'DM Mono',monospace;font-size:.7rem;color:var(--teal2)">Default: 10%</div>
+          </div>
+          <div style="font-size:.85rem;color:var(--text2);line-height:1.6">Total capital loss since session start. If your unrealized + realized losses exceed this threshold, Guardian locks the bot and sends you a Telegram alert. You can reset it manually once you have reviewed the situation. Formula: <code style="background:rgba(0,0,0,.3);padding:1px 5px;border-radius:4px">(session_start_balance - current_balance) / session_start_balance</code></div>
+        </div>
+        <div style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:16px;display:grid;grid-template-columns:180px 1fr;gap:16px;align-items:start">
+          <div>
+            <div style="font-weight:700;color:var(--text);margin-bottom:4px">❌ Consecutive Losses</div>
+            <div style="font-family:'DM Mono',monospace;font-size:.7rem;color:var(--amber2)">Default: 3</div>
+          </div>
+          <div style="font-size:.85rem;color:var(--text2);line-height:1.6">If the bot closes N losing trades in a row, Guardian activates a <strong style="color:var(--text)">cooldown period</strong> and stops opening new positions. This prevents the bot from "tilt trading" — chasing losses in adverse market conditions. Counter resets on a profitable trade.</div>
+        </div>
+        <div style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:16px;display:grid;grid-template-columns:180px 1fr;gap:16px;align-items:start">
+          <div>
+            <div style="font-weight:700;color:var(--text);margin-bottom:4px">💸 Daily Loss Limit</div>
+            <div style="font-family:'DM Mono',monospace;font-size:.7rem;color:var(--red2)">Default: 100 USDT</div>
+          </div>
+          <div style="font-size:.85rem;color:var(--text2);line-height:1.6">Maximum USDT you can lose in a single calendar day (UTC midnight reset). Once reached, the bot stops for the rest of the day regardless of signal quality. Essential for prop-firm funded accounts and disciplined personal accounts alike.</div>
+        </div>
+        <div style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:16px;display:grid;grid-template-columns:180px 1fr;gap:16px;align-items:start">
+          <div>
+            <div style="font-weight:700;color:var(--text);margin-bottom:4px">⏸️ Cooldown</div>
+            <div style="font-family:'DM Mono',monospace;font-size:.7rem;color:var(--text3)">Auto / Manual</div>
+          </div>
+          <div style="font-size:.85rem;color:var(--text2);line-height:1.6">A waiting period triggered by consecutive losses. During cooldown, the bot monitors but does not open trades. Cooldown duration is configurable. Use the <strong style="color:var(--text)">↺ Reset</strong> button in the Guardian card to clear it manually if you've reviewed the market conditions and want to resume early.</div>
+        </div>
+      </div>
+      <div style="background:rgba(0,201,167,.05);border:1px solid rgba(0,201,167,.15);border-radius:10px;padding:14px 18px;font-size:.85rem;color:var(--text2)">
+        <strong style="color:var(--teal2)">🛡️ Guardian Status Bar:</strong> The colored banner at the top of the Trading page shows Guardian's current state in real time:
+        <span style="display:inline-flex;align-items:center;gap:5px;background:rgba(0,201,167,.1);border:1px solid rgba(0,201,167,.2);border-radius:5px;padding:2px 8px;margin:0 4px;font-family:monospace;font-size:.75rem;color:var(--teal2)">🟢 SAFE</span> all limits OK —
+        <span style="display:inline-flex;align-items:center;gap:5px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);border-radius:5px;padding:2px 8px;margin:0 4px;font-family:monospace;font-size:.75rem;color:var(--amber2)">🟡 WARN</span> approaching a limit —
+        <span style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,77,109,.1);border:1px solid rgba(255,77,109,.2);border-radius:5px;padding:2px 8px;margin:0 4px;font-family:monospace;font-size:.75rem;color:var(--red2)">🔴 LOCKED</span> bot paused, action required.
+      </div>
+    </div>
+
+    <!-- PNL -->
+    <div>
+      <div style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--p2);letter-spacing:.15em;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:8px">
+        <span style="width:20px;height:1px;background:var(--p2);opacity:.5;display:inline-block"></span>
+        📊 PnL Cards — reading your performance
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+        <div style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:16px">
+          <div style="font-weight:700;color:var(--text);margin-bottom:8px;font-size:.9rem">💰 Realized PnL</div>
+          <div style="font-size:.85rem;color:var(--text2);line-height:1.6">Profit and loss from <strong style="color:var(--text)">closed trades only</strong>. This is real money that has been settled on your exchange. Includes trading fees automatically. The bar chart below shows the last 20 sessions so you can spot trends.</div>
+        </div>
+        <div style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:16px">
+          <div style="font-weight:700;color:var(--text);margin-bottom:8px;font-size:.9rem">📈 Unrealized PnL</div>
+          <div style="font-size:.85rem;color:var(--text2);line-height:1.6">Current floating P&amp;L on <strong style="color:var(--text)">open positions</strong>. Changes every second with the market price. Not settled until the trade closes. Guardian includes unrealized losses in its drawdown calculation.</div>
+        </div>
+        <div style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:16px">
+          <div style="font-weight:700;color:var(--text);margin-bottom:8px;font-size:.9rem">🏆 Win Rate</div>
+          <div style="font-size:.85rem;color:var(--text2);line-height:1.6">Percentage of closed trades that were profitable. Formula: <code style="background:rgba(0,0,0,.3);padding:1px 5px;border-radius:4px">wins / (wins + losses)</code>. A win rate above 55% with good R:R is considered excellent for mean reversion strategies.</div>
+        </div>
+        <div style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:16px">
+          <div style="font-weight:700;color:var(--text);margin-bottom:8px;font-size:.9rem">⚡ R:R Ratio</div>
+          <div style="font-size:.85rem;color:var(--text2);line-height:1.6">Average risk-to-reward per trade. Formula: <code style="background:rgba(0,0,0,.3);padding:1px 5px;border-radius:4px">avg_win / avg_loss</code>. FundShot's trailing stop strategy targets R:R ≥ 1.5 — meaning you earn more on winners than you lose on losers.</div>
+        </div>
+      </div>
+      <div style="background:rgba(212,168,67,.06);border:1px solid rgba(212,168,67,.15);border-radius:10px;padding:14px 18px;font-size:.85rem;color:var(--text2)">
+        <strong style="color:var(--gold2)">💡 Recommended starting config:</strong>
+        Trade size <code style="background:rgba(0,0,0,.3);padding:1px 6px;border-radius:4px">50 USDT</code> · Leverage <code style="background:rgba(0,0,0,.3);padding:1px 6px;border-radius:4px">5×</code> · Max positions <code style="background:rgba(0,0,0,.3);padding:1px 6px;border-radius:4px">3</code> · Max drawdown <code style="background:rgba(0,0,0,.3);padding:1px 6px;border-radius:4px">8%</code> · Consecutive losses <code style="background:rgba(0,0,0,.3);padding:1px 6px;border-radius:4px">3</code> · Daily limit <code style="background:rgba(0,0,0,.3);padding:1px 6px;border-radius:4px">75 USDT</code>.
+        Run on Demo first for 7 days, validate win rate, then switch to Live.
+      </div>
+    </div>
   </div>
 
   <!-- 04. EXCHANGES -->
