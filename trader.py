@@ -960,19 +960,19 @@ class FundingTrader:
         strategy_line = (
             f"🎯 TP1 30%: `${params['tp1_price']:.6f}` ({params['tp1_pct']:+.2f}%) + Trailing {params['trailing_buffer']:.2f}%\n"
             if USE_TP1 else
-            f"🎯 Trailing 100%: active from `${active_price:.6f}` (+{params['tp1_pct']:.2f}%), dist `{params['trailing_buffer']:.2f}%`\n"
+            f"🎯 Trailing 100%: active from `${active_price:.8g}` (+{params['tp1_pct']:.2f}%), dist `{params['trailing_buffer']:.2f}%`\n"
         )
         msg = (
             f"{emoji} *TRADE OPENED — {direction}*\n"
             f"━━━━━━━━━━━━━━━━━━\n"
             f"📌 Pair:      `{symbol}`\n"
-            f"💰 Entry:     `${mark_price:.6f}`\n"
+            f"💰 Entry:     `${mark_price:.8g}`\n"
             f"📊 Funding:   `{funding_rate*100:+.4f}%` ({level.upper()})\n"
             f"📈 OI Δ5m:    `{oi_data['change_5m']:+.2f}%`\n"
             f"━━━━━━━━━━━━━━━━━━\n"
             f"{strategy_line}"
             f"🎯 Cap max:   `~{params['tp_max_pct']:.1f}%`\n"
-            f"🛡️ SL:        `${params['sl_price']:.6f}` (-{CONFIG['sl_pct']:.1f}%)\n"
+            f"🛡️ SL:        `${params["sl_price"]:.8g}` (-{CONFIG['sl_pct']:.1f}%)\n"
             f"⚡ Leverage:  `{CONFIG['leverage']}x`\n"
             f"💵 Size:      `{CONFIG['size_usdt']} USDT` → `{notional:.0f} USDT` notional\n"
             f"━━━━━━━━━━━━━━━━━━\n"
@@ -1005,7 +1005,7 @@ class FundingTrader:
                 f"🔔 *POSITION CLOSED — {pos.direction} {symbol}*\n"
                 f"━━━━━━━━━━━━━━━━━━\n"
                 f"📌 Reason:    `Closed by {self.exchange_name.capitalize()} (native TP/SL)`\n"
-                f"💰 Price:     `${mark_price:.6f}`\n"
+                f"💰 Price:     `${mark_price:.8g}`\n"
                 f"📈 Est. PnL:  `{pnl_usdt:+.2f} USDT` ({pnl_pct:+.2f}%)\n"
                 f"━━━━━━━━━━━━━━━━━━\n"
                 f"⏱️ Durata: `{((datetime.now(timezone.utc)-pos.opened_at).seconds//60)} min`"
@@ -1048,12 +1048,13 @@ class FundingTrader:
                 msg = (
                     f"✅ *TP1 HIT — {pos.direction} {symbol}*\n"
                     f"━━━━━━━━━━━━━━━━━━\n"
-                    f"💰 Price:     `${mark_price:.4f}`\n"
+                    f"💰 Price:     `${mark_price:.8g}`\n"
                     f"💵 Closed:    `30%` of position\n"
                     f"📈 Partial PnL: `+{pnl_tp1:.2f} USDT`\n"
-                    f"🔄 SL moved to breakeven: `${pos.entry_price:.4f}`\n"
+                    f"🔄 SL moved to breakeven: `${pos.entry_price:.8g}`\n"
                     f"🎯 Trailing active: buffer `{pos.trailing_buffer:.1f}%`\n"
-                    f"⏳ 70% position still open..."
+                    f"⏳ 70% position still open...\n"
+                    f"{self._ex_badge}"
                 )
                 await self.send(chat_id, msg)
                 # Sposta SL a breakeven su Bybit
@@ -1141,8 +1142,8 @@ class FundingTrader:
             f"{emoji} *TRADE CLOSED — {reason_str}*\n"
             f"━━━━━━━━━━━━━━━━━━\n"
             f"📌 Pair:      `{pos.symbol}` ({pos.direction})\n"
-            f"💰 Entry:     `${pos.entry_price:.4f}`\n"
-            f"💰 Exit:      `${price:.4f}`\n"
+            f"💰 Entry:     `${pos.entry_price:.8g}`\n"
+            f"💰 Exit:      `${price:.8g}`\n"
             f"📊 Closed:    `{portion}`\n"
             f"━━━━━━━━━━━━━━━━━━\n"
             f"{'📈' if pnl >= 0 else '📉'} PnL:       `{pnl:+.2f} USDT` ({pnl_pct:+.2f}%)\n"
