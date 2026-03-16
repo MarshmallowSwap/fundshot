@@ -376,15 +376,24 @@ class ProxyHandler(BaseHTTPRequestHandler):
                 if not u:
                     self._json({"ok": False, "error": "User not found"}, 404)
                     return
-                ok = asyncio.run(save_credentials(u.id, exchange, api_key, api_sec, env, passph))
+                try:
+                    ok = asyncio.run(save_credentials(u.id, exchange, api_key, api_sec, env, passph))
+                except Exception as e_save:
+                    log.error("save_credentials error: %s", e_save)
+                    self._json({"ok": False, "error": f"DB error: {str(e_save)[:200]}"}, 500)
+                    return
                 if ok:
-                    from db.supabase_client import get_client as _kc
-                    db = _kc()
-                    cur = set(u.active_exchanges or [])
-                    cur.add(exchange)
-                    db.table("users").update({"active_exchanges": list(cur)}).eq("id", u.id).execute()
+                    try:
+                        from db.supabase_client import get_client as _kc
+                        db = _kc()
+                        cur = set(u.active_exchanges or [])
+                        cur.add(exchange)
+                        db.table("users").update({"active_exchanges": list(cur)}).eq("id", u.id).execute()
+                    except Exception as e_upd:
+                        log.warning("update active_exchanges: %s", e_upd)
                 self._json({"ok": ok, "exchange": exchange, "environment": env})
             except Exception as e:
+                log.error("POST /api/user/keys: %s", e)
                 self._json({"ok": False, "error": str(e)}, 500)
             return
 

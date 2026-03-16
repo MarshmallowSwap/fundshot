@@ -4046,10 +4046,10 @@ async function saveExchangeKeys() {
       if (msg) { msg.style.color='var(--teal2)'; msg.textContent=`✓ ${info.emoji} ${info.label} keys saved`; }
       ['ink','ins','inp-passphrase'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
     } else {
-      if (msg) { msg.style.color='var(--red2)'; msg.textContent=d.error||'Error saving keys'; }
+      if (msg) { msg.style.color='var(--red2)'; msg.textContent=`✗ ${d.error || 'Error saving keys'}`; }
     }
   } catch(e) {
-    if (msg) { msg.style.color='var(--red2)'; msg.textContent='Network error'; }
+    if (msg) { msg.style.color='var(--red2)'; msg.textContent=`Network error: ${e.message}`; }
   }
 }
 
