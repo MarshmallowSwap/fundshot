@@ -65,7 +65,8 @@ def generate_chart(symbol: str, funding_rate: float, exchange: str = "bybit") ->
         return None
 
     klines = fetch_klines(symbol, interval="15", limit=60, exchange=exchange)
-    if not klines:
+    if not klines or len(klines) < 5:
+        logger.warning("generate_chart: troppo pochi dati per %s/%s (%d candles)", exchange, symbol, len(klines) if klines else 0)
         return None
 
     # Bybit restituisce dal più recente al più vecchio — invertiamo
@@ -129,6 +130,13 @@ def generate_chart(symbol: str, funding_rate: float, exchange: str = "bybit") ->
     # Griglia
     ax.grid(True, color=GRID, linewidth=0.5, alpha=0.7)
     ax.set_xlim(-1, len(times))
+
+    # Scala Y dinamica — evita grafico piatto su simboli poco volatili
+    price_range = max(highs) - min(lows)
+    if price_range < last_price * 0.001:  # range < 0.1% del prezzo
+        pad = last_price * 0.005  # aggiungi 0.5% di padding
+        ax.set_ylim(min(lows) - pad, max(highs) + pad)
+
     for spine in ax.spines.values():
         spine.set_edgecolor(GRID)
 
