@@ -213,8 +213,10 @@ class OKXClient(ExchangeClient):
             usdt    = next((d for d in details if d.get("ccy") == "USDT"), {})
             return WalletBalance(
                 total_equity=self._sf(usdt.get("eq")),
-                available_balance=self._sf(usdt.get("availEq")),
-                unrealized_pnl=self._sf(usdt.get("upl")),
+                total_wallet_balance=self._sf(usdt.get("eq")),
+                total_available_balance=self._sf(usdt.get("availEq")),
+                total_perp_upl=self._sf(usdt.get("upl")),
+                total_margin_balance=self._sf(usdt.get("eq")) - self._sf(usdt.get("availEq")),
                 exchange=self.EXCHANGE_ID,
             )
         except Exception as e:
@@ -239,7 +241,7 @@ class OKXClient(ExchangeClient):
                     size=abs(size),
                     entry_price=self._sf(p.get("avgPx")),
                     mark_price=self._sf(p.get("markPx")),
-                    unrealized_pnl=self._sf(p.get("upl")),
+                    unrealised_pnl=self._sf(p.get("upl")),
                     leverage=int(self._sf(p.get("lever", 1))),
                     liq_price=self._sf(p.get("liqPx")),
                     exchange=self.EXCHANGE_ID,

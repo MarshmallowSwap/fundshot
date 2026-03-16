@@ -174,8 +174,10 @@ class BinanceClient(ExchangeClient):
                 return None
             return WalletBalance(
                 total_equity=self._sf(data.get("totalMarginBalance")),
-                available_balance=self._sf(data.get("availableBalance")),
-                unrealized_pnl=self._sf(data.get("totalUnrealizedProfit")),
+                total_wallet_balance=self._sf(data.get("totalWalletBalance")),
+                total_available_balance=self._sf(data.get("availableBalance")),
+                total_perp_upl=self._sf(data.get("totalUnrealizedProfit")),
+                total_margin_balance=self._sf(data.get("totalMaintMargin")),
                 exchange=self.EXCHANGE_ID,
             )
         except Exception as e:
@@ -199,7 +201,7 @@ class BinanceClient(ExchangeClient):
                     size=abs(size),
                     entry_price=self._sf(p.get("entryPrice")),
                     mark_price=self._sf(p.get("markPrice")),
-                    unrealized_pnl=self._sf(p.get("unRealizedProfit")),
+                    unrealised_pnl=self._sf(p.get("unRealizedProfit")),
                     leverage=int(self._sf(p.get("leverage", 1))),
                     liq_price=self._sf(p.get("liquidationPrice")),
                     exchange=self.EXCHANGE_ID,

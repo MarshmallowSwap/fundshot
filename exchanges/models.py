@@ -43,11 +43,11 @@ class Position:
 @dataclass
 class WalletBalance:
     """Saldo account."""
-    total_equity: float
-    total_wallet_balance: float
-    total_available_balance: float
-    total_perp_upl: float
-    total_margin_balance: float
+    total_equity: float = 0.0
+    total_wallet_balance: float = 0.0
+    total_available_balance: float = 0.0
+    total_perp_upl: float = 0.0
+    total_margin_balance: float = 0.0
     coins: list = field(default_factory=list)
     exchange: str = ""
 
