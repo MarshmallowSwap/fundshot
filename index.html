@@ -4394,10 +4394,14 @@ function selectExchangeTab(exchange, btn) {
   if (lblKey) lblKey.textContent = `${info.emoji} ${info.label} API Key`;
   if (lblSec) lblSec.textContent = `${info.emoji} ${info.label} API Secret`;
 
-  ['ink','ins','inp-passphrase'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
-  });
+  // Svuota i campi solo se non ci sono già valori inseriti
+  const hasValues = ['ink','ins'].some(id => document.getElementById(id)?.value.trim());
+  if (!hasValues) {
+    ['ink','ins','inp-passphrase'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+  }
 
   const msg = document.getElementById('key-msg');
   if (msg) {
