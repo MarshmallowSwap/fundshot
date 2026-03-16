@@ -2266,6 +2266,47 @@ nav {
 <!-- TOAST -->
 <div id="toast"></div>
 
+<!-- ═══ BOT ACTION PREVIEW MODAL ═══ -->
+<div class="bot-preview-overlay hidden" id="bot-preview-modal">
+  <div class="bot-preview-modal">
+    <div class="bot-preview-header">
+      <div class="bot-preview-icon" id="bp-icon">🤖</div>
+      <div>
+        <div class="bot-preview-title" id="bp-title">Sending to bot</div>
+        <div class="bot-preview-subtitle" id="bp-subtitle">Review before confirming</div>
+      </div>
+    </div>
+    <div class="bot-preview-items" id="bp-items"></div>
+    <div class="bot-preview-actions">
+      <button class="bot-preview-confirm" id="bp-confirm" onclick="botPreviewConfirm()">⚡ Confirm &amp; Send</button>
+      <button class="bot-preview-cancel" onclick="botPreviewCancel()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ AUTOTRADER OFF CONFIRM MODAL ═══ -->
+<div class="confirm-modal-overlay hidden" id="autotrader-off-modal">
+  <div class="confirm-modal">
+    <div class="confirm-modal-icon">🔴</div>
+    <div class="confirm-modal-title">Disable Auto-Trader?</div>
+    <div class="confirm-modal-sub">
+      You have <strong id="modal-open-count" style="color:var(--red2)">open positions</strong>.
+      What do you want to do before disabling?
+    </div>
+    <div class="confirm-modal-actions">
+      <button class="confirm-btn confirm-btn-close-all" onclick="autotraderOffAction('close_all')">
+        ❌ Close all &amp; disable
+      </button>
+      <button class="confirm-btn confirm-btn-off-only" onclick="autotraderOffAction('off_only')">
+        ⏸ Disable only
+      </button>
+      <button class="confirm-btn confirm-btn-cancel" onclick="closeAutotraderModal()">
+        Cancel
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══════════════════════════════════════════════════ -->
 <script>
 // ─── STATE ───
@@ -4262,8 +4303,11 @@ function botPreviewCancel() {
 }
 
 // Close on overlay click
-document.getElementById('bot-preview-modal')?.addEventListener('click', function(e) {
-  if (e.target === this) botPreviewCancel();
+document.addEventListener('DOMContentLoaded', function() {
+  const m = document.getElementById('bot-preview-modal');
+  if (m) m.addEventListener('click', function(e) {
+    if (e.target === this) botPreviewCancel();
+  });
 });
 
 // ─── DASHBOARD LOGOUT ───
