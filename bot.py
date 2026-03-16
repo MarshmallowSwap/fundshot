@@ -214,6 +214,39 @@ async def send_to_owner(bot: Bot, text: str):
 
 # ── Alert liquidazione imminente ──────────────────────────────────────────────
 _LIQ_ALERT_SENT: dict[str, float] = {}   # symbol → last liq% when alert sent
+
+# Alert history in memoria (ultimi 100 alert)
+_alert_history: list[dict] = []
+MAX_ALERT_HISTORY = 100
+
+def _save_alert_history(symbol: str, level: str, rate_pct: float, exchange: str, text: str):
+    """Salva alert in memoria e su file per la dashboard."""
+    import json as _ahj, os as _aho
+    entry = {
+        "symbol":   symbol,
+        "level":    level,
+        "rate_pct": round(rate_pct, 4),
+        "exchange": exchange,
+        "ts":       int(time.time() * 1000),
+        "preview":  text[:120] if text else "",
+    }
+    _alert_history.append(entry)
+    if len(_alert_history) > MAX_ALERT_HISTORY:
+        _alert_history.pop(0)
+    # Scrivi su file per proxy
+    try:
+        f = "/tmp/fs_alert_history.json"
+        existing = []
+        if _aho.path.exists(f):
+            try:
+                existing = _ahj.loads(open(f).read())
+            except Exception:
+                existing = []
+        existing.append(entry)
+        existing = existing[-MAX_ALERT_HISTORY:]
+        open(f, "w").write(_ahj.dumps(existing))
+    except Exception:
+        pass
 LIQ_WARN_PCT = 15.0                       # alert se margine residuo < 15%
 
 async def _check_liq_and_level(bot: Bot, symbol: str, mark_price: float,
@@ -335,6 +368,7 @@ async def _process_exchange_tickers(
                 if al.should_send_to_user(str(cid), level, symbol, exchange):
                     await send_alert(bot, alert_text, target_chat_id=cid, symbol=symbol, rate=rate_pct, **ex_kwargs)
             bot_data["alerts_sent"] = bot_data.get("alerts_sent", 0) + 1
+            _save_alert_history(symbol, level, rate_pct, exchange, alert_text)
 
         # ── AUTO-TRADER: apri posizione se configurato per questo exchange ──
         if TRADING_ENABLED and exchange in _exchange_traders:

@@ -651,6 +651,41 @@ nav {
 
 @media(max-width:900px) { .exch-summary-grid { grid-template-columns: 1fr; } }
 
+.alert-history-row {
+  display: grid;
+  grid-template-columns: 80px 1fr auto auto;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+  align-items: center;
+  font-size: .8rem;
+}
+.alert-history-row:last-child { border-bottom: none; }
+.ah-level {
+  font-family: "DM Mono", monospace;
+  font-size: .65rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  text-align: center;
+  letter-spacing: .04em;
+}
+.ah-jackpot { background: rgba(212,168,67,.2); color: var(--gold2); }
+.ah-hard    { background: rgba(244,63,94,.15);  color: var(--red2); }
+.ah-extreme { background: rgba(251,146,60,.15); color: #fb923c; }
+.ah-high    { background: rgba(59,130,246,.15); color: #60a5fa; }
+.ah-soft    { background: rgba(156,163,175,.12); color: var(--text3); }
+.ah-sym  { font-weight: 700; color: var(--text); font-family: "DM Mono", monospace; }
+.ah-rate { font-family: "DM Mono", monospace; color: var(--text3); font-size: .75rem; }
+.ah-time { font-size: .7rem; color: var(--text3); white-space: nowrap; }
+.ah-exch { font-size: .65rem; padding: 1px 6px; border-radius: 4px; }
+.ah-bybit    { background: rgba(212,168,67,.1); color: var(--gold2); }
+.ah-binance  { background: rgba(251,146,60,.1); color: #fb923c; }
+
+/* Posizioni — PnL live fix */
+.pos-pnl-val { font-size: .9rem; font-weight: 700; font-family: "DM Mono", monospace; }
+.pos-pnl-pct { font-size: .7rem; }
+
 .okx-restricted {
   position: relative;
   pointer-events: none;
@@ -1118,6 +1153,20 @@ nav {
       <div style="color:var(--text-muted);font-size:13px;grid-column:1/-1;text-align:center;padding:8px">
         Nessun simbolo in monitoraggio
       </div>
+    </div>
+  </div>
+
+  <!-- ALERT HISTORY -->
+  <div class="card" style="margin-bottom:16px">
+    <div class="ch">
+      <div>
+        <div class="ct">🔔 Alert History</div>
+        <div style="font-size:11px;color:var(--text3)">Ultimi alert ricevuti in questa sessione</div>
+      </div>
+      <span class="badge" id="ah-count">—</span>
+    </div>
+    <div id="ah-list" style="max-height:280px;overflow-y:auto">
+      <div class="empty-state"><div class="ei">🔔</div>Nessun alert ancora</div>
     </div>
   </div>
 
@@ -2631,10 +2680,13 @@ window.addPartialClose = function(pnlUsdt) {
 // ─── FETCH CLOSED PNL DA BYBIT ───
 async function fetchClosedPnl() {
   try {
-    const r = await fetch('https://api.fundshot.app/api/closed-pnl');
-    if (!r.ok) return;
-    const data = await r.json();
-    if (!data.ok || !data.trades || !data.trades.length) return;
+    const data = await authFetch('/api/closed-pnl');
+    if (!data.ok || !data.trades || !data.trades.length) {
+      // Mostra "nessun trade" nella tabella
+      const tbody = document.getElementById('th-body');
+      if (tbody && tbody.querySelector('td[colspan]')) return; // già mostra placeholder
+      return;
+    }
     updateFromBybitTrades(data.trades);
   } catch(e) {}
 }
@@ -2682,6 +2734,7 @@ function updateFromBybitTrades(trades) {
     // Converti unix timestamp
     const tsNum = parseInt(t.ts||'0');
     const timeStr = tsNum > 0 ? new Date(tsNum*1000).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}) : '—';
+    const exEm = {'bybit':'🟡','binance':'🟠','okx':'🔵'}[t.exchange||'bybit'] || '⚡';
     return `<tr>
       <td style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3)">${timeStr}</td>
       <td style="font-family:'DM Mono',monospace;font-size:12px;font-weight:600">${t.symbol}</td>
@@ -2690,8 +2743,7 @@ function updateFromBybitTrades(trades) {
       <td style="font-size:11px;color:var(--text3)">${entS}</td>
       <td style="font-size:11px;color:var(--text3)">${exitS}</td>
       <td class="${pnlCls}" style="font-weight:700">${t.pnl_usdt>=0?'+':''}${t.pnl_usdt.toFixed(2)}</td>
-      <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--pk2)">+0.00</td>
-      <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)">${pct}</td>
+      <td style="font-size:11px;color:var(--text3)">${exEm} ${(t.exchange||'bybit').charAt(0).toUpperCase()+(t.exchange||'bybit').slice(1)}</td>
     </tr>`;
   }).join('');
 
@@ -2700,22 +2752,28 @@ function updateFromBybitTrades(trades) {
 
 // ─── FETCH UNREALIZED PNL ───
 async function fetchUnrealizedPnl() {
-  if (!S.k) return; // no API key
   try {
-    const r = await priv('/v5/account/wallet-balance', { accountType: 'UNIFIED' });
-    const list = r?.result?.list || [];
-    if (!list.length) return;
-    const unr = parseFloat(list[0].totalPerpUPL || list[0].totalUnrealisedPnl || 0);
+    // Prova a leggere l'unrealized PnL dal wallet per l'exchange attivo
+    const ex = window._activeExchange || 'bybit';
+    const d  = await authFetch('/api/user/wallet?exchange=' + ex);
+    if (!d.ok) return;
+    const unr = parseFloat(d.unrealized_pnl || d.total_perp_upl || 0);
     const uEl = document.getElementById('pnl-unrealized');
     if (uEl) {
       uEl.textContent = (unr >= 0 ? '+' : '') + unr.toFixed(2);
-      uEl.style.color = unr >= 0 ? 'var(--p2)' : 'var(--red2)';
+      uEl.style.color = unr >= 0 ? 'var(--teal2)' : 'var(--red2)';
+    }
+    // Aggiorna anche cs-open nella pagina Positions
+    const csOpen = document.getElementById('cs-open');
+    if (csOpen) {
+      csOpen.textContent = (unr >= 0 ? '+' : '') + unr.toFixed(2);
+      csOpen.style.color = unr >= 0 ? 'var(--teal2)' : 'var(--red2)';
     }
     // Aggiorna totale sessione
     const totEl = document.getElementById('pnl-total');
     const rEl   = document.getElementById('pnl-realized');
     if (totEl && rEl) {
-      const realized = parseFloat(rEl.textContent) || 0;
+      const realized = parseFloat(rEl.textContent.replace('+','')) || 0;
       const tot = realized + unr;
       totEl.textContent = (tot >= 0 ? '+' : '') + tot.toFixed(2);
       totEl.style.color = tot >= 0 ? 'var(--amber2)' : 'var(--red2)';
@@ -2825,6 +2883,38 @@ function setStatus(st) {
 }
 
 // ─── PUBLIC API ───
+async function loadAlertHistory() {
+  const list = document.getElementById('ah-list');
+  const cnt  = document.getElementById('ah-count');
+  if (!list) return;
+  try {
+    const d = await authFetch('/api/alert-history');
+    if (!d.ok || !d.alerts || !d.alerts.length) {
+      list.innerHTML = '<div class="empty-state"><div class="ei">🔔</div>Nessun alert ancora</div>';
+      if (cnt) cnt.textContent = '0';
+      return;
+    }
+    const alerts = d.alerts;
+    if (cnt) cnt.textContent = alerts.length;
+    const LEVEL_CLS = {jackpot:'ah-jackpot',hard:'ah-hard',extreme:'ah-extreme',high:'ah-high',soft:'ah-soft',critico:'ah-jackpot'};
+    list.innerHTML = alerts.map(a => {
+      const cls  = LEVEL_CLS[a.level] || 'ah-soft';
+      const rate = (a.rate_pct >= 0 ? '+' : '') + a.rate_pct.toFixed(4) + '%';
+      const ts   = new Date(a.ts * 1000).toLocaleTimeString('it-IT', {hour:'2-digit', minute:'2-digit'});
+      const exEm = a.ex_em || {'bybit':'🟡','binance':'🟠','okx':'🔵'}[a.exchange||'bybit'] || '⚡';
+      return `<div class="alert-history-row">
+        <span class="ah-time">${ts}</span>
+        <span class="ah-sym">${a.symbol}</span>
+        <span class="ah-level ${cls}">${a.level.toUpperCase()}</span>
+        <span class="ah-rate">${rate}</span>
+        <span class="ah-time">${exEm}</span>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    list.innerHTML = '<div class="empty-state"><div class="ei">🔔</div>Errore caricamento</div>';
+  }
+}
+
 async function loadPublic() {
   setStatus('loading');
   try {

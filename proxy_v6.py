@@ -539,6 +539,22 @@ class ProxyHandler(BaseHTTPRequestHandler):
             self._json({"ok": True, "results": data})
             return
 
+        if p == "/api/alert-history":
+            user = self._auth()
+            if not user: return
+            try:
+                # Leggi da file temporaneo scritto dal bot
+                import os as _os
+                f = "/tmp/fs_alert_history.json"
+                if _os.path.exists(f):
+                    data = json.load(open(f))
+                    self._json({"ok": True, "alerts": data[-50:][::-1]})  # ultimi 50, più recenti prima
+                else:
+                    self._json({"ok": True, "alerts": []})
+            except Exception as e:
+                self._json({"ok": False, "alerts": [], "error": str(e)})
+            return
+
         if p == "/api/track-record":
             try:
                 import os as _os
@@ -550,6 +566,25 @@ class ProxyHandler(BaseHTTPRequestHandler):
                     self._json({"ok": False, "error": "Track record not yet generated"})
             except Exception as e:
                 self._json({"ok": False, "error": str(e)})
+            return
+
+        # GET /api/alert-history — ultimi 50 alert inviati (per-user)
+        if p == "/api/alert-history":
+            user = self._auth()
+            if not user:
+                return
+            try:
+                import os as _os
+                f = "/tmp/fs_alert_history.json"
+                if _os.path.exists(f):
+                    import json as _j
+                    data = _j.loads(open(f).read())
+                    # Filtra per chat_id utente se non owner
+                    self._json({"ok": True, "alerts": data[-50:][::-1]})
+                else:
+                    self._json({"ok": True, "alerts": []})
+            except Exception as e:
+                self._json({"ok": True, "alerts": [], "error": str(e)})
             return
 
         if p == "/api/oi":
