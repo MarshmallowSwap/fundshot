@@ -2424,6 +2424,8 @@ var _tradingExchange = (function() {
   try { return localStorage.getItem('fk_trading_exchange') || 'bybit'; }
   catch(e) { return 'bybit'; }
 })();
+var _activeExchTab = 'bybit';
+var _exchConfigs   = {};
 function _mmKey()  { return 'fk_mm_'       + (_tradingExchange || 'bybit'); }
 function _gKey()   { return 'fk_guardian_' + (_tradingExchange || 'bybit'); }
 function _cfgKey() { return 'fk_cfg_'      + (_tradingExchange || 'bybit'); }
@@ -4303,8 +4305,6 @@ const _statsGrid = document.querySelector('.stats-grid');
 if (_statsGrid) _counterObs.observe(_statsGrid);
 
 // ─── EXCHANGE MANAGEMENT ─────────────────────────────────────────────────────
-let _activeExchTab = 'bybit';
-let _exchConfigs   = {};
 
 const EXCH_INFO = {
   bybit:   { label: 'Bybit',   emoji: '🟡', passphrase: false },
@@ -4410,8 +4410,11 @@ async function saveExchangeKeys() {
       if (d.ok) {
         _exchConfigs[_activeExchTab] = { env, configured: true };
         renderExchStatusBar();
+        selectExchangeTab(_activeExchTab, document.getElementById('tab-' + _activeExchTab));
         if (msg) { msg.style.color='var(--teal2)'; msg.textContent=`✓ ${info.emoji} ${info.label} keys saved`; }
         ['ink','ins','inp-passphrase'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+        // Re-fetch da server per conferma
+        setTimeout(() => initExchangeSettings(), 500);
       } else {
         if (msg) { msg.style.color='var(--red2)'; msg.textContent=`✗ ${d.error || 'Error saving keys'}`; }
       }
