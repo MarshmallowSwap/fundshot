@@ -92,6 +92,71 @@ nav {
   max-width: 1200px; margin: 0 auto;
 }
 .hero-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; width: 100%; }
+
+/* ── Mini Track Record Bar ── */
+.tr-mini-bar {
+  background: rgba(255,255,255,.025);
+  border-top: 1px solid rgba(212,168,67,.12);
+  border-bottom: 1px solid rgba(255,255,255,.05);
+  padding: 18px 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  flex-wrap: wrap;
+}
+.tr-mini-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 32px;
+  border-right: 1px solid rgba(255,255,255,.06);
+}
+.tr-mini-item:last-child { border-right: none; }
+.tr-mini-val {
+  font-family: "Syne", sans-serif;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #d4a843;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.tr-mini-val.green { color: #00c9a7; }
+.tr-mini-val.red   { color: #f43f5e; }
+.tr-mini-lbl {
+  font-size: .62rem;
+  color: rgba(255,255,255,.3);
+  font-family: "DM Mono", monospace;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.tr-mini-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(212,168,67,.06);
+  border: 1px solid rgba(212,168,67,.15);
+  border-radius: 20px;
+  padding: 3px 12px;
+  font-size: .62rem;
+  color: rgba(212,168,67,.7);
+  font-family: "DM Mono", monospace;
+  letter-spacing: .06em;
+  margin-right: 16px;
+  white-space: nowrap;
+}
+.tr-mini-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: #00c9a7;
+  animation: pulse-dot 1.5s infinite;
+}
+@media(max-width:768px) {
+  .tr-mini-bar { padding: 14px 16px; gap: 0; }
+  .tr-mini-item { padding: 8px 16px; }
+  .tr-mini-val { font-size: 1.1rem; }
+}
 .hero-eyebrow {
   display: inline-flex; align-items: center; gap: 8px;
   font-family: 'DM Mono', monospace; font-size: .7rem;
@@ -1024,6 +1089,35 @@ footer {
 </div>
 </section>
 
+<!-- ═══ MINI TRACK RECORD BAR ═══ -->
+<div class="tr-mini-bar" id="tr-mini-bar" style="display:none">
+  <span class="tr-mini-tag"><span class="tr-mini-dot"></span>60D BACKTEST · BYBIT</span>
+  <div class="tr-mini-item">
+    <div class="tr-mini-val green" id="tm-wr">—</div>
+    <div class="tr-mini-lbl">Win Rate</div>
+  </div>
+  <div class="tr-mini-item">
+    <div class="tr-mini-val" id="tm-trades">—</div>
+    <div class="tr-mini-lbl">Simulated Trades</div>
+  </div>
+  <div class="tr-mini-item">
+    <div class="tr-mini-val green" id="tm-return">—</div>
+    <div class="tr-mini-lbl">Total Return</div>
+  </div>
+  <div class="tr-mini-item">
+    <div class="tr-mini-val green" id="tm-capital">—</div>
+    <div class="tr-mini-lbl">$10k → Final</div>
+  </div>
+  <div class="tr-mini-item">
+    <div class="tr-mini-val red" id="tm-dd">—</div>
+    <div class="tr-mini-lbl">Max Drawdown</div>
+  </div>
+  <div class="tr-mini-item">
+    <div class="tr-mini-val green" id="tm-best">—</div>
+    <div class="tr-mini-lbl">Best Trade</div>
+  </div>
+</div>
+
 <!-- ═══ NUMBERS ═══ -->
 <section style="padding:0 48px 100px">
 <div class="container">
@@ -1803,6 +1897,41 @@ async function loadTrackRecord() {
   }
 }
 loadTrackRecord();
+
+async function loadMiniBar() {
+  try {
+    const r = await fetch('https://api.fundshot.app/api/track-record');
+    const d = await r.json();
+    if (!d.ok || !d.record) return;
+    const s = d.record.summary;
+
+    const set = (id, val, cls) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.textContent = val;
+      if (cls) el.className = 'tr-mini-val ' + cls;
+    };
+
+    const wr = s.win_rate_pct || 0;
+    set('tm-wr',      wr.toFixed(1) + '%',   wr >= 60 ? 'green' : '');
+    set('tm-trades',  s.total_trades || '—', '');
+    const ret = s.total_return_pct || 0;
+    set('tm-return',  (ret >= 0 ? '+' : '') + ret.toFixed(1) + '%', ret >= 0 ? 'green' : 'red');
+    const fin = s.final_capital || 0;
+    set('tm-capital', '$' + Math.round(fin).toLocaleString('en-US'), fin >= 10000 ? 'green' : 'red');
+    const dd = s.max_dd_pct || 0;
+    set('tm-dd',      '-' + dd.toFixed(1) + '%', 'red');
+    const best = s.best_trade_pct || 0;
+    set('tm-best',    '+' + best.toFixed(2) + '%', 'green');
+
+    // Mostra la bar
+    const bar = document.getElementById('tr-mini-bar');
+    if (bar) bar.style.display = 'flex';
+  } catch(e) {
+    console.warn('loadMiniBar:', e);
+  }
+}
+loadMiniBar();
 
 </script>
 </body>
