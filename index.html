@@ -2435,7 +2435,7 @@ const S = {
 if (!localStorage.getItem('fk_sess')) localStorage.setItem('fk_sess', S.sessionStart);
 
 // THR si aggiorna da loadCfg() — valori iniziali = default
-const _bootCfg = (() => { try { return JSON.parse(localStorage.getItem('fk_cfg')||'null'); } catch{ return null; } })();
+const _bootCfg = (() => { try { return JSON.parse(localStorage.getItem(_cfgKey())||'null'); } catch{ return null; } })();
 const THR = {
   jackpot: (_bootCfg?.thr?.jackpot ?? 2.50) / 100,
   hard:    (_bootCfg?.thr?.hard    ?? 2.00) / 100,
@@ -3210,6 +3210,16 @@ async function authFetch(path, method='GET', body=null) {
 }
 
 // ─── CONFIG DEFAULTS ───
+// ─── EXCHANGE ATTIVO — definito prima di tutto ───────────────────────────────
+let _tradingExchange = (() => {
+  try { return localStorage.getItem('fk_trading_exchange') || 'bybit'; }
+  catch { return 'bybit'; }
+})();
+
+function _mmKey()  { return 'fk_mm_'       + (_tradingExchange || 'bybit'); }
+function _gKey()   { return 'fk_guardian_' + (_tradingExchange || 'bybit'); }
+function _cfgKey() { return 'fk_cfg_'      + (_tradingExchange || 'bybit'); }
+
 const CFG_DEFAULTS = {
   // Risk
   size: 50, leva: 2, maxpos: 2, sl: 1.2, tp1pct: 30,
@@ -3543,8 +3553,6 @@ const MM_DEFAULTS = { size:50, leva:2, risk:1.0, maxpos:2, sl:1.2 };
 const GUARDIAN_DEFAULTS_DEF = { maxdd:10, maxloss:3, maxdaily:100, cooldown:30 };
 
 // ─── EXCHANGE ATTIVO (Trading page) ──────────────────────────────────────────
-let _tradingExchange = localStorage.getItem('fk_trading_exchange') || 'bybit';
-
 function setTradingExchange(ex) {
   _tradingExchange = ex;
   localStorage.setItem('fk_trading_exchange', ex);
@@ -3558,10 +3566,6 @@ function setTradingExchange(ex) {
   updateExchangeLabel();
   renderAllExchangeCards();
 }
-
-function _mmKey()  { return 'fk_mm_'       + _tradingExchange; }
-function _gKey()   { return 'fk_guardian_' + _tradingExchange; }
-function _cfgKey() { return 'fk_cfg_'      + _tradingExchange; }
 
 function renderExchangeSummaryCard(ex) {
   const mm  = JSON.parse(localStorage.getItem('fk_mm_' + ex) || 'null');
