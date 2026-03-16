@@ -368,6 +368,11 @@ class ProxyHandler(BaseHTTPRequestHandler):
                 api_key  = body.get("api_key", "").strip()
                 api_sec  = body.get("api_secret", "").strip()
                 env      = body.get("environment", "mainnet")
+                # Normalizza: la tabella accetta solo 'mainnet' o 'demo'
+                if env in ("testnet", "test"):
+                    env = "demo"
+                elif env not in ("mainnet", "demo"):
+                    env = "mainnet"
                 passph   = body.get("passphrase", "")
                 if not exchange or not api_key or not api_sec:
                     self._json({"ok": False, "error": "exchange, api_key and api_secret are required"}, 400)
