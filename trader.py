@@ -594,47 +594,76 @@ class BinanceFuturesTrader:
         r = self._post("/fapi/v1/leverage", {"symbol": symbol, "leverage": leverage})
         return "leverage" in r
 
+    def get_tick_size(self, symbol: str) -> float:
+        """Ottieni il tick size (precisione prezzo) per il simbolo da Binance."""
+        try:
+            r = requests.get(f"{self.base_url}/fapi/v1/exchangeInfo", timeout=10)
+            for s in r.json().get("symbols", []):
+                if s.get("symbol") == symbol:
+                    for f in s.get("filters", []):
+                        if f.get("filterType") == "PRICE_FILTER":
+                            return float(f.get("tickSize", 0.0001))
+        except Exception as e:
+            logger.error("BinanceFutures get_tick_size %s: %s", symbol, e)
+        return 0.0001
+
+    def _round_price(self, price: float, tick: float) -> str:
+        """Arrotonda il prezzo al tick size e ritorna come stringa."""
+        import math
+        if tick <= 0:
+            tick = 0.0001
+        decimals = max(0, -int(math.floor(math.log10(tick)))) if tick < 1 else 0
+        rounded = round(math.floor(price / tick) * tick, decimals)
+        return f"{rounded:.{decimals}f}"
+
     def place_order(self, symbol: str, side: str, qty: float,
                     sl_price: float, tp_price: float) -> Optional[str]:
         """side: 'Buy'→'BUY', 'Sell'→'SELL' per compatibilità con FundingTrader."""
         self.set_leverage(symbol, CONFIG["leverage"])
         bn_side = "BUY" if side == "Buy" else "SELL"
+        sl_side = "SELL" if bn_side == "BUY" else "BUY"
 
-        params = {
-            "symbol":           symbol,
-            "side":             bn_side,
-            "type":             "MARKET",
-            "quantity":         str(qty),
-            "stopPrice":        str(round(sl_price, 6)),
-            "workingType":      "MARK_PRICE",
-        }
-        # Apri ordine market
+        # Ottieni tick size per arrotondamento corretto prezzi
+        tick = self.get_tick_size(symbol)
+        sl_str = self._round_price(sl_price, tick)
+        tp_str = self._round_price(tp_price, tick) if tp_price > 0 else None
+
+        # 1. Ordine market principale
         r = self._post("/fapi/v1/order", {
             "symbol": symbol, "side": bn_side,
             "type": "MARKET", "quantity": str(qty),
         })
         if "orderId" not in r:
-            logger.error("BinanceFutures place_order error: %s", r)
+            logger.error("BinanceFutures place_order market error: %s", r)
             return None
         order_id = str(r["orderId"])
+        logger.info("BinanceFutures market order OK: %s %s qty=%s id=%s", symbol, bn_side, qty, order_id)
 
-        # SL separato
-        sl_side = "SELL" if bn_side == "BUY" else "BUY"
-        self._post("/fapi/v1/order", {
+        # 2. Stop Loss separato
+        r_sl = self._post("/fapi/v1/order", {
             "symbol": symbol, "side": sl_side,
-            "type": "STOP_MARKET", "stopPrice": str(round(sl_price, 4)),
+            "type": "STOP_MARKET", "stopPrice": sl_str,
             "closePosition": "true", "workingType": "MARK_PRICE",
+            "priceProtect": "true",
         })
+        if "orderId" in r_sl:
+            logger.info("BinanceFutures SL OK: %s stopPrice=%s", symbol, sl_str)
+        else:
+            logger.error("BinanceFutures SL FAILED: %s → %s (stopPrice=%s tick=%s)", symbol, r_sl, sl_str, tick)
 
-        # TP separato (solo se impostato)
-        if tp_price > 0:
-            self._post("/fapi/v1/order", {
+        # 3. Take Profit separato (solo se impostato)
+        if tp_str:
+            r_tp = self._post("/fapi/v1/order", {
                 "symbol": symbol, "side": sl_side,
-                "type": "TAKE_PROFIT_MARKET", "stopPrice": str(round(tp_price, 4)),
+                "type": "TAKE_PROFIT_MARKET", "stopPrice": tp_str,
                 "closePosition": "true", "workingType": "MARK_PRICE",
+                "priceProtect": "true",
             })
+            if "orderId" in r_tp:
+                logger.info("BinanceFutures TP OK: %s stopPrice=%s", symbol, tp_str)
+            else:
+                logger.error("BinanceFutures TP FAILED: %s → %s (stopPrice=%s)", symbol, r_tp, tp_str)
 
-        logger.info("BinanceFutures place_order %s %s qty=%s", symbol, bn_side, qty)
         return order_id
 
     def set_trailing_stop(self, symbol: str, side: str,
