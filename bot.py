@@ -662,6 +662,7 @@ async def trading_job(context):
             warning = f"\n⚠️ *{open_pos} open position(s) not closed automatically.*" if open_pos > 0 else ""
             await send_to_owner(context.bot,
                 f"🔴 *Auto-Trader disabled* (dashboard)\n"
+            f"Exchange: `🟡 Bybit`\n"
                 f"Funding alerts still active ✅{warning}")
             logger.info("Auto-trader disattivato da dashboard flag")
 
@@ -739,8 +740,11 @@ async def cmd_autotrader_toggle(update, context):
     if not args or args[0].lower() not in ("on", "off"):
         status = "🟢 ON" if TRADING_ENABLED else "🔴 OFF"
         env    = "🎮 DEMO" if TRADING_DEMO else ("🧪 TESTNET" if TRADING_TESTNET else "🔴 MAINNET")
+        api_key_set = bool(os.getenv("BYBIT_API_KEY", ""))
+        exch_label  = "🟡 Bybit" if api_key_set else "no exchange configured"
         await update.message.reply_text(
             f"🤖 *Auto-Trader* — {status}\n"
+            f"Exchange: `{exch_label}`\n"
             f"Environment: `{env}`\n\n"
             f"Use `/autotrader on` or `/autotrader off`",
             parse_mode="Markdown"
@@ -794,9 +798,10 @@ async def cmd_autotrader_toggle(update, context):
         _funding_trader = FundingTrader(_bybit_trader, _tg_send_toggle)
         TRADING_ENABLED = True
 
-        env_label = "🎮 DEMO" if TRADING_DEMO else ("🧪 TESTNET" if TRADING_TESTNET else "🔴 MAINNET")
+        env_label = "🎮 DEMO" if TRADING_DEMO else ("🧪 TESTNET" if TRADING_TESTNET else "🔴 LIVE")
         await update.message.reply_text(
             f"🤖 *Auto-Trader activated*\n"
+            f"Exchange: `🟡 Bybit`\n"
             f"Environment: `{env_label}`\n"
             f"Size: `{TRADER_CONFIG['size_usdt']} USDT` | "
             f"Leverage: `{TRADER_CONFIG['leverage']}x` | "
@@ -826,6 +831,7 @@ async def cmd_autotrader_toggle(update, context):
         )
         await update.message.reply_text(
             f"🔴 *Auto-Trader disabled*\n"
+            f"Exchange: `🟡 Bybit`\n"
             f"No new trades will be opened.\n"
             f"Funding alerts are still active ✅"
             f"{warning}",
@@ -887,8 +893,8 @@ async def cmd_stats(update, context):
     if open_lines:
         msg += "\n" + "\n".join(open_lines)
 
-    env_label = "🎮 DEMO" if TRADING_DEMO else ("🧪 TESTNET" if TRADING_TESTNET else "🔴 MAINNET")
-    msg += f"\n━━━━━━━━━━━━━━━━━━\n⚡ Environment: `{env_label}`"
+    env_label = "🎮 DEMO" if TRADING_DEMO else ("🧪 TESTNET" if TRADING_TESTNET else "🔴 LIVE")
+    msg += f"\n━━━━━━━━━━━━━━━━━━\n🟡 Exchange: `Bybit` · ⚡ Environment: `{env_label}`"
 
     await update.message.reply_text(msg, parse_mode="Markdown")
 
