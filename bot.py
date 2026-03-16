@@ -1487,7 +1487,7 @@ async def post_init(app):
                 "🚀 *FundShot Bot Online*\n" + _bsep + "\n"
                 "🤖 Auto-Trader: 🟢 ATTIVO\n" + _bsep + "\n"
                 "🔑 Exchange attivi:\n" + _bdetail + "\n" + _bsep + "\n"
-                "📡 Alert attivi · Guardian ✅"
+                "📡 Alert attivi · MM ✅ · Guardian ✅"
             )
             await send_to_owner(app.bot, _bmsg)
         else:
