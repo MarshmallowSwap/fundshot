@@ -584,6 +584,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
                     api_secret=cred.api_secret,
                     demo=(cred.environment == "demo"),
                     testnet=False,
+                    passphrase=getattr(cred, "passphrase", ""),
                 )
                 positions = asyncio.run(client.get_positions())
                 pos = [
@@ -636,10 +637,11 @@ class ProxyHandler(BaseHTTPRequestHandler):
                     api_secret=cred.api_secret,
                     demo=(cred.environment == "demo"),
                     testnet=False,
+                    passphrase=getattr(cred, "passphrase", ""),
                 )
                 wb = asyncio.run(client.get_wallet_balance())
                 if not wb:
-                    self._json({"ok": False, "error": "Cannot fetch wallet"})
+                    self._json({"ok": False, "error": f"Cannot fetch {exchange} wallet — check API keys and permissions"})
                     return
 
                 result = {
