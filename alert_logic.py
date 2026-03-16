@@ -667,7 +667,8 @@ def process_funding(symbol: str, rate_pct: float, interval_h, last_price: float 
     _record_alert(symbol, new_level)
 
     return format_alert(symbol, rate_pct, interval_h, new_level, prev_level,
-                        last_price=last_price, pct_24h=pct_24h)
+                        last_price=last_price, pct_24h=pct_24h,
+                        exchange=exchange, env=env)
 
 
 # ══════════════════════════════════════════════════════════════════════════════

@@ -4359,7 +4359,10 @@ async function initExchangeSettings() {
     renderExchStatusBar();
     // Aggiorna badge su tutti i tab
     Object.keys(EXCH_INFO).forEach(ex => updateExchTabBadge(ex, !!_exchConfigs[ex]));
-    selectExchangeTab(_activeExchTab, document.getElementById('tab-' + _activeExchTab));
+    // Aggiorna il tab attivo per mostrare stato corretto
+    const activeBtn = document.getElementById('tab-' + _activeExchTab);
+    selectExchangeTab(_activeExchTab, activeBtn);
+    log.debug && log.debug('initExchangeSettings: loaded', Object.keys(_exchConfigs));
   } catch(e) { console.warn('initExchangeSettings:', e); }
 }
 
@@ -4486,9 +4489,21 @@ async function testExchangeKeys() {
   const info = EXCH_INFO[_activeExchTab] || { emoji:'🏦', label: _activeExchTab };
   if (msg) { msg.style.color='var(--text3)'; msg.textContent='Testing connection...'; }
   try {
+    // Prima verifica cosa è salvato nel DB
+    const check = await authFetch('/api/user/keys/' + _activeExchTab);
+    if (!check.ok || !check.configured) {
+      if (msg) { msg.style.color='var(--red2)'; msg.textContent=`✗ No keys configured for ${info.label}`; }
+      return;
+    }
+    if (info.passphrase && !check.has_passphrase) {
+      if (msg) { msg.style.color='var(--red2)'; msg.textContent=`✗ ${info.label} needs passphrase — re-save keys with passphrase`; }
+      return;
+    }
+    // Poi testa il wallet reale
     const d = await authFetch('/api/user/wallet?exchange=' + _activeExchTab);
     if (d.ok) {
-      if (msg) { msg.style.color='var(--teal2)'; msg.textContent=`✓ ${info.emoji} ${info.label} OK — balance: ${d.total_equity||'—'} USDT`; }
+      const eq = parseFloat(d.equity||0).toFixed(2);
+      if (msg) { msg.style.color='var(--teal2)'; msg.textContent=`✓ ${info.emoji} ${info.label} OK — equity: ${eq} USDT`; }
     } else {
       if (msg) { msg.style.color='var(--red2)'; msg.textContent=`✗ ${d.error||'Connection failed'}`; }
     }
@@ -4665,6 +4680,8 @@ fetchUnrealizedPnl();
 startCountdown();
 // Delay lieve per assicurare DOM pronto
 setTimeout(() => fetchAndUpdateOI(), 500);
+// Carica exchange configs al boot (per badge e status)
+setTimeout(() => initExchangeSettings(), 800);
 </script>
 </body>
 </html>

@@ -842,9 +842,41 @@ class ProxyHandler(BaseHTTPRequestHandler):
             self._json({"ok": True, "msg": "v6 — usa /api/user/* con JWT", "version": "6.0"})
             return
 
+        # GET /api/user/keys/:exchange
+        if p.startswith("/api/user/keys/"):
+            user = self._auth()
+            if not user: return
+            if self.do_GET_keys(p, user): return
+
         self._json({"ok": False, "error": "Not Found"}, 404)
 
     # ── DELETE ────────────────────────────────────────────────────────────────
+
+    def do_GET_keys(self, p, user):
+        """GET /api/user/keys/:exchange — verifica se keys sono salvate (senza esporre i valori)"""
+        if not p.startswith("/api/user/keys/"):
+            return False
+        exchange = p.split("/")[-1].lower()
+        try:
+            import asyncio
+            from db.supabase_client import get_user, get_credentials
+            u    = asyncio.run(get_user(user["chat_id"]))
+            cred = asyncio.run(get_credentials(u.id, exchange)) if u else None
+            if not cred:
+                self._json({"ok": False, "configured": False, "exchange": exchange})
+            else:
+                self._json({
+                    "ok":          True,
+                    "configured":  True,
+                    "exchange":    exchange,
+                    "environment": cred.environment,
+                    "has_key":     bool(cred.api_key),
+                    "has_secret":  bool(cred.api_secret),
+                    "has_passphrase": bool(cred.passphrase),
+                })
+        except Exception as e:
+            self._json({"ok": False, "error": str(e)}, 500)
+        return True
 
     def do_DELETE(self):
         p = urlparse(self.path).path.rstrip("/")
