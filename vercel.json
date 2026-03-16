@@ -1,11 +1,17 @@
 {
   "version": 2,
   "builds": [
-    { "src": "landing.html", "use": "@vercel/static" },
-    { "src": "admin.html",   "use": "@vercel/static" },
-    { "src": "index.html",   "use": "@vercel/static" }
+    { "src": "landing.html",    "use": "@vercel/static" },
+    { "src": "admin.html",      "use": "@vercel/static" },
+    { "src": "index.html",      "use": "@vercel/static" },
+    { "src": "bybit-logo.svg",   "use": "@vercel/static" },
+    { "src": "binance-logo.svg", "use": "@vercel/static" },
+    { "src": "okx-logo.svg",     "use": "@vercel/static" }
   ],
   "routes": [
+    { "src": "/bybit-logo.svg",   "dest": "/bybit-logo.svg"   },
+    { "src": "/binance-logo.svg", "dest": "/binance-logo.svg" },
+    { "src": "/okx-logo.svg",     "dest": "/okx-logo.svg"     },
     { "src": "/admin",     "dest": "/admin.html" },
     { "src": "/dashboard", "dest": "/index.html" },
     { "src": "/",          "dest": "/landing.html" },
@@ -16,6 +22,13 @@
       "source": "/(.*).html",
       "headers": [
         { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/(.*).svg",
+      "headers": [
+        { "key": "Content-Type", "value": "image/svg+xml" },
+        { "key": "Cache-Control", "value": "public, max-age=86400" }
       ]
     }
   ]
