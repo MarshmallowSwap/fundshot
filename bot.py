@@ -604,29 +604,28 @@ _last_config_ts: float = 0.0
 # { exchange: last_mtime }
 _last_config_ts: dict = {}
 
-def _check_config_flag(exchange: str = "bybit") -> None:
+def _check_config_flag(exchange: str = "bybit") -> dict | None:
     """
     Legge /tmp/fs_config_{exchange}.json scritto dalla dashboard.
     Aggiorna TRADER_CONFIG se il file e piu recente dell ultima lettura.
+    Ritorna i dati config se applicati, None altrimenti.
     """
     import json as _j
     cfg_file = f"/tmp/fs_config_{exchange}.json"
-    # Fallback al globale se non esiste per-exchange
     if not os.path.exists(cfg_file):
         cfg_file = "/tmp/fs_config.json"
     try:
         if not os.path.exists(cfg_file):
-            return
+            return None
         mtime = os.path.getmtime(cfg_file)
         last  = _last_config_ts.get(exchange, 0.0)
         if mtime <= last:
-            return
+            return None
         _last_config_ts[exchange] = mtime
         data = _j.loads(open(cfg_file).read())
-        # Applica solo se corrisponde all exchange o e globale
         data_exchange = data.get("exchange", "bybit")
         if data_exchange != exchange and data_exchange != "":
-            return
+            return None
         tmp = f"/tmp/fs_config_applied_{exchange}.json"
         with open(tmp, "w") as _f:
             _j.dump(data, _f)
@@ -640,8 +639,10 @@ def _check_config_flag(exchange: str = "bybit") -> None:
             data.get("mm",{}).get("maxpos", data.get("maxpos", 0)),
             data.get("mm",{}).get("sl", data.get("sl", 0)),
         )
+        return data
     except Exception as e:
         logger.debug("_check_config_flag %s: %s", exchange, e)
+        return None
 
 
 def _check_autotrader_flag() -> bool | None:
@@ -672,9 +673,33 @@ async def trading_job(context):
 
     # Controlla flag dalla dashboard (toggle in tempo reale)
     flag_state = _check_autotrader_flag()
-    # Controlla config per tutti gli exchange supportati
+    # Controlla config per tutti gli exchange supportati — notifica se applicata
+    _ex_emoji = {"bybit": "🟡", "binance": "🟠", "okx": "🔵"}
     for _ex in ("bybit", "binance", "okx"):
-        _check_config_flag(_ex)
+        _cfg = _check_config_flag(_ex)
+        if _cfg:
+            # Config applicata — invia notifica
+            mm  = _cfg.get("mm", {})
+            g   = _cfg.get("guardian", {})
+            tog = _cfg.get("tog", {})
+            env = "🧪 Demo" if _cfg.get("tog", {}).get("testnet") else "🔴 Live"
+            ex_em = _ex_emoji.get(_ex, "⚡")
+            bot_on = "🟢 ON" if tog.get("bot") else "🔴 OFF"
+            sl_on  = "✅" if tog.get("sl")   else "❌"
+            tp_on  = "✅" if tog.get("tp1")  else "❌"
+            tr_on  = "✅" if tog.get("trail") else "❌"
+            await send_to_owner(context.bot,
+                f"⚙️ *Config aggiornata* · {ex_em} {_ex.capitalize()} · {env}\n"
+                f"━━━━━━━━━━━━━━━━━━\n"
+                f"🤖 Auto-Trader: `{bot_on}`\n"
+                f"💰 Size: `{mm.get('size', '?')} USDT` · Leva: `{mm.get('leva', '?')}x`\n"
+                f"📊 Max pos: `{mm.get('maxpos', '?')}` · SL: `{mm.get('sl', '?')}%`\n"
+                f"🎯 TP1: {tp_on} · Trailing: {tr_on} · SL auto: {sl_on}\n"
+                f"━━━━━━━━━━━━━━━━━━\n"
+                f"🛡️ Guardian: DD `{g.get('maxdd','?')}%` · Daily `{g.get('maxdaily','?')} USDT`\n"
+                f"📡 Source: `{_cfg.get('_source','dashboard')}`",
+                parse_mode="Markdown"
+            )
     if flag_state is not None and flag_state != TRADING_ENABLED:
         if flag_state:
             # Avvia trader se non già attivo
@@ -690,11 +715,16 @@ async def trading_job(context):
                     TRADING_ENABLED = True
                     env_label = "🎮 DEMO" if TRADING_DEMO else ("🧪 TESTNET" if TRADING_TESTNET else "🔴 MAINNET")
                     await send_to_owner(context.bot,
-                        f"🤖 *Auto-Trader activated* (dashboard)\n"
-                        f"Environment: `{env_label}`\n"
-                        f"Size: `{TRADER_CONFIG['size_usdt']} USDT` | "
-                        f"Leverage: `{TRADER_CONFIG['leverage']}x` | "
-                        f"Max pos: `{TRADER_CONFIG['max_positions']}`")
+                        f"🟢 *Auto-Trader ATTIVATO* · 🟡 Bybit · {env_label}\n"
+                        f"━━━━━━━━━━━━━━━━━━\n"
+                        f"💰 Size: `{TRADER_CONFIG['size_usdt']} USDT`\n"
+                        f"⚡ Leverage: `{TRADER_CONFIG['leverage']}x`\n"
+                        f"📊 Max posizioni: `{TRADER_CONFIG['max_positions']}`\n"
+                        f"🛡️ SL: `{TRADER_CONFIG['sl_pct']}%`\n"
+                        f"━━━━━━━━━━━━━━━━━━\n"
+                        f"Il bot apre posizioni automaticamente su segnali HIGH+",
+                        parse_mode="Markdown"
+                    )
                     logger.info("Auto-trader attivato da dashboard flag")
         else:
             # Disattiva trader
