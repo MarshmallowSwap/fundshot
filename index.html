@@ -3032,6 +3032,18 @@ async function loadWallet(){
   el.innerHTML='<div class="loading"><div class="spin"></div>Loading wallet...</div>';
   try{
     const r=await authFetch('/api/user/wallet?exchange='+ex);
+    if (!r.ok) {
+      const msg = r.error || 'Unknown error';
+      if (msg.includes('No') && msg.includes('API key')) {
+        el.innerHTML='<div class="empty-state"><div class="ei">🔑</div>No API keys for '+ex+'<br><small style="color:var(--text3)">Go to Settings → configure '+ex+' keys</small></div>';
+      } else {
+        el.innerHTML=`<div class="empty-state" style="color:var(--red2)">❌ ${msg}</div>`;
+      }
+      return;
+    }
+  el.innerHTML='<div class="loading"><div class="spin"></div>Loading wallet...</div>';
+  try{
+    const r=await authFetch('/api/user/wallet?exchange='+ex);
     // proxy ritorna {ok, equity, available, margin, unrealisedPnl, ...}
     const a = r.equity !== undefined ? r : (r.list?.[0] || {});
     const eq=parseFloat(r.equity || a.totalEquity||0).toFixed(2);

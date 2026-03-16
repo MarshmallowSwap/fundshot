@@ -643,12 +643,13 @@ class ProxyHandler(BaseHTTPRequestHandler):
                     return
 
                 result = {
-                    "ok":           True,
-                    "equity":       str(wb.total_equity),
-                    "available":    str(wb.available_balance),
-                    "unrealisedPnl": str(wb.unrealized_pnl),
-                    "exchange":     exchange,
-                    "env":          cred.environment,
+                    "ok":            True,
+                    "equity":        str(wb.total_equity),
+                    "available":     str(wb.total_available_balance),
+                    "margin":        str(round(wb.total_equity - wb.total_available_balance, 4)),
+                    "unrealisedPnl": str(wb.total_perp_upl),
+                    "exchange":      exchange,
+                    "env":           cred.environment,
                 }
                 cache_set(cache_key, result)
                 self._json(result)
