@@ -80,10 +80,10 @@ def set_user_min_level(chat_id_str: str, min_level: int):
 def set_user_cooldown(chat_id_str: str, minutes: int):
     get_user_alert_prefs(chat_id_str)["cooldown_min"] = max(1, min(60, minutes))
 
-def should_send_to_user(chat_id_str: str, level: str, symbol: str) -> bool:
+def should_send_to_user(chat_id_str: str, level: str, symbol: str, exchange: str = "") -> bool:
     """
     Controlla se l'alert deve essere inviato a questo utente.
-    Filtra per livello minimo e cooldown per simbolo.
+    Filtra per livello minimo e cooldown per simbolo+exchange.
     """
     import time
     prefs = get_user_alert_prefs(chat_id_str)
@@ -93,14 +93,15 @@ def should_send_to_user(chat_id_str: str, level: str, symbol: str) -> bool:
     if level_n < prefs["min_level"]:
         return False
 
-    # Cooldown per simbolo
+    # Cooldown per simbolo — chiave per-exchange
     cooldown_sec = prefs["cooldown_min"] * 60
-    last = prefs["_last_per_sym"].get(symbol, 0)
+    key = f"{exchange}:{symbol}" if exchange else symbol
+    last = prefs["_last_per_sym"].get(key, 0)
     if time.time() - last < cooldown_sec:
         return False
 
     # Aggiorna timestamp
-    prefs["_last_per_sym"][symbol] = time.time()
+    prefs["_last_per_sym"][key] = time.time()
     return True
 
 # ── Modalita ibrida ───────────────────────────────────────────────────────────

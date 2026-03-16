@@ -330,7 +330,7 @@ async def _process_exchange_tickers(
         if alert_text:
             level = al.classify(symbol, rate_pct)
             for cid in target_chat_ids:
-                if al.should_send_to_user(str(cid), level, symbol):
+                if al.should_send_to_user(str(cid), level, symbol, exchange):
                     await send_alert(bot, alert_text, target_chat_id=cid, symbol=symbol, rate=rate_pct, **ex_kwargs)
             bot_data["alerts_sent"] = bot_data.get("alerts_sent", 0) + 1
 
@@ -344,7 +344,7 @@ async def _process_exchange_tickers(
             if level_alert:
                 level = al.classify(symbol, rate_pct)
                 for cid in target_chat_ids:
-                    if al.should_send_to_user(str(cid), level, symbol):
+                    if al.should_send_to_user(str(cid), level, symbol, exchange):
                         await send_alert(bot, level_alert, target_chat_id=cid, symbol=symbol, rate=rate_pct, **ex_kwargs)
                 bot_data["alerts_sent"] = bot_data.get("alerts_sent", 0) + 1
 
