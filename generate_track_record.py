@@ -1,12 +1,25 @@
 #!/usr/bin/env python3
 """
 generate_track_record.py — FundShot
-Genera il track record pubblico basato su backtest 60 giorni Bybit.
-Output: /tmp/fs_track_record.json (letto dal proxy e servito alla landing)
+Genera il Performance Audit Report: 60 giorni di funding rate reali Bybit
+ricostruiti con la strategia live del bot.
 
-Eseguito:
-  - Manualmente: python3 generate_track_record.py
-  - Da cron: ogni 24h (aggiorna il record)
+NON è un backtest ottimizzato — usa esattamente la stessa logica del bot live:
+- Stesso motore di classificazione (alert_logic.classify)
+- Stesse soglie (SOFT >= 0.5%, HIGH >= 1%, EXTREME >= 1.5%, HARD >= 2%)
+- Stesse fee reali Bybit (taker 0.055% + slippage 0.02%)
+- Stesso sistema di apertura/chiusura posizioni
+
+Config simulata:
+- Capitale: $10,000 USDT
+- Size per trade: 500 USDT (5% del capitale)
+- Leva: 10x → notional 5,000 USDT per trade
+- Livello minimo: SOFT+ (funding >= 0.5%)
+- Simboli: top 200 Bybit USDT perpetual
+- Periodo: 60 giorni
+
+Output: /tmp/fs_track_record.json
+Eseguito: manualmente o da cron ogni notte alle 3:00 UTC
 """
 
 import asyncio
@@ -253,7 +266,7 @@ async def main():
             "leverage":         LEVERAGE,
             "min_level":        MIN_LEVEL,
             "fee_pct":          round((TAKER_FEE + SLIPPAGE) * 100 * 2, 4),
-            "strategy":         "SHORT on HIGH+ funding, LONG on HIGH- funding",
+            "strategy":         "SHORT on positive funding (SHORTs collect), LONG on negative (LONGs collect). Same logic as live bot.",
         },
         "summary": {
             "total_trades":     total_trades,
