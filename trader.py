@@ -461,13 +461,236 @@ class BybitTrader:
         return None
 
 
+
+
+# ─────────────────────────────────────────────
+# BINANCE FUTURES TRADER
+# ─────────────────────────────────────────────
+
+class BinanceFuturesTrader:
+    """
+    Client trading Binance Futures con la stessa interfaccia di BybitTrader.
+    Supporta: demo (testnet.binancefuture.com) e mainnet (fapi.binance.com).
+    """
+    EXCHANGE_ID = "binance"
+
+    def __init__(self, api_key: str, api_secret: str, demo: bool = False, testnet: bool = False):
+        self.api_key    = api_key
+        self.api_secret = api_secret
+        self.demo       = demo
+        self.base_url   = (
+            "https://testnet.binancefuture.com" if (demo or testnet)
+            else "https://fapi.binance.com"
+        )
+        logger.info("BinanceFuturesTrader init — %s", "DEMO/TESTNET" if (demo or testnet) else "MAINNET")
+
+    def _sign(self, params: str) -> str:
+        import hmac as _hmac, hashlib as _hs
+        return _hmac.new(self.api_secret.encode(), params.encode(), _hs.sha256).hexdigest()
+
+    def _headers(self) -> dict:
+        return {"X-MBX-APIKEY": self.api_key, "Content-Type": "application/x-www-form-urlencoded"}
+
+    def _get(self, path: str, params: dict = None) -> dict:
+        import time as _t
+        p = dict(params or {})
+        p["timestamp"] = int(_t.time() * 1000)
+        qs = "&".join(f"{k}={v}" for k, v in p.items())
+        p["signature"] = self._sign(qs)
+        qs2 = "&".join(f"{k}={v}" for k, v in p.items())
+        try:
+            r = requests.get(f"{self.base_url}{path}?{qs2}", headers=self._headers(), timeout=10)
+            return r.json()
+        except Exception as e:
+            logger.error("BinanceFutures GET %s: %s", path, e)
+            return {}
+
+    def _post(self, path: str, params: dict) -> dict:
+        import time as _t
+        p = dict(params)
+        p["timestamp"] = int(_t.time() * 1000)
+        qs = "&".join(f"{k}={v}" for k, v in p.items())
+        p["signature"] = self._sign(qs)
+        qs2 = "&".join(f"{k}={v}" for k, v in p.items())
+        try:
+            r = requests.post(f"{self.base_url}{path}", data=qs2, headers=self._headers(), timeout=10)
+            return r.json()
+        except Exception as e:
+            logger.error("BinanceFutures POST %s: %s", path, e)
+            return {}
+
+    def _delete(self, path: str, params: dict) -> dict:
+        import time as _t
+        p = dict(params)
+        p["timestamp"] = int(_t.time() * 1000)
+        qs = "&".join(f"{k}={v}" for k, v in p.items())
+        p["signature"] = self._sign(qs)
+        qs2 = "&".join(f"{k}={v}" for k, v in p.items())
+        try:
+            r = requests.delete(f"{self.base_url}{path}?{qs2}", headers=self._headers(), timeout=10)
+            return r.json()
+        except Exception as e:
+            logger.error("BinanceFutures DELETE %s: %s", path, e)
+            return {}
+
+    # ── MARKET DATA ──
+
+    def get_mark_price(self, symbol: str) -> Optional[float]:
+        try:
+            r = requests.get(f"{self.base_url}/fapi/v1/premiumIndex",
+                             params={"symbol": symbol}, timeout=10)
+            d = r.json()
+            if isinstance(d, dict):
+                return float(d.get("markPrice", 0)) or None
+        except Exception as e:
+            logger.error("BinanceFutures get_mark_price %s: %s", symbol, e)
+        return None
+
+    def get_open_interest(self, symbol: str) -> Optional[dict]:
+        try:
+            r = requests.get(f"{self.base_url}/fapi/v1/openInterestHist",
+                             params={"symbol": symbol, "period": "5m", "limit": 3}, timeout=10)
+            items = r.json()
+            if isinstance(items, list) and len(items) >= 2:
+                curr = float(items[-1]["sumOpenInterestValue"])
+                prev = float(items[-2]["sumOpenInterestValue"])
+                chg  = (curr - prev) / prev * 100 if prev else 0
+                return {"oi": curr, "change_5m": chg, "change_10m": chg}
+        except Exception as e:
+            logger.error("BinanceFutures get_oi %s: %s", symbol, e)
+        return {"oi": 0, "change_5m": 0, "change_10m": 0}
+
+    def get_lot_info(self, symbol: str) -> dict:
+        try:
+            r = requests.get(f"{self.base_url}/fapi/v1/exchangeInfo", timeout=10)
+            for s in r.json().get("symbols", []):
+                if s.get("symbol") == symbol:
+                    for f in s.get("filters", []):
+                        if f.get("filterType") == "LOT_SIZE":
+                            return {
+                                "min_qty":  float(f.get("minQty", 0.001)),
+                                "qty_step": float(f.get("stepSize", 0.001)),
+                            }
+        except Exception as e:
+            logger.error("BinanceFutures get_lot_info %s: %s", symbol, e)
+        return {"min_qty": 0.001, "qty_step": 0.001}
+
+    def calc_qty(self, symbol: str, size_usdt: float, leverage: int) -> Optional[float]:
+        import math
+        price = self.get_mark_price(symbol)
+        if not price:
+            return None
+        lot   = self.get_lot_info(symbol)
+        step  = lot["qty_step"]
+        min_q = lot["min_qty"]
+        notional = size_usdt * leverage
+        raw_qty  = notional / price
+        decimals = max(0, -int(math.floor(math.log10(step)))) if step < 1 else 0
+        qty = round(math.floor(raw_qty / step) * step, decimals)
+        qty = max(qty, min_q)
+        return qty
+
+    def set_leverage(self, symbol: str, leverage: int) -> bool:
+        r = self._post("/fapi/v1/leverage", {"symbol": symbol, "leverage": leverage})
+        return "leverage" in r
+
+    def place_order(self, symbol: str, side: str, qty: float,
+                    sl_price: float, tp_price: float) -> Optional[str]:
+        """side: 'Buy'→'BUY', 'Sell'→'SELL' per compatibilità con FundingTrader."""
+        self.set_leverage(symbol, CONFIG["leverage"])
+        bn_side = "BUY" if side == "Buy" else "SELL"
+
+        params = {
+            "symbol":           symbol,
+            "side":             bn_side,
+            "type":             "MARKET",
+            "quantity":         str(qty),
+            "stopPrice":        str(round(sl_price, 6)),
+            "workingType":      "MARK_PRICE",
+        }
+        # Apri ordine market
+        r = self._post("/fapi/v1/order", {
+            "symbol": symbol, "side": bn_side,
+            "type": "MARKET", "quantity": str(qty),
+        })
+        if "orderId" not in r:
+            logger.error("BinanceFutures place_order error: %s", r)
+            return None
+        order_id = str(r["orderId"])
+
+        # SL separato
+        sl_side = "SELL" if bn_side == "BUY" else "BUY"
+        self._post("/fapi/v1/order", {
+            "symbol": symbol, "side": sl_side,
+            "type": "STOP_MARKET", "stopPrice": str(round(sl_price, 4)),
+            "closePosition": "true", "workingType": "MARK_PRICE",
+        })
+
+        # TP separato (solo se impostato)
+        if tp_price > 0:
+            self._post("/fapi/v1/order", {
+                "symbol": symbol, "side": sl_side,
+                "type": "TAKE_PROFIT_MARKET", "stopPrice": str(round(tp_price, 4)),
+                "closePosition": "true", "workingType": "MARK_PRICE",
+            })
+
+        logger.info("BinanceFutures place_order %s %s qty=%s", symbol, bn_side, qty)
+        return order_id
+
+    def set_trailing_stop(self, symbol: str, side: str,
+                          trailing_dist: float, active_price: float) -> bool:
+        """Binance usa callbackRate % invece di distanza assoluta."""
+        price = self.get_mark_price(symbol)
+        if not price or price == 0:
+            return False
+        callback_pct = max(0.1, min(10.0, round(trailing_dist / price * 100, 1)))
+        sl_side = "SELL" if side == "Buy" else "BUY"
+        r = self._post("/fapi/v1/order", {
+            "symbol":         symbol,
+            "side":           sl_side,
+            "type":           "TRAILING_STOP_MARKET",
+            "callbackRate":   str(callback_pct),
+            "activationPrice": str(round(active_price, 4)),
+            "closePosition":  "true",
+            "workingType":    "MARK_PRICE",
+        })
+        ok = "orderId" in r
+        if not ok:
+            logger.warning("BinanceFutures set_trailing_stop %s: %s", symbol, r)
+        return ok
+
+    def close_position(self, symbol: str, side: str, qty: float) -> bool:
+        """Chiude posizione: side è 'Buy'/'Sell' (formato Bybit) — convertiamo per Binance."""
+        close_side = "SELL" if side == "Buy" else "BUY"
+        r = self._post("/fapi/v1/order", {
+            "symbol":     symbol,
+            "side":       close_side,
+            "type":       "MARKET",
+            "quantity":   str(qty),
+            "reduceOnly": "true",
+        })
+        ok = "orderId" in r
+        if not ok:
+            logger.error("BinanceFutures close_position %s: %s", symbol, r)
+        return ok
+
+    def get_position(self, symbol: str) -> Optional[dict]:
+        r = self._get("/fapi/v2/positionRisk", {"symbol": symbol})
+        if isinstance(r, list):
+            for p in r:
+                if float(p.get("positionAmt", 0)) != 0:
+                    return {"size": abs(float(p["positionAmt"])), "symbol": symbol}
+            return None  # posizione chiusa
+        return None
+
 # ─────────────────────────────────────────────
 # LOGICA STRATEGIA
 # ─────────────────────────────────────────────
 
 class FundingTrader:
-    def __init__(self, bybit: BybitTrader, telegram_send_fn):
-        self.bybit         = bybit
+    def __init__(self, exchange, telegram_send_fn, exchange_name: str = "bybit"):
+        self.exchange      = exchange
+        self.exchange_name = exchange_name
         self.send          = telegram_send_fn      # async fn(chat_id, msg)
         self.positions:        dict[str, TradePosition] = {}
         self._recently_closed: dict[str, float] = {}   # symbol -> timestamp chiusura
@@ -575,7 +798,7 @@ class FundingTrader:
         # 7. OI — solo informativo, non blocca il trade
         # Il filtro OI è disabilitato: troppo volatile su timeframe 5min
         # Viene comunque loggato per analisi futura
-        oi_data = self.bybit.get_open_interest(symbol)
+        oi_data = self.exchange.get_open_interest(symbol)
         if oi_data:
             logger.debug(f"OI {symbol}: {oi_data['change_5m']:+.2f}% (solo log, non filtra)")
 
@@ -588,16 +811,16 @@ class FundingTrader:
         direction = "SHORT" if funding_rate > 0 else "LONG"
         side      = "Sell"  if direction == "SHORT" else "Buy"
 
-        mark_price = self.bybit.get_mark_price(symbol)
+        mark_price = self.exchange.get_mark_price(symbol)
         if not mark_price:
             logger.error(f"open_trade: impossibile ottenere prezzo {symbol}")
             return
 
-        oi_data  = self.bybit.get_open_interest(symbol) or {"change_5m": 0}
+        oi_data  = self.exchange.get_open_interest(symbol) or {"change_5m": 0}
         params   = self.calc_trade_params(mark_price, direction, level)
         notional = CONFIG["size_usdt"] * CONFIG["leverage"]
 
-        qty = self.bybit.calc_qty(symbol, CONFIG["size_usdt"], CONFIG["leverage"])
+        qty = self.exchange.calc_qty(symbol, CONFIG["size_usdt"], CONFIG["leverage"])
         if not qty:
             logger.error(f"open_trade: impossibile calcolare qty {symbol}")
             return
@@ -614,7 +837,7 @@ class FundingTrader:
         # Per livelli forti non impostiamo TP fisso — solo trailing
         tp_price_order = params["tp1_price"] if USE_TP1 else 0
 
-        order_id = self.bybit.place_order(
+        order_id = self.exchange.place_order(
             symbol    = symbol,
             side      = side,
             qty       = qty,
@@ -639,7 +862,7 @@ class FundingTrader:
             active_price   = mark_price * (1 - tp1_pct)
             trailing_dist  = mark_price * buf_pct
 
-        ts_ok = self.bybit.set_trailing_stop(symbol, side, trailing_dist, active_price)
+        ts_ok = self.exchange.set_trailing_stop(symbol, side, trailing_dist, active_price)
         if ts_ok:
             logger.info(f"Trailing stop nativo impostato {symbol}: dist={trailing_dist:.6f} active={active_price:.6f}")
         else:
@@ -682,7 +905,7 @@ class FundingTrader:
             f"🎯 Trailing 100%: active from `${active_price:.6f}` (+{params['tp1_pct']:.2f}%), dist `{params['trailing_buffer']:.2f}%`\n"
         )
         msg = (
-            f"{emoji} *TRADE OPENED — {direction}*\n"
+            f"{emoji} *TRADE OPENED — {direction}*  {('🟡' if self.exchange_name=='bybit' else '🟠') if self.exchange_name in ('bybit','binance') else '⚡'}\n"
             f"━━━━━━━━━━━━━━━━━━\n"
             f"📌 Pair:      `{symbol}`\n"
             f"💰 Entry:     `${mark_price:.6f}`\n"
@@ -712,10 +935,10 @@ class FundingTrader:
 
     async def _monitor_single(self, symbol: str, pos: TradePosition, chat_id: str):
         # ── CHECK PRIORITARIO: Bybit ha già chiuso la posizione? ──
-        bybit_pos = self.bybit.get_position(symbol)
+        bybit_pos = self.exchange.get_position(symbol)
         if bybit_pos is None or float(bybit_pos.get("size", 0)) == 0:
             # Posizione chiusa esternamente (TP/SL nativo Bybit o liquidazione)
-            mark_price = self.bybit.get_mark_price(symbol) or pos.entry_price
+            mark_price = self.exchange.get_mark_price(symbol) or pos.entry_price
             is_short   = pos.direction == "SHORT"
             pnl_pct    = ((pos.entry_price - mark_price) / pos.entry_price * 100) if is_short                          else ((mark_price - pos.entry_price) / pos.entry_price * 100)
             pnl_usdt   = pos.notional * (pnl_pct / 100)
@@ -735,7 +958,7 @@ class FundingTrader:
             logger.info(f"Posizione {symbol} chiusa esternamente da Bybit — rimossa dal tracking, cooldown 30min")
             return
 
-        mark_price = self.bybit.get_mark_price(symbol)
+        mark_price = self.exchange.get_mark_price(symbol)
         if not mark_price:
             return
 
@@ -825,7 +1048,7 @@ class FundingTrader:
                           reason: str, price: float, pnl_pct: float):
         """Chiude l'intera posizione."""
         full_qty = pos.tp1_qty + pos.remaining_qty
-        ok = self.bybit.close_position(symbol, pos.side, full_qty)
+        ok = self.exchange.close_position(symbol, pos.side, full_qty)
         if ok:
             pnl = pos.notional * (pnl_pct / 100)
             await self._send_close_msg(chat_id, pos, reason, price, pnl, pnl_pct, "100%")
@@ -836,7 +1059,7 @@ class FundingTrader:
     async def _close_remaining(self, symbol: str, pos: TradePosition, chat_id: str,
                                 reason: str, price: float, pnl_pct: float):
         """Chiude il 70% residuo dopo TP1."""
-        ok = self.bybit.close_position(symbol, pos.side, pos.remaining_qty)
+        ok = self.exchange.close_position(symbol, pos.side, pos.remaining_qty)
         if ok:
             # PnL totale = TP1 parziale + residuo
             pnl_tp1  = pos.notional * (pos.tp1_pct / 100) * (CONFIG["tp1_size_pct"] / 100)
@@ -920,7 +1143,7 @@ class FundingTrader:
 
         # Esci se funding è rientrato sotto la soglia base
         if abs_rate < CONFIG["min_funding_abs"]:
-            mark_price = self.bybit.get_mark_price(symbol) or pos.entry_price
+            mark_price = self.exchange.get_mark_price(symbol) or pos.entry_price
             is_short   = pos.direction == "SHORT"
             pnl_pct    = ((pos.entry_price - mark_price) / pos.entry_price * 100) if is_short \
                          else ((mark_price - pos.entry_price) / pos.entry_price * 100)

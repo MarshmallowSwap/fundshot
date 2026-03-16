@@ -48,11 +48,13 @@ from user_registry import registry as _registry
 from trading_manager import trading_manager as _trading_manager
 
 # ── Auto-trading ──────────────────────────────────────────────────────────────
-from trader import CONFIG as TRADER_CONFIG, load_config, BybitTrader, FundingTrader
+from trader import CONFIG as TRADER_CONFIG, load_config, BybitTrader, BinanceFuturesTrader, FundingTrader
 
 # Istanze globali del trader (inizializzate in post_init)
 _bybit_trader:   BybitTrader   | None = None
 _funding_trader: FundingTrader | None = None
+# Multi-exchange traders: { exchange: FundingTrader }
+_exchange_traders: dict[str, FundingTrader] = {}
 
 # ── Configurazione ────────────────────────────────────────────────────────────
 load_dotenv()
@@ -334,6 +336,16 @@ async def _process_exchange_tickers(
                     await send_alert(bot, alert_text, target_chat_id=cid, symbol=symbol, rate=rate_pct, **ex_kwargs)
             bot_data["alerts_sent"] = bot_data.get("alerts_sent", 0) + 1
 
+        # ── AUTO-TRADER: apri posizione se configurato per questo exchange ──
+        if TRADING_ENABLED and exchange in _exchange_traders:
+            ft = _exchange_traders[exchange]
+            ft.update_persistence(symbol, rate_pct / 100)
+            ok, reason = await ft.should_open(symbol, rate_pct / 100)
+            if ok:
+                owner_cid = os.getenv("CHAT_ID", CHAT_ID)
+                if owner_cid:
+                    await ft.open_trade(symbol, rate_pct / 100, owner_cid)
+
         # 1b. Alert cambio livello
         if _bot_alert_enabled("level_change"):
             level_alert = al.check_level_change(
@@ -403,6 +415,77 @@ async def _process_exchange_tickers(
             _mon_add(sym, r_raw, lvl)
         elif sym in _monitoring and not lvl and exchange == "bybit":
             _mon_remove(sym, "funding rientrato")
+
+
+async def _init_exchange_traders(bot) -> None:
+    """
+    Inizializza FundingTrader per ogni exchange con chiavi configurate nel DB.
+    Chiamata all'avvio e quando l'autotrader viene attivato dalla dashboard.
+    """
+    global _exchange_traders
+
+    owner_chat_id = int(os.getenv("CHAT_ID", CHAT_ID or "0"))
+    if not owner_chat_id:
+        return
+
+    try:
+        from db.supabase_client import get_user, get_credentials
+        user = await get_user(owner_chat_id)
+        if not user:
+            return
+
+        async def _make_send_fn(exch_name: str):
+            async def _send(chat_id, msg, symbol=None, rate=None):
+                try:
+                    chart_buf = None
+                    if symbol and rate is not None:
+                        try:
+                            chart_buf = generate_chart(symbol, rate, exchange=exch_name)
+                        except Exception:
+                            pass
+                    if chart_buf:
+                        chart_buf.seek(0)
+                        await bot.send_photo(chat_id=chat_id, photo=chart_buf,
+                                             caption=msg, parse_mode="Markdown")
+                    else:
+                        await bot.send_message(chat_id=chat_id, text=msg, parse_mode="Markdown")
+                except Exception as e:
+                    logger.error("_send trader %s: %s", exch_name, e)
+            return _send
+
+        for exchange in ["bybit", "binance"]:
+            if exchange in _exchange_traders:
+                continue  # già inizializzato
+            try:
+                cred = await get_credentials(user.id, exchange)
+                if not cred or not cred.api_key:
+                    continue
+                is_demo = cred.environment == "demo"
+                if exchange == "bybit":
+                    client = BybitTrader(
+                        api_key=cred.api_key, api_secret=cred.api_secret,
+                        demo=is_demo, testnet=False
+                    )
+                elif exchange == "binance":
+                    client = BinanceFuturesTrader(
+                        api_key=cred.api_key, api_secret=cred.api_secret,
+                        demo=is_demo
+                    )
+                else:
+                    continue
+
+                send_fn = await _make_send_fn(exchange)
+                ft = FundingTrader(client, send_fn, exchange_name=exchange)
+                ft.chat_id = str(owner_chat_id)
+                _exchange_traders[exchange] = ft
+                logger.info("FundingTrader inizializzato: exchange=%s env=%s", exchange, cred.environment)
+            except Exception as e:
+                logger.warning("_init_exchange_traders %s: %s", exchange, e)
+
+        logger.info("Exchange traders attivi: %s", list(_exchange_traders.keys()))
+
+    except Exception as e:
+        logger.error("_init_exchange_traders: %s", e)
 
 
 _funding_job_cycles = 0
@@ -707,33 +790,49 @@ async def trading_job(context):
                     from exchanges.bybit import BybitTrader as _BT
                     _bybit_trader   = _BT(api_key=api_key, api_secret=api_secret,
                                           testnet=TRADING_TESTNET, demo=TRADING_DEMO)
-                    _funding_trader = FundingTrader(_bybit_trader, lambda *a, **kw: None)
+                    _funding_trader = FundingTrader(_bybit_trader, lambda *a, **kw: None,
+                                                    exchange_name="bybit")
+                    _exchange_traders["bybit"] = _funding_trader
                     TRADING_ENABLED = True
+
+                    # Avvia anche Binance se le chiavi sono nel DB
+                    await _init_exchange_traders(context.bot)
+
                     env_label = "🎮 DEMO" if TRADING_DEMO else ("🧪 TESTNET" if TRADING_TESTNET else "🔴 MAINNET")
                     await send_to_owner(context.bot,
-                        f"🟢 *Auto-Trader ATTIVATO* · 🟡 Bybit · {env_label}\n"
+                        f"🟢 *Auto-Trader ATTIVATO* · {env_label}\n"
                         f"━━━━━━━━━━━━━━━━━━\n"
-                        f"💰 Size: `{TRADER_CONFIG['size_usdt']} USDT`\n"
-                        f"⚡ Leverage: `{TRADER_CONFIG['leverage']}x`\n"
-                        f"📊 Max posizioni: `{TRADER_CONFIG['max_positions']}`\n"
-                        f"🛡️ SL: `{TRADER_CONFIG['sl_pct']}%`\n"
+                        f"💰 Size: {TRADER_CONFIG['size_usdt']} USDT · Leva: {TRADER_CONFIG['leverage']}x\n"
+                        f"📊 Max pos: {TRADER_CONFIG['max_positions']} · SL: {TRADER_CONFIG['sl_pct']}%\n"
                         f"━━━━━━━━━━━━━━━━━━\n"
-                        f"Il bot apre posizioni automaticamente su segnali HIGH+",
+                        f"Exchange attivi: {', '.join(_exchange_traders.keys())}",
                         parse_mode="Markdown"
                     )
-                    logger.info("Auto-trader attivato da dashboard flag")
+                    logger.info("Auto-trader attivato da dashboard flag su: %s", list(_exchange_traders.keys()))
         else:
             # Disattiva trader
-            open_pos = len(_funding_trader.positions) if _funding_trader else 0
+            open_pos = sum(len(ft.positions) for ft in _exchange_traders.values())
             TRADING_ENABLED = False
             _funding_trader = None
             _bybit_trader   = None
+            _exchange_traders.clear()
             warning = f"\n⚠️ *{open_pos} open position(s) not closed automatically.*" if open_pos > 0 else ""
             await send_to_owner(context.bot,
                 f"🔴 *Auto-Trader disabled* (dashboard)\n"
             f"Exchange: `🟡 Bybit`\n"
                 f"Funding alerts still active ✅{warning}")
             logger.info("Auto-trader disattivato da dashboard flag")
+
+    # Monitor posizioni per tutti gli exchange attivi
+    if TRADING_ENABLED and _exchange_traders:
+        owner_cid = os.getenv("CHAT_ID", CHAT_ID)
+        if owner_cid:
+            for _exname, _ft in list(_exchange_traders.items()):
+                if _ft.positions:
+                    try:
+                        await _ft.monitor_positions(owner_cid)
+                    except Exception as _me:
+                        logger.error("monitor_positions %s: %s", _exname, _me)
 
     if not TRADING_ENABLED:
         return
@@ -1323,9 +1422,14 @@ async def post_init(app):
                 except Exception as e:
                     logger.error("_tg_send: %s", e)
 
-            _funding_trader = FundingTrader(_bybit_trader, _tg_send)
+            _funding_trader = FundingTrader(_bybit_trader, _tg_send,
+                                            exchange_name="bybit")
+            _exchange_traders["bybit"] = _funding_trader
 
             env_label = "🎮 DEMO" if TRADING_DEMO else ("🧪 TESTNET" if TRADING_TESTNET else "🔴 MAINNET")
+            # Inizializza traders per altri exchange (es. Binance)
+            await _init_exchange_traders(app.bot)
+
             logger.info(
                 "🤖 Auto-trader attivo — %s | size=%.0f USDT | leva=%dx | maxpos=%d",
                 env_label,
@@ -1563,10 +1667,11 @@ def main():
             )
 
         elif q.data == "autotrader_off_only":
-            open_pos = len(_funding_trader.positions) if _funding_trader else 0
+            open_pos = sum(len(ft.positions) for ft in _exchange_traders.values())
             TRADING_ENABLED = False
             _funding_trader = None
             _bybit_trader   = None
+            _exchange_traders.clear()
             await q.edit_message_text(
                 f"🔴 *Auto-Trader disabled*\n"
                 f"Exchange: `🟡 Bybit`\n"
