@@ -3439,7 +3439,15 @@ async function sendToBot(source='settings') {
       const d = await r.json().catch(()=>({}));
       setMsg('<span style="color:var(--teal2)">✅ Bot aggiornato — config live!</span>');
       // Salva timestamp invio per le summary card
-      localStorage.setItem('fk_sent_ts_' + _tradingExchange, Date.now().toString());
+      // Salva snapshot completo per persistenza across reloads
+      const _snap = {
+        mm:  JSON.parse(localStorage.getItem(_mmKey())  || '{}'),
+        g:   JSON.parse(localStorage.getItem(_gKey())   || '{}'),
+        cfg: JSON.parse(localStorage.getItem(_cfgKey()) || '{}'),
+        ts:  Date.now()
+      };
+      localStorage.setItem('fk_sent_ts_' + _tradingExchange, _snap.ts.toString());
+      localStorage.setItem('fk_snap_' + _tradingExchange, JSON.stringify(_snap));
       renderExchangeSummaryCard(_tradingExchange);
     } else {
       setMsg('<span style="color:var(--amber2)">⚠️ Bot non raggiungibile (proxy offline?)</span>');
@@ -3619,13 +3627,20 @@ function renderExchangeSummaryCard(ex) {
   document.querySelectorAll('.exch-summary-card').forEach(c => c.classList.remove('active-card'));
   if (ex === _tradingExchange && cardEl) cardEl.classList.add('active-card');
 
-  if (!mm && !g) {
+  // Fallback: leggi dallo snapshot salvato al momento dell'ultimo send
+  let mmData = mm, gData = g, cfgData = cfg;
+  if (!mm && !g && ts) {
+    const snap = (() => { try { return JSON.parse(localStorage.getItem('fk_snap_' + ex) || 'null'); } catch { return null; } })();
+    if (snap) { mmData = snap.mm || null; gData = snap.g || null; cfgData = snap.cfg || null; }
+  }
+
+  if (!mmData && !gData) {
     rowsEl.innerHTML = '<div class="exch-card-never">No config sent yet<br>Select ' + ex.charAt(0).toUpperCase() + ex.slice(1) + ' and save</div>';
     if (statEl) { statEl.textContent = 'Never sent'; statEl.className = 'exch-card-status not-sent'; }
     return;
   }
 
-  const tog = cfg?.tog || {};
+  const tog = cfgData?.tog || cfg?.tog || {};
   const botOn = tog.bot || false;
   const tsStr = ts ? new Date(parseInt(ts)).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '—';
 
@@ -4699,6 +4714,8 @@ startCountdown();
 setTimeout(() => fetchAndUpdateOI(), 500);
 // Carica exchange configs al boot (per badge e status)
 setTimeout(() => initExchangeSettings(), 800);
+// Renderizza le card con i dati salvati in localStorage
+setTimeout(() => renderAllExchangeCards(), 300);
 </script>
 </body>
 </html>
