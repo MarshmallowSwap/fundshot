@@ -678,37 +678,9 @@ async def trading_job(context):
     for _ex in ("bybit", "binance", "okx"):
         _cfg = _check_config_flag(_ex)
         if _cfg:
-            # Config applicata — invia notifica
-            mm  = _cfg.get("mm", {})
-            g   = _cfg.get("guardian", {})
-            tog = _cfg.get("tog", {})
-            env = "🧪 Demo" if _cfg.get("tog", {}).get("testnet") else "🔴 Live"
-            ex_em = _ex_emoji.get(_ex, "⚡")
-            bot_on = "🟢 ON" if tog.get("bot") else "🔴 OFF"
-            sl_on  = "✅" if tog.get("sl")   else "❌"
-            tp_on  = "✅" if tog.get("tp1")  else "❌"
-            tr_on  = "✅" if tog.get("trail") else "❌"
-            _mm_size  = mm.get("size", "?")
-            _mm_leva  = mm.get("leva", "?")
-            _mm_mpos  = mm.get("maxpos", "?")
-            _mm_sl    = mm.get("sl", "?")
-            _g_dd     = g.get("maxdd", "?")
-            _g_daily  = g.get("maxdaily", "?")
-            _source   = _cfg.get("_source", "dashboard")
-            _notif    = (
-                f"⚙️ *Config aggiornata*\n"
-                f"{ex_em} {_ex.capitalize()} · {env}\n"
-                "━━━━━━━━━━━━━━━━━━\n"
-                f"🤖 Auto-Trader: {bot_on}\n"
-                f"💰 Size: {_mm_size} USDT · Leva: {_mm_leva}x\n"
-                f"📊 Max pos: {_mm_mpos} · SL: {_mm_sl}%\n"
-                f"🎯 TP1: {tp_on} · Trail: {tr_on} · SL: {sl_on}\n"
-                "━━━━━━━━━━━━━━━━━━\n"
-                f"🛡️ Guardian: DD {_g_dd}% · Daily {_g_daily} USDT\n"
-                f"📡 Source: {_source}"
-            )
-            logger.info("Notifica config exchange=%s", _ex)
-            await send_to_owner(context.bot, _notif)
+            # Config applicata — notifica già inviata dal proxy in tempo reale
+            logger.info("Config applicata exchange=%s size=%s leva=%s",
+                        _ex, _cfg.get("mm",{}).get("size","?"), _cfg.get("mm",{}).get("leva","?"))
     if flag_state is not None and flag_state != TRADING_ENABLED:
         if flag_state:
             # Avvia trader se non già attivo
