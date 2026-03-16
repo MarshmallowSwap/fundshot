@@ -632,7 +632,14 @@ def _check_config_flag(exchange: str = "bybit") -> None:
             _j.dump(data, _f)
         from trader import load_config as _lc
         _lc(tmp)
-        logger.info("Config aggiornata exchange=%s source=%s", exchange, data.get("_source","?"))
+        logger.info(
+            "Config aggiornata exchange=%s source=%s size=%.0f leva=%d maxpos=%d sl=%.1f",
+            exchange, data.get("_source","?"),
+            data.get("mm",{}).get("size", data.get("size", 0)),
+            data.get("mm",{}).get("leva", data.get("leva", 0)),
+            data.get("mm",{}).get("maxpos", data.get("maxpos", 0)),
+            data.get("mm",{}).get("sl", data.get("sl", 0)),
+        )
     except Exception as e:
         logger.debug("_check_config_flag %s: %s", exchange, e)
 

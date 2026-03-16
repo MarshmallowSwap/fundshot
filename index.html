@@ -3521,8 +3521,8 @@ async function sendToBot(source='settings') {
 async function saveAndSendSettings() {
   saveAll();
   const cfg = loadCfg();
-  const mm  = JSON.parse(localStorage.getItem('fk_mm')||'{}');
-  const g   = JSON.parse(localStorage.getItem('fk_guardian')||'{}');
+  const mm  = JSON.parse(localStorage.getItem(_mmKey())||'{}');
+  const g   = JSON.parse(localStorage.getItem(_gKey())||'{}');
   const botOn = document.getElementById('tog-bot')?.classList.contains('on') || false;
 
   showBotPreview('⚙️', 'Save & Send Settings', 'Full config snapshot sent to bot', buildBotPreviewRows(), async () => {
@@ -3581,7 +3581,7 @@ async function handleAutotraderToggle(el) {
   } else {
     // Sta attivando — mostra preview prima
     const cfg = loadCfg();
-    const mm  = JSON.parse(localStorage.getItem('fk_mm')||'{}');
+    const mm  = JSON.parse(localStorage.getItem(_mmKey())||'{}');
     showBotPreview('🤖', 'Enable Auto-Trader', 'Full config snapshot — bot will start opening positions', buildBotPreviewRows(), () => {
       el.classList.add('on');
       botToggleFeedback(el);
@@ -3606,8 +3606,8 @@ async function saveAndSendTrading() {
   mmSave();
   guardianSave();
   efSave();
-  const mm = JSON.parse(localStorage.getItem('fk_mm')||'{}');
-  const g  = JSON.parse(localStorage.getItem('fk_guardian')||'{}');
+  const mm = JSON.parse(localStorage.getItem(_mmKey())||'{}');
+  const g  = JSON.parse(localStorage.getItem(_gKey())||'{}');
   showBotPreview('⚡', 'Apply Trading Config', 'Full config snapshot sent to bot', buildBotPreviewRows(), async () => {
     await sendToBot('trading');
   });
@@ -3765,7 +3765,7 @@ function initTradingPage() {
 
 // ─── MM ───
 function loadMM() {
-  const m = JSON.parse(localStorage.getItem('fk_mm')||'null') || MM_DEFAULTS;
+  const m = JSON.parse(localStorage.getItem(_mmKey())||'null') || MM_DEFAULTS;
   document.getElementById('mm-size').value   = m.size;
   document.getElementById('mm-leva').value   = m.leva;
   document.getElementById('mm-risk').value   = m.risk;
@@ -3890,7 +3890,7 @@ function addTrade(preset) {
   const sym = (document.getElementById('mt-sym')?.value||'').trim().toUpperCase() || 'MANUAL';
   let pnl     = parseFloat(document.getElementById('mt-pnl')?.value)||0;
   const fund  = parseFloat(document.getElementById('mt-funding')?.value)||0;
-  const mm    = JSON.parse(localStorage.getItem('fk_mm')||'null') || MM_DEFAULTS;
+  const mm    = JSON.parse(localStorage.getItem(_mmKey())||'null') || MM_DEFAULTS;
 
   if (preset === 'long' || preset === 'short') {
     pnl = Math.abs(mm.size * (mm.risk/100) * (1.5 + Math.random()));
