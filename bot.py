@@ -602,7 +602,7 @@ _tj_running = False   # lock anti-sovrapposizione
 _last_config_ts: float = 0.0
 
 # { exchange: last_mtime }
-_last_config_ts: dict = {}
+_last_config_ts: dict = {}  # resettato ad ogni restart del processo
 
 def _check_config_flag(exchange: str = "bybit") -> dict | None:
     """
@@ -669,7 +669,7 @@ async def trading_job(context):
     Esegue FundingTrader per ogni utente registrato su Supabase.
     Mantiene retrocompatibilità con il trader legacy single-tenant.
     """
-    global _tj_running, TRADING_ENABLED, _funding_trader, _bybit_trader
+    global _tj_running, TRADING_ENABLED, _funding_trader, _bybit_trader, _last_config_ts
 
     # Controlla flag dalla dashboard (toggle in tempo reale)
     flag_state = _check_autotrader_flag()
@@ -1338,15 +1338,28 @@ async def post_init(app):
                 TRADER_CONFIG["max_positions"],
             )
 
-            # Notifica owner al boot
+            # Notifica owner al boot — con dettagli completi
+            from db.supabase_client import get_client as _bc2
+            try:
+                _db2 = _bc2()
+                _rows = _db2.table("exchange_credentials").select("exchange,environment").eq("is_active", True).execute()
+                _exch_list = [f"{'🟡' if r['exchange']=='bybit' else '🟠' if r['exchange']=='binance' else '🔵'} {r['exchange'].capitalize()} ({'Demo' if r['environment']=='demo' else 'Live'})"
+                              for r in (_rows.data or [])]
+                _exch_str = " · ".join(_exch_list) if _exch_list else "nessuno"
+            except Exception:
+                _exch_str = "—"
+
             await send_to_owner(
                 app.bot,
-                f"🤖 *Auto-Trader activated*\n"
-                f"Environment: `{env_label}`\n"
-                f"Size: `{TRADER_CONFIG['size_usdt']} USDT` | "
-                f"Leverage: `{TRADER_CONFIG['leverage']}x` | "
-                f"Max pos: `{TRADER_CONFIG['max_positions']}`\n"
-                f"Config: `trader_config.json` {'✅' if os.path.exists('trader_config.json') else '⚠️ not found (using defaults)'}"
+                f"🚀 *FundShot Bot Online*\n"
+                f"━━━━━━━━━━━━━━━━━━\n"
+                f"🤖 Auto-Trader: `🟢 ATTIVO` · {env_label}\n"
+                f"💰 Size: `{TRADER_CONFIG['size_usdt']} USDT` · Leva: `{TRADER_CONFIG['leverage']}x`\n"
+                f"📊 Max pos: `{TRADER_CONFIG['max_positions']}` · SL: `{TRADER_CONFIG['sl_pct']}%`\n"
+                f"━━━━━━━━━━━━━━━━━━\n"
+                f"🔑 Exchange configurati:\n{_exch_str}\n"
+                f"━━━━━━━━━━━━━━━━━━\n"
+                f"📡 Alert attivi · Guardian ✅"
             )
         else:
             logger.warning("AUTO_TRADING=true but API keys not configured.")
@@ -1358,11 +1371,26 @@ async def post_init(app):
             )
     else:
         logger.info("Auto-trading DISABLED (AUTO_TRADING=false)")
+        # Leggi exchange configurati anche senza autotrader
+        try:
+            from db.supabase_client import get_client as _bc3
+            _db3 = _bc3()
+            _rows3 = _db3.table("exchange_credentials").select("exchange,environment").eq("is_active", True).execute()
+            _exch_list3 = [f"{'🟡' if r['exchange']=='bybit' else '🟠' if r['exchange']=='binance' else '🔵'} {r['exchange'].capitalize()} ({'Demo' if r['environment']=='demo' else 'Live'})"
+                           for r in (_rows3.data or [])]
+            _exch_str3 = " · ".join(_exch_list3) if _exch_list3 else "nessuno"
+        except Exception:
+            _exch_str3 = "—"
         await send_to_owner(
             app.bot,
-            "🤖 *Auto-Trader disabled*\n"
-            "Set `AUTO_TRADING=true` in `.env` and restart to enable.\n"
-            "Alerts are still active ✅"
+            f"🚀 *FundShot Bot Online*\n"
+            f"━━━━━━━━━━━━━━━━━━\n"
+            f"🤖 Auto-Trader: `🔴 OFF`\n"
+            f"📡 Alert attivi ✅ · Guardian ✅\n"
+            f"━━━━━━━━━━━━━━━━━━\n"
+            f"🔑 Exchange configurati:\n{_exch_str3}\n"
+            f"━━━━━━━━━━━━━━━━━━\n"
+            f"Usa /autotrader on per attivare il trading"
         )
 
     # 5. Registra comandi e Menu Button Telegram
