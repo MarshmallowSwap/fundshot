@@ -115,12 +115,7 @@ def _check_alert_limit(chat_id_str: str, plan: str) -> tuple[bool, bool]:
 async def send_alert(bot: Bot, text: str, target_chat_id=None, symbol: str = None,
                      rate: float = None, exchange: str = None):
     """Invia alert a un utente specifico o a tutti gli utenti registrati su Supabase."""
-    # Aggiunge badge exchange in testa al messaggio se specificato
-    if exchange and exchange != "bybit":
-        BADGES = {"binance": "🟠 BINANCE", "okx": "🔵 OKX", "hyperliquid": "🟣 HYPERLIQUID"}
-        badge = BADGES.get(exchange)
-        if badge:
-            text = f"_{badge}_\n{text}"
+    # Badge exchange ora è solo nel footer (_exchange_footer) — non aggiungiamo più header
     if target_chat_id:
         recipients = [str(target_chat_id)]
     else:
@@ -140,9 +135,9 @@ async def send_alert(bot: Bot, text: str, target_chat_id=None, symbol: str = Non
     chart_buf = None
     if symbol and rate is not None:
         try:
-            chart_buf = generate_chart(symbol, rate)
+            chart_buf = generate_chart(symbol, rate, exchange=exchange or "bybit")
             if chart_buf:
-                logger.info("Grafico generato per %s (%d bytes)", symbol, len(chart_buf.getvalue()))
+                logger.info("Grafico generato per %s/%s (%d bytes)", exchange or "bybit", symbol, len(chart_buf.getvalue()))
             else:
                 logger.warning("Grafico None per %s — invio solo testo", symbol)
         except Exception as e:
@@ -822,7 +817,7 @@ async def cmd_autotrader_toggle(update, context):
                 chart_buf = None
                 if symbol and rate is not None:
                     try:
-                        chart_buf = generate_chart(symbol, rate)
+                        chart_buf = generate_chart(symbol, rate, exchange=exchange or "bybit")
                     except Exception:
                         pass
                 if chart_buf:
@@ -1273,7 +1268,7 @@ async def post_init(app):
                     chart_buf = None
                     if symbol and rate is not None:
                         try:
-                            chart_buf = generate_chart(symbol, rate)
+                            chart_buf = generate_chart(symbol, rate, exchange=exchange or "bybit")
                         except Exception as _ce:
                             logger.warning("Grafico trader non generato: %s", _ce)
                     if chart_buf:

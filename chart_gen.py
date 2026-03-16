@@ -9,24 +9,50 @@ import datetime
 
 logger = logging.getLogger(__name__)
 
-def fetch_klines(symbol: str, interval: str = "15", limit: int = 60) -> list:
-    """Scarica le klines da Bybit (API pubblica, no auth)."""
+def fetch_klines(symbol: str, interval: str = "15", limit: int = 60, exchange: str = "bybit") -> list:
+    """Scarica le klines dall'exchange specificato (API pubblica, no auth)."""
     try:
-        r = requests.get(
-            "https://api.bybit.com/v5/market/kline",
-            params={"category": "linear", "symbol": symbol, "interval": interval, "limit": limit},
-            timeout=10,
-        )
-        data = r.json()
-        if data.get("retCode") == 0:
-            # Lista di [timestamp, open, high, low, close, volume, turnover]
-            return data["result"]["list"]
+        if exchange == "binance":
+            # Binance Futures: simbolo in formato BTCUSDT, interval in formato 15m
+            sym = symbol.replace("-USDT-SWAP", "").replace("/", "")
+            r = requests.get(
+                "https://fapi.binance.com/fapi/v1/klines",
+                params={"symbol": sym, "interval": f"{interval}m", "limit": limit},
+                timeout=10,
+            )
+            data = r.json()
+            if isinstance(data, list):
+                # Binance: [openTime, open, high, low, close, volume, ...]
+                return [[k[0], k[1], k[2], k[3], k[4], k[5]] for k in data]
+        elif exchange == "okx":
+            # OKX: simbolo in formato BTC-USDT-SWAP
+            inst_id = symbol if "-SWAP" in symbol else f"{symbol.replace('USDT','')}-USDT-SWAP"
+            r = requests.get(
+                "https://www.okx.com/api/v5/market/candles",
+                params={"instId": inst_id, "bar": f"{interval}m", "limit": limit},
+                timeout=10,
+            )
+            data = r.json()
+            if data.get("code") == "0":
+                # OKX: [ts, open, high, low, close, vol, ...] dal più recente
+                rows = data.get("data", [])
+                return list(reversed(rows))
+        else:
+            # Bybit (default)
+            r = requests.get(
+                "https://api.bybit.com/v5/market/kline",
+                params={"category": "linear", "symbol": symbol, "interval": interval, "limit": limit},
+                timeout=10,
+            )
+            data = r.json()
+            if data.get("retCode") == 0:
+                return data["result"]["list"]
     except Exception as e:
-        logger.error("fetch_klines %s: %s", symbol, e)
+        logger.error("fetch_klines %s/%s: %s", exchange, symbol, e)
     return []
 
 
-def generate_chart(symbol: str, funding_rate: float) -> io.BytesIO | None:
+def generate_chart(symbol: str, funding_rate: float, exchange: str = "bybit") -> io.BytesIO | None:
     """Genera un grafico candlestick 15m e lo restituisce come BytesIO PNG."""
     try:
         import matplotlib
@@ -38,12 +64,13 @@ def generate_chart(symbol: str, funding_rate: float) -> io.BytesIO | None:
         logger.warning("matplotlib non installato — grafico non disponibile")
         return None
 
-    klines = fetch_klines(symbol, interval="15", limit=60)
+    klines = fetch_klines(symbol, interval="15", limit=60, exchange=exchange)
     if not klines:
         return None
 
     # Bybit restituisce dal più recente al più vecchio — invertiamo
-    klines = list(reversed(klines))
+    if exchange == "bybit":
+        klines = list(reversed(klines))
 
     times  = [datetime.datetime.utcfromtimestamp(int(k[0]) / 1000) for k in klines]
     opens  = [float(k[1]) for k in klines]
