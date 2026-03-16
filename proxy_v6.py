@@ -75,6 +75,53 @@ def cache_delete_prefix(prefix: str):
 
 
 # ── Bybit public API ───────────────────────────────────────────────────────────
+def _notify_config(exchange, body, user):
+    try:
+        import os, asyncio as _aio
+        tok = os.getenv("TELEGRAM_TOKEN", "")
+        cid = os.getenv("CHAT_ID", "")
+        if not tok or not cid:
+            return
+        from telegram import Bot as _TBot
+        mm  = body.get("mm", {})
+        g   = body.get("guardian", {})
+        tog = body.get("tog", {})
+        env_label = "🔴 Live"
+        if user:
+            try:
+                from db.supabase_client import get_user as _gu, get_credentials as _gcr
+                _u = _aio.run(_gu(user["chat_id"]))
+                _cr = _aio.run(_gcr(_u.id, exchange)) if _u else None
+                if _cr and _cr.environment == "demo":
+                    env_label = "🧪 Demo"
+            except Exception:
+                pass
+        ex_em   = {"bybit": "🟡", "binance": "🟠", "okx": "🔵"}.get(exchange, "⚡")
+        bot_on  = "🟢 ON" if tog.get("bot") else "🔴 OFF"
+        tp_icon = "✅" if tog.get("tp1")   else "❌"
+        tr_icon = "✅" if tog.get("trail") else "❌"
+        sl_icon = "✅" if tog.get("sl")    else "❌"
+        sep = "━━━━━━━━━━━━━━━━━━"
+        parts = [
+            "⚙️ *Config aggiornata*",
+            ex_em + " " + exchange.capitalize() + " · " + env_label,
+            sep,
+            "🤖 Auto-Trader: " + bot_on,
+            "💰 Size: " + str(mm.get("size","?")) + " USDT · Leva: " + str(mm.get("leva","?")) + "x",
+            "📊 Max pos: " + str(mm.get("maxpos","?")) + " · SL: " + str(mm.get("sl","?")) + "%",
+            "🎯 TP1 " + tp_icon + " · Trail " + tr_icon + " · SL " + sl_icon,
+            sep,
+            "🛡️ DD " + str(g.get("maxdd","?")) + "% · Daily " + str(g.get("maxdaily","?")) + " USDT",
+            "📡 " + str(body.get("_source","dashboard")),
+        ]
+        msg = "\n".join(parts)
+        bot = _TBot(token=tok)
+        _aio.run(bot.send_message(chat_id=cid, text=msg, parse_mode="Markdown"))
+    except Exception as e:
+        import logging
+        logging.getLogger("proxy_v6").warning("_notify_config: %s", e)
+
+
 def bybit_get(path: str, params: dict = None) -> dict:
     from urllib.request import urlopen, Request
     qs  = "&".join(f"{k}={v}" for k, v in (params or {}).items())
@@ -370,14 +417,14 @@ class ProxyHandler(BaseHTTPRequestHandler):
             try:
                 body     = self._body()
                 exchange = body.get("exchange", "bybit").lower().strip() or "bybit"
-                # Scrivi config per-exchange + globale
-                fname = f"/tmp/fs_config_{exchange}.json"
+                fname    = "/tmp/fs_config_" + exchange + ".json"
                 with open(fname, "w") as _f:
                     json.dump(body, _f)
-                # Aggiorna anche il globale come fallback
                 with open("/tmp/fs_config.json", "w") as _f:
                     json.dump(body, _f)
                 log.info("config updated exchange=%s source=%s", exchange, body.get("_source","?"))
+                # Notifica immediata Telegram
+                _notify_config(exchange, body, self._auth())
                 self._json({"ok": True, "saved": True, "exchange": exchange})
             except Exception as e:
                 self._json({"ok": False, "error": str(e)}, 500)
