@@ -604,6 +604,34 @@ async def oi_spike_job(context):
 # ── Job auto-trading ──────────────────────────────────────────────────────────
 _tj_running = False   # lock anti-sovrapposizione
 
+_last_config_ts: float = 0.0
+
+def _check_config_flag() -> None:
+    """
+    Legge /tmp/fs_config.json scritto dalla dashboard.
+    Aggiorna TRADER_CONFIG se il file e piu recente dell ultima lettura.
+    """
+    global _last_config_ts
+    import json as _j
+    cfg_file = "/tmp/fs_config.json"
+    try:
+        if not os.path.exists(cfg_file):
+            return
+        mtime = os.path.getmtime(cfg_file)
+        if mtime <= _last_config_ts:
+            return
+        _last_config_ts = mtime
+        data = _j.loads(open(cfg_file).read())
+        tmp = "/tmp/fs_config_applied.json"
+        with open(tmp, "w") as _f:
+            _j.dump(data, _f)
+        from trader import load_config as _lc
+        _lc(tmp)
+        logger.info("Config aggiornata dalla dashboard (source=%s)", data.get("_source","?"))
+    except Exception as e:
+        logger.debug("_check_config_flag: %s", e)
+
+
 def _check_autotrader_flag() -> bool | None:
     """
     Legge /tmp/fs_autotrader.flag scritto dalla dashboard (proxy).
@@ -632,6 +660,7 @@ async def trading_job(context):
 
     # Controlla flag dalla dashboard (toggle in tempo reale)
     flag_state = _check_autotrader_flag()
+    _check_config_flag()
     if flag_state is not None and flag_state != TRADING_ENABLED:
         if flag_state:
             # Avvia trader se non già attivo

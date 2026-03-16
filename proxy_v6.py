@@ -355,6 +355,18 @@ class ProxyHandler(BaseHTTPRequestHandler):
                 self._json({"ok": False, "error": str(e)}, 500)
             return
 
+        # ── POST /api/config — salva config trading dal dashboard ────────────
+        if p == "/api/config":
+            try:
+                body = self._body()
+                with open("/tmp/fs_config.json", "w") as _f:
+                    json.dump(body, _f)
+                log.info("config updated from dashboard, source=%s", body.get("_source","?"))
+                self._json({"ok": True, "saved": True})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)}, 500)
+            return
+
         # ── POST /api/user/keys — salva API keys per un exchange ─────────────
         if p == "/api/user/keys":
             user = self._auth()
@@ -470,6 +482,35 @@ class ProxyHandler(BaseHTTPRequestHandler):
                 self._json({"ok": True, "oi": data})
             except Exception as e:
                 self._json({"ok": False, "error": str(e)})
+            return
+
+        if p == "/api/closed-pnl":
+            user = self._auth()
+            if not user:
+                return
+            try:
+                import asyncio
+                from db.supabase_client import get_user_trades, get_user
+                u      = asyncio.run(get_user(user["chat_id"]))
+                if not u:
+                    self._json({"ok": True, "trades": []})
+                    return
+                trades = asyncio.run(get_user_trades(u.id, limit=100))
+                result = []
+                for t in trades:
+                    result.append({
+                        "symbol":    t.get("symbol", ""),
+                        "side":      t.get("side", ""),
+                        "pnl_usdt":  float(t.get("realized_pnl", 0) or 0),
+                        "qty":       float(t.get("qty", 0) or 0),
+                        "entry":     float(t.get("entry_price", 0) or 0),
+                        "exit":      float(t.get("exit_price", 0) or 0),
+                        "ts":        t.get("closed_at", t.get("created_at", "")),
+                        "exchange":  t.get("exchange", "bybit"),
+                    })
+                self._json({"ok": True, "trades": result})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e), "trades": []})
             return
 
         # ── Endpoint protetti (richiedono JWT) ────────────────────────────────
@@ -766,7 +807,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
             return
 
         # ── Backward compat: endpoint v5 senza auth ───────────────────────────
-        if p in ("/api/config", "/api/stats", "/api/logs",
+        if p in ("/api/stats", "/api/logs",
                  "/api/bot-status", "/api/alert-config"):
             self._json({"ok": True, "msg": "v6 — usa /api/user/* con JWT", "version": "6.0"})
             return
