@@ -1455,18 +1455,41 @@ async def post_init(app):
             except Exception:
                 _exch_str = "—"
 
-            await send_to_owner(
-                app.bot,
-                f"🚀 *FundShot Bot Online*\n"
-                f"━━━━━━━━━━━━━━━━━━\n"
-                f"🤖 Auto-Trader: `🟢 ATTIVO` · {env_label}\n"
-                f"💰 Size: `{TRADER_CONFIG['size_usdt']} USDT` · Leva: `{TRADER_CONFIG['leverage']}x`\n"
-                f"📊 Max pos: `{TRADER_CONFIG['max_positions']}` · SL: `{TRADER_CONFIG['sl_pct']}%`\n"
-                f"━━━━━━━━━━━━━━━━━━\n"
-                f"🔑 Exchange configurati:\n{_exch_str}\n"
-                f"━━━━━━━━━━━━━━━━━━\n"
-                f"📡 Alert attivi · Guardian ✅"
+            # Costruisci messaggio con config specifica per ogni exchange
+            import json as _bj, os as _bos
+            _bex_em = {"bybit": "🟡", "binance": "🟠", "okx": "🔵"}
+            _blines = []
+            for _br in (_rows.data or []):
+                _bex  = _br["exchange"]
+                _benv = "Demo" if _br["environment"] == "demo" else "Live"
+                _bem  = _bex_em.get(_bex, "⚡")
+                _bcf  = "/tmp/fs_config_" + _bex + ".json"
+                _bsz  = str(TRADER_CONFIG["size_usdt"])
+                _blv  = str(TRADER_CONFIG["leverage"])
+                _bsl  = str(TRADER_CONFIG["sl_pct"])
+                _bmp  = str(TRADER_CONFIG["max_positions"])
+                try:
+                    if _bos.path.exists(_bcf):
+                        _bmm = _bj.loads(open(_bcf).read()).get("mm", {})
+                        _bsz = str(_bmm.get("size", _bsz))
+                        _blv = str(_bmm.get("leva", _blv))
+                        _bsl = str(_bmm.get("sl",   _bsl))
+                        _bmp = str(_bmm.get("maxpos", _bmp))
+                except Exception:
+                    pass
+                _blines.append(
+                    _bem + " *" + _bex.capitalize() + "* (" + _benv + ")"
+                    + " — " + _bsz + " USDT · " + _blv + "x · SL " + _bsl + "% · Max " + _bmp
+                )
+            _bdetail = "\n".join(_blines) if _blines else "nessuno"
+            _bsep = "━━━━━━━━━━━━━━━━━━"
+            _bmsg = (
+                "🚀 *FundShot Bot Online*\n" + _bsep + "\n"
+                "🤖 Auto-Trader: 🟢 ATTIVO\n" + _bsep + "\n"
+                "🔑 Exchange attivi:\n" + _bdetail + "\n" + _bsep + "\n"
+                "📡 Alert attivi · Guardian ✅"
             )
+            await send_to_owner(app.bot, _bmsg)
         else:
             logger.warning("AUTO_TRADING=true but API keys not configured.")
             await send_to_owner(
