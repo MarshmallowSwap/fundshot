@@ -1,8 +1,8 @@
 """
-oi_monitor.py — Monitoraggio OI spike su tutti i simboli perpetual USDT.
-Alert indipendente dal funding rate.
+oi_monitor.py — OI spike monitoring on all USDT perpetual pairs.
+Alert independent from the main funding rate loop.
 
-Soglia default: spike >= 3% in 5min (o <= -3% per crollo)
+Default threshold: spike >= 3% in 5min (or <= -3% for drop)
 """
 import logging
 import time
@@ -57,79 +57,79 @@ def _fetch_funding(symbol: str) -> float | None:
 
 def _get_suggestion(oi_chg: float, funding_pct: float | None) -> str:
     """
-    Genera azione consigliata basata su OI + funding.
+    Generate suggested action based on OI change + funding rate.
 
-    OI ▲ = nuove posizioni entrano → trend in accelerazione
-      + funding negativo → short pagano → APRI LONG
-      + funding positivo → long pagano  → APRI SHORT
-      + funding neutro   → spike speculativo
+    OI rising = new positions entering → trend accelerating
+      + negative funding → shorts paying → OPEN LONG
+      + positive funding → longs paying  → OPEN SHORT
+      + neutral funding  → speculative spike
 
-    OI ▼ = posizioni si chiudono → trend in esaurimento
-      → CHIUDI posizioni aperte
+    OI falling = positions closing → trend exhausting
+      → CLOSE open positions
     """
     if funding_pct is None:
         if oi_chg >= OI_SPIKE_THRESHOLD:
-            return "📊 OI in forte crescita — funding non disponibile, monitora direzione"
+            return "OI surging — funding unavailable, monitor direction before entering"
         else:
-            return "⚠️ OI in forte calo — riduci esposizione"
+            return "OI dropping sharply — reduce exposure"
 
-    abs_f = abs(funding_pct)
-    strength = "forte" if abs_f >= 0.5 else "moderato" if abs_f >= 0.1 else "debole"
+    abs_f    = abs(funding_pct)
+    strength = "strong" if abs_f >= 0.5 else "moderate" if abs_f >= 0.1 else "weak"
 
     if oi_chg >= OI_SPIKE_THRESHOLD:
         if funding_pct < -0.01:
             return (
-                "🟢 *APRI LONG*\n"
-                "Short pagano funding (" + f"{funding_pct:+.4f}%" + "), nuove posizioni long entrano\n"
-                "Segnale: " + strength
+                "🟢 *OPEN LONG*\n"
+                "Shorts paying funding (" + f"{funding_pct:+.4f}%" + "), new long positions entering\n"
+                "Signal: " + strength
             )
         elif funding_pct > 0.01:
             return (
-                "🔴 *APRI SHORT*\n"
-                "Long pagano funding (" + f"{funding_pct:+.4f}%" + "), nuove posizioni short entrano\n"
-                "Segnale: " + strength
+                "🔴 *OPEN SHORT*\n"
+                "Longs paying funding (" + f"{funding_pct:+.4f}%" + "), new short positions entering\n"
+                "Signal: " + strength
             )
         else:
             return (
-                "⚪ *ATTENZIONE* — spike speculativo\n"
-                "Funding neutro (" + f"{funding_pct:+.4f}%" + "), nessuna direzione chiara\n"
-                "Evita nuove posizioni"
+                "⚪ *CAUTION* — speculative spike\n"
+                "Neutral funding (" + f"{funding_pct:+.4f}%" + "), no clear direction\n"
+                "Avoid new positions"
             )
     else:
         if funding_pct < -0.01:
             return (
-                "🟡 *CHIUDI LONG* (se aperta)\n"
-                "Momentum in esaurimento — long escono dal mercato\n"
-                "Funding ancora negativo (" + f"{funding_pct:+.4f}%" + ") ma OI cala"
+                "🟡 *CLOSE LONG* (if open)\n"
+                "Momentum exhausting — longs exiting the market\n"
+                "Funding still negative (" + f"{funding_pct:+.4f}%" + ") but OI falling"
             )
         elif funding_pct > 0.01:
             return (
-                "🟡 *CHIUDI SHORT* (se aperta)\n"
-                "Momentum in esaurimento — short escono dal mercato\n"
-                "Funding ancora positivo (" + f"{funding_pct:+.4f}%" + ") ma OI cala"
+                "🟡 *CLOSE SHORT* (if open)\n"
+                "Momentum exhausting — shorts exiting the market\n"
+                "Funding still positive (" + f"{funding_pct:+.4f}%" + ") but OI falling"
             )
         else:
             return (
-                "⚠️ *ESCI DA POSIZIONI*\n"
-                "Mercato si svuota — funding neutro (" + f"{funding_pct:+.4f}%" + "), OI in calo\n"
-                "Volatilita in diminuzione"
+                "⚠️ *EXIT POSITIONS*\n"
+                "Market unwinding — neutral funding (" + f"{funding_pct:+.4f}%" + "), OI falling\n"
+                "Volatility decreasing"
             )
 
 
 def format_oi_spike_alert(symbol: str, oi_chg: float, funding_pct: float | None) -> str:
-    arrow    = "▲" if oi_chg > 0 else "▼"
-    emoji    = "⚡" if oi_chg >= OI_SPIKE_THRESHOLD else "📉"
-    kind     = "SPIKE" if oi_chg >= OI_SPIKE_THRESHOLD else "CROLLO"
-    f_str    = f"{funding_pct:+.4f}%" if funding_pct is not None else "n/d"
+    arrow    = "\u25b2" if oi_chg > 0 else "\u25bc"
+    emoji    = "\u26a1" if oi_chg >= OI_SPIKE_THRESHOLD else "\U0001f4c9"
+    kind     = "SPIKE" if oi_chg >= OI_SPIKE_THRESHOLD else "DROP"
+    f_str    = f"{funding_pct:+.4f}%" if funding_pct is not None else "n/a"
     suggestion = _get_suggestion(oi_chg, funding_pct)
 
     return (
         f"{emoji} *OI {kind}*\n"
         f"*{symbol}*\n"
-        f"\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n"
-        f"\U0001f4ca OI 5m:    `{arrow} {oi_chg:+.2f}%`\n"
-        f"\U0001f4b8 Funding:  `{f_str}`\n"
-        f"\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n"
+        "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n"
+        f"\U0001f4ca OI 5m:      `{arrow} {oi_chg:+.2f}%`\n"
+        f"\U0001f4b8 Funding:   `{f_str}`\n"
+        "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n"
         f"{suggestion}"
     )
 
