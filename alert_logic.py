@@ -545,22 +545,24 @@ def get_last_nonzero_rate(symbol: str) -> float:
     return _last_nonzero_rate.get(symbol, 0.0)
 
 
-def _get_state(symbol: str) -> dict:
-    if symbol not in _state:
-        _state[symbol] = {
+def _get_state(symbol: str, exchange: str = "") -> dict:
+    key = f"{exchange}:{symbol}" if exchange else symbol
+    if key not in _state:
+        _state[key] = {
             "level":                "none",
             "reset_time":           0.0,
             "next_funding_alerted": False,
         }
-    return _state[symbol]
+    return _state[key]
 
 
 def get_all_states() -> dict:
     return {s: d for s, d in _state.items() if d["level"] != "none"}
 
 
-def reset_state(symbol: str):
-    _state[symbol] = {"level": "none", "reset_time": 0.0, "next_funding_alerted": False}
+def reset_state(symbol: str, exchange: str = ""):
+    key = f"{exchange}:{symbol}" if exchange else symbol
+    _state[key] = {"level": "none", "reset_time": 0.0, "next_funding_alerted": False}
 
 
 # ── FUNDED SYMBOLS ────────────────────────────────────────────────────────────
@@ -614,7 +616,7 @@ def process_funding(symbol: str, rate_pct: float, interval_h, last_price: float 
       - warn_tip  (PERICOLO CHIUSURA) -> mai inviato
       - rientro   (FUNDING RIENTRATO) -> mai inviato
     """
-    state    = _get_state(symbol)
+    state    = _get_state(symbol, exchange)
     now      = time.monotonic()
     abs_rate = abs(rate_pct)
 
@@ -703,10 +705,10 @@ def process_next_funding(
     minutes_left = (next_funding_ts_ms - now_ms) / 60000
 
     if minutes_left < 0 or minutes_left > FUNDING_ALERT_MINUTES:
-        _get_state(symbol)["next_funding_alerted"] = False
+        _get_state(symbol, exchange)["next_funding_alerted"] = False
         return None
 
-    state = _get_state(symbol)
+    state = _get_state(symbol, exchange)
     if state["next_funding_alerted"]:
         return None
 
