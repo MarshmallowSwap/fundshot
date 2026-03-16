@@ -211,7 +211,7 @@ class OKXClient(ExchangeClient):
                 code = data.get("code")
                 msg  = data.get("msg", "")
                 if code == "50119":
-                    hint = "API key not found — for Demo mode use Paper Trading keys from okx.com/account/demo/trade"
+                    hint = "API key not found — check: 1) Use Paper Trading keys from okx.com Demo section 2) Key has Read+Trade permissions 3) Wait 2-3 min after creating key"
                     logger.error("get_wallet_balance OKX: %s | hint: %s", msg, hint)
                 else:
                     logger.error("get_wallet_balance OKX code=%s msg=%s", code, msg)
