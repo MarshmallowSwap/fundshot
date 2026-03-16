@@ -539,6 +539,19 @@ class ProxyHandler(BaseHTTPRequestHandler):
             self._json({"ok": True, "results": data})
             return
 
+        if p == "/api/track-record":
+            try:
+                import os as _os
+                f = "/tmp/fs_track_record.json"
+                if _os.path.exists(f):
+                    data = json.load(open(f))
+                    self._json({"ok": True, "record": data})
+                else:
+                    self._json({"ok": False, "error": "Track record not yet generated"})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)})
+            return
+
         if p == "/api/oi":
             try:
                 data = json.load(open("/tmp/fs_oi.json")) if os.path.exists("/tmp/fs_oi.json") else {}

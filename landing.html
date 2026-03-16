@@ -350,6 +350,141 @@ section { position: relative; z-index: 1; padding: 120px 48px; }
 .quote-text em { color: var(--gold2); }
 
 /* ── Guardian section ── */
+.track-record-section {
+  padding: 120px 24px;
+  background: #05040a;
+  position: relative;
+  overflow: hidden;
+}
+.track-record-section::before {
+  content: '';
+  position: absolute;
+  top: -200px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(212,168,67,.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+.tr-grid {
+  display: grid;
+  grid-template-columns: repeat(4,1fr);
+  gap: 16px;
+  margin: 48px 0 40px;
+}
+.tr-stat {
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.tr-stat::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+.tr-stat-val {
+  font-family: "Syne", sans-serif;
+  font-size: 2rem;
+  font-weight: 800;
+  color: #d4a843;
+  margin-bottom: 6px;
+  line-height: 1;
+}
+.tr-stat-val.green { color: #00c9a7; }
+.tr-stat-val.red   { color: #f43f5e; }
+.tr-stat-lbl {
+  font-size: .75rem;
+  color: rgba(255,255,255,.4);
+  font-family: "DM Mono", monospace;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.tr-table {
+  background: rgba(255,255,255,.02);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 32px;
+}
+.tr-table-header {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  padding: 12px 20px;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  font-size: .7rem;
+  color: rgba(255,255,255,.35);
+  font-family: "DM Mono", monospace;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.tr-table-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  padding: 12px 20px;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+  font-size: .85rem;
+  align-items: center;
+  transition: background .15s;
+}
+.tr-table-row:last-child { border-bottom: none; }
+.tr-table-row:hover { background: rgba(255,255,255,.03); }
+.tr-sym { font-weight: 700; color: #e2e8f0; font-family: "DM Mono", monospace; }
+.tr-pos { color: #00c9a7; }
+.tr-neg { color: #f43f5e; }
+.tr-neutral { color: rgba(255,255,255,.5); }
+.tr-disclaimer {
+  text-align: center;
+  font-size: .75rem;
+  color: rgba(255,255,255,.25);
+  font-family: "DM Mono", monospace;
+  margin-top: 24px;
+  line-height: 1.6;
+}
+.tr-loading {
+  text-align: center;
+  padding: 40px;
+  color: rgba(255,255,255,.3);
+  font-family: "DM Mono", monospace;
+  font-size: .8rem;
+}
+.tr-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(212,168,67,.08);
+  border: 1px solid rgba(212,168,67,.2);
+  border-radius: 20px;
+  padding: 4px 14px;
+  font-size: .7rem;
+  color: #d4a843;
+  font-family: "DM Mono", monospace;
+  letter-spacing: .06em;
+  margin-bottom: 20px;
+}
+.tr-pulse {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #00c9a7;
+  animation: pulse-dot 1.5s infinite;
+}
+@keyframes pulse-dot {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: .5; transform: scale(1.3); }
+}
+@media(max-width:768px) {
+  .tr-grid { grid-template-columns: repeat(2,1fr); }
+  .tr-table-header, .tr-table-row { grid-template-columns: 2fr 1fr 1fr; }
+  .tr-table-header > *:last-child,
+  .tr-table-row > *:last-child { display: none; }
+}
+
 .guardian-section {
   padding: 120px 48px;
   position: relative; z-index: 1;
@@ -448,7 +583,142 @@ section { position: relative; z-index: 1; padding: 120px 48px; }
 .gui-metric-lbl { font-size: .65rem; color: var(--muted); font-family: 'DM Mono', monospace; margin-top: 3px; letter-spacing: .05em; text-transform: uppercase; }
 
 @media(max-width:1024px) {
-  .guardian-section { padding: 80px 24px; }
+  .track-record-section {
+  padding: 120px 24px;
+  background: #05040a;
+  position: relative;
+  overflow: hidden;
+}
+.track-record-section::before {
+  content: '';
+  position: absolute;
+  top: -200px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(212,168,67,.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+.tr-grid {
+  display: grid;
+  grid-template-columns: repeat(4,1fr);
+  gap: 16px;
+  margin: 48px 0 40px;
+}
+.tr-stat {
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.tr-stat::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+.tr-stat-val {
+  font-family: "Syne", sans-serif;
+  font-size: 2rem;
+  font-weight: 800;
+  color: #d4a843;
+  margin-bottom: 6px;
+  line-height: 1;
+}
+.tr-stat-val.green { color: #00c9a7; }
+.tr-stat-val.red   { color: #f43f5e; }
+.tr-stat-lbl {
+  font-size: .75rem;
+  color: rgba(255,255,255,.4);
+  font-family: "DM Mono", monospace;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.tr-table {
+  background: rgba(255,255,255,.02);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 32px;
+}
+.tr-table-header {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  padding: 12px 20px;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  font-size: .7rem;
+  color: rgba(255,255,255,.35);
+  font-family: "DM Mono", monospace;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.tr-table-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  padding: 12px 20px;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+  font-size: .85rem;
+  align-items: center;
+  transition: background .15s;
+}
+.tr-table-row:last-child { border-bottom: none; }
+.tr-table-row:hover { background: rgba(255,255,255,.03); }
+.tr-sym { font-weight: 700; color: #e2e8f0; font-family: "DM Mono", monospace; }
+.tr-pos { color: #00c9a7; }
+.tr-neg { color: #f43f5e; }
+.tr-neutral { color: rgba(255,255,255,.5); }
+.tr-disclaimer {
+  text-align: center;
+  font-size: .75rem;
+  color: rgba(255,255,255,.25);
+  font-family: "DM Mono", monospace;
+  margin-top: 24px;
+  line-height: 1.6;
+}
+.tr-loading {
+  text-align: center;
+  padding: 40px;
+  color: rgba(255,255,255,.3);
+  font-family: "DM Mono", monospace;
+  font-size: .8rem;
+}
+.tr-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(212,168,67,.08);
+  border: 1px solid rgba(212,168,67,.2);
+  border-radius: 20px;
+  padding: 4px 14px;
+  font-size: .7rem;
+  color: #d4a843;
+  font-family: "DM Mono", monospace;
+  letter-spacing: .06em;
+  margin-bottom: 20px;
+}
+.tr-pulse {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #00c9a7;
+  animation: pulse-dot 1.5s infinite;
+}
+@keyframes pulse-dot {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: .5; transform: scale(1.3); }
+}
+@media(max-width:768px) {
+  .tr-grid { grid-template-columns: repeat(2,1fr); }
+  .tr-table-header, .tr-table-row { grid-template-columns: 2fr 1fr 1fr; }
+  .tr-table-header > *:last-child,
+  .tr-table-row > *:last-child { display: none; }
+}
+
+.guardian-section { padding: 80px 24px; }
   .guardian-grid { grid-template-columns: 1fr; gap: 48px; }
 }
 
@@ -929,6 +1199,64 @@ footer {
 </div>
 </section>
 
+<!-- ═══ TRACK RECORD ═══ -->
+<section class="track-record-section" id="track-record">
+<div class="container">
+  <div style="text-align:center;margin-bottom:16px">
+    <div class="tr-badge">
+      <div class="tr-pulse"></div>
+      LIVE BACKTEST DATA
+    </div>
+  </div>
+  <span class="section-tag fade-up" style="text-align:center;display:block">// track record</span>
+  <h2 class="section-title fade-up" style="text-align:center;margin-bottom:12px">
+    60-Day Verified Performance
+  </h2>
+  <p class="section-sub fade-up" style="text-align:center;max-width:560px;margin:0 auto 48px">
+    Simulated results based on our bot's actual strategy applied to 60 days of real Bybit funding rate data.
+    Updated daily.
+  </p>
+
+  <!-- Stats grid -->
+  <div class="tr-grid" id="tr-stats">
+    <div class="tr-stat">
+      <div class="tr-stat-val green" id="tr-wr">—</div>
+      <div class="tr-stat-lbl">Win Rate</div>
+    </div>
+    <div class="tr-stat">
+      <div class="tr-stat-val" id="tr-trades">—</div>
+      <div class="tr-stat-lbl">Total Trades</div>
+    </div>
+    <div class="tr-stat">
+      <div class="tr-stat-val" id="tr-pnl">—</div>
+      <div class="tr-stat-lbl">Avg PnL / Trade</div>
+    </div>
+    <div class="tr-stat">
+      <div class="tr-stat-val" id="tr-best">—</div>
+      <div class="tr-stat-lbl">Best Trade</div>
+    </div>
+  </div>
+
+  <!-- Top symbols table -->
+  <div class="tr-table">
+    <div class="tr-table-header">
+      <span>Symbol</span>
+      <span>Trades</span>
+      <span>Win Rate</span>
+      <span>PnL</span>
+    </div>
+    <div id="tr-table-body">
+      <div class="tr-loading">Loading performance data...</div>
+    </div>
+  </div>
+
+  <p class="tr-disclaimer" id="tr-meta">
+    Backtest simulation · 60 days · Bybit linear perpetuals<br>
+    Includes taker fees (0.055%) + slippage (0.02%) per side · Not financial advice
+  </p>
+</div>
+</section>
+
 <!-- ═══ FEATURES ═══ -->
 <section id="features">
 <div class="container">
@@ -1366,6 +1694,65 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch(e) {}
   }
 });
+
+// ── Track Record ──────────────────────────────────────────────────────────────
+async function loadTrackRecord() {
+  try {
+    const r = await fetch('https://api.fundshot.app/api/track-record');
+    const d = await r.json();
+    if (!d.ok || !d.record) return;
+    const rec = d.record;
+    const s   = rec.summary;
+
+    // Stats
+    const wr = s.win_rate_pct;
+    const wrEl = document.getElementById('tr-wr');
+    if (wrEl) { wrEl.textContent = wr.toFixed(1) + '%'; wrEl.className = 'tr-stat-val ' + (wr >= 60 ? 'green' : wr >= 45 ? '' : 'red'); }
+
+    const trEl = document.getElementById('tr-trades');
+    if (trEl) trEl.textContent = s.total_trades;
+
+    const pnlEl = document.getElementById('tr-pnl');
+    if (pnlEl) {
+      const avg = s.avg_pnl_pct;
+      pnlEl.textContent = (avg >= 0 ? '+' : '') + avg.toFixed(3) + '%';
+      pnlEl.className = 'tr-stat-val ' + (avg >= 0 ? 'green' : 'red');
+    }
+
+    const bestEl = document.getElementById('tr-best');
+    if (bestEl) {
+      bestEl.textContent = '+' + s.best_trade_pct.toFixed(3) + '%';
+      bestEl.className = 'tr-stat-val green';
+    }
+
+    // Table
+    const tbody = document.getElementById('tr-table-body');
+    if (tbody && rec.top_symbols) {
+      tbody.innerHTML = rec.top_symbols.slice(0, 8).map(sym => {
+        const pnl = sym.total_pnl_pct;
+        const cls = pnl >= 0 ? 'tr-pos' : 'tr-neg';
+        return '<div class="tr-table-row">'
+          + '<span class="tr-sym">' + sym.symbol + '</span>'
+          + '<span class="tr-neutral">' + sym.trades + '</span>'
+          + '<span class="tr-neutral">' + sym.win_rate.toFixed(0) + '%</span>'
+          + '<span class="' + cls + '">' + (pnl >= 0 ? '+' : '') + pnl.toFixed(3) + '%</span>'
+          + '</div>';
+      }).join('');
+    }
+
+    // Meta
+    const metaEl = document.getElementById('tr-meta');
+    if (metaEl && rec.generated_at) {
+      const dt = new Date(rec.generated_at).toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'});
+      metaEl.innerHTML = 'Backtest simulation · ' + rec.days + ' days · ' + rec.exchange + ' linear perpetuals<br>'
+        + 'Fees included · Updated: ' + dt + ' · Not financial advice';
+    }
+  } catch(e) {
+    console.warn('loadTrackRecord:', e);
+  }
+}
+loadTrackRecord();
+
 </script>
 </body>
 </html>
