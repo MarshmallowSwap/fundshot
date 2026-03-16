@@ -2784,14 +2784,19 @@ async function fetchUnrealizedPnl() {
 // ─── FETCH RESULTS DAL SERVER ───
 async function fetchResults() {
   try {
+    // Prima prova con closed-pnl (dati reali da Supabase)
+    const data = await authFetch('/api/closed-pnl');
+    if (data.ok && data.trades && data.trades.length) {
+      updateFromBybitTrades(data.trades);
+      return;
+    }
+    // Fallback: /api/results (file locale)
     const r = await fetch('https://api.fundshot.app/api/results');
     if (!r.ok) return;
-    const data = await r.json();
-    if (!data.ok || !data.results) return;
-    updateFromServerResults(data.results);
-  } catch(e) {
-    // silenzioso
-  }
+    const d = await r.json();
+    if (!d.ok || !d.results) return;
+    updateFromServerResults(d.results);
+  } catch(e) {}
 }
 
 function updateFromServerResults(results) {
@@ -3318,6 +3323,9 @@ function initPositionsPage(){
   loadWallet();
   loadPositions();
   fetchResults();
+  fetchClosedPnl();
+  fetchUnrealizedPnl();
+  loadAlertHistory();
 }
 
 // ── Exchange selector ────────────────────────────────────────────────────────
@@ -4873,6 +4881,8 @@ setTimeout(() => fetchAndUpdateOI(), 500);
 setTimeout(() => initExchangeSettings(), 800);
 // Renderizza le card con i dati salvati in localStorage
 setTimeout(() => renderAllExchangeCards(), 300);
+// Precarica dati Positions anche se non si naviga lì subito
+setTimeout(() => { fetchClosedPnl(); loadAlertHistory(); }, 1500);
 </script>
 </body>
 </html>
