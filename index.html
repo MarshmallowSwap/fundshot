@@ -2900,7 +2900,7 @@ async function initExchangeSelector() {
   try {
     const token = localStorage.getItem('fs_token');
     if (!token) return;
-    const r = await fetch(proxyBase() + '/api/user/exchanges', {
+    const r = await fetch('https://api.fundshot.app/api/user/exchanges', {
       headers: { 'Authorization': 'Bearer ' + token }
     });
     const data = await r.json();
@@ -2934,7 +2934,7 @@ function switchExchange(ex) {
 
 async function authFetch(path, method='GET', body=null) {
   const token = localStorage.getItem('fs_token');
-  const url   = proxyBase() + path;
+  const url   = 'https://api.fundshot.app' + path;
   const opts  = {
     method,
     headers: {
@@ -3143,7 +3143,7 @@ async function saveAndSendSettings() {
   // Invia toggle bot separatamente all'endpoint dedicato
   const botEnabled = document.getElementById('tog-bot')?.classList.contains('on') || false;
   try {
-    await fetch(proxyBase() + '/api/auto-trading', {
+    await fetch('https://api.fundshot.app/api/auto-trading', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({enabled: botEnabled})
