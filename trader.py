@@ -639,31 +639,43 @@ class BinanceFuturesTrader:
         order_id = str(r["orderId"])
         logger.info("BinanceFutures market order OK: %s %s qty=%s id=%s", symbol, bn_side, qty, order_id)
 
-        # 2. Stop Loss separato — usa quantity esplicita (closePosition non funziona in demo)
+        # 2. Stop Loss separato
         qty_str = str(qty)
-        r_sl = self._post("/fapi/v1/order", {
-            "symbol": symbol, "side": sl_side,
-            "type": "STOP_MARKET", "stopPrice": sl_str,
-            "quantity": qty_str, "workingType": "MARK_PRICE",
-            "reduceOnly": "true",
-        })
-        if "orderId" in r_sl:
-            logger.info("BinanceFutures SL OK: %s stopPrice=%s", symbol, sl_str)
-        else:
-            logger.error("BinanceFutures SL FAILED: %s → %s (stopPrice=%s tick=%s)", symbol, r_sl, sl_str, tick)
+        # Prova prima con closePosition (mainnet), poi con quantity (fallback)
+        sl_placed = False
+        for sl_params in [
+            {"symbol": symbol, "side": sl_side, "type": "STOP_MARKET",
+             "stopPrice": sl_str, "closePosition": "true", "workingType": "MARK_PRICE"},
+            {"symbol": symbol, "side": sl_side, "type": "STOP_MARKET",
+             "stopPrice": sl_str, "quantity": qty_str, "workingType": "MARK_PRICE", "reduceOnly": "true"},
+        ]:
+            r_sl = self._post("/fapi/v1/order", sl_params)
+            if "orderId" in r_sl:
+                logger.info("BinanceFutures SL OK: %s stopPrice=%s", symbol, sl_str)
+                sl_placed = True
+                break
+            logger.debug("BinanceFutures SL attempt failed: %s → %s", symbol, r_sl.get("msg","?"))
+
+        if not sl_placed:
+            # Fallback: SL gestito dal monitor loop in-house (come Bybit)
+            logger.warning("BinanceFutures SL native non disponibile per %s — gestione interna attiva", symbol)
 
         # 3. Take Profit separato (solo se impostato)
         if tp_str:
-            r_tp = self._post("/fapi/v1/order", {
-                "symbol": symbol, "side": sl_side,
-                "type": "TAKE_PROFIT_MARKET", "stopPrice": tp_str,
-                "quantity": qty_str, "workingType": "MARK_PRICE",
-                "reduceOnly": "true",
-            })
-            if "orderId" in r_tp:
-                logger.info("BinanceFutures TP OK: %s stopPrice=%s", symbol, tp_str)
-            else:
-                logger.error("BinanceFutures TP FAILED: %s → %s (stopPrice=%s)", symbol, r_tp, tp_str)
+            tp_placed = False
+            for tp_params in [
+                {"symbol": symbol, "side": sl_side, "type": "TAKE_PROFIT_MARKET",
+                 "stopPrice": tp_str, "closePosition": "true", "workingType": "MARK_PRICE"},
+                {"symbol": symbol, "side": sl_side, "type": "TAKE_PROFIT_MARKET",
+                 "stopPrice": tp_str, "quantity": qty_str, "workingType": "MARK_PRICE", "reduceOnly": "true"},
+            ]:
+                r_tp = self._post("/fapi/v1/order", tp_params)
+                if "orderId" in r_tp:
+                    logger.info("BinanceFutures TP OK: %s stopPrice=%s", symbol, tp_str)
+                    tp_placed = True
+                    break
+            if not tp_placed:
+                logger.warning("BinanceFutures TP native non disponibile per %s — gestione interna attiva", symbol)
 
         return order_id
 
@@ -682,22 +694,22 @@ class BinanceFuturesTrader:
         pos = self.get_position(symbol)
         qty_str = str(abs(float(pos["size"]))) if pos else "0"
 
-        r = self._post("/fapi/v1/order", {
-            "symbol":          symbol,
-            "side":            ts_side,
-            "type":            "TRAILING_STOP_MARKET",
-            "callbackRate":    str(callback_pct),
-            "activationPrice": act_str,
-            "quantity":        qty_str,
-            "workingType":     "MARK_PRICE",
-            "reduceOnly":      "true",
-        })
-        ok = "orderId" in r
-        if ok:
-            logger.info("BinanceFutures trailing OK: %s callback=%s%% active=%s", symbol, callback_pct, act_str)
-        else:
-            logger.warning("BinanceFutures set_trailing_stop %s: %s", symbol, r)
-        return ok
+        for ts_params in [
+            {"symbol": symbol, "side": ts_side, "type": "TRAILING_STOP_MARKET",
+             "callbackRate": str(callback_pct), "activationPrice": act_str,
+             "closePosition": "true", "workingType": "MARK_PRICE"},
+            {"symbol": symbol, "side": ts_side, "type": "TRAILING_STOP_MARKET",
+             "callbackRate": str(callback_pct), "activationPrice": act_str,
+             "quantity": qty_str, "workingType": "MARK_PRICE", "reduceOnly": "true"},
+        ]:
+            r = self._post("/fapi/v1/order", ts_params)
+            if "orderId" in r:
+                logger.info("BinanceFutures trailing OK: %s callback=%s%% active=%s", symbol, callback_pct, act_str)
+                return True
+            logger.debug("BinanceFutures trailing attempt: %s → %s", symbol, r.get("msg","?"))
+
+        logger.warning("BinanceFutures trailing native non disponibile per %s — gestione interna attiva", symbol)
+        return False
 
     def close_position(self, symbol: str, side: str, qty: float) -> bool:
         """Chiude posizione: side è 'Buy'/'Sell' (formato Bybit) — convertiamo per Binance."""
@@ -981,7 +993,7 @@ class FundingTrader:
                 logger.error(f"monitor_positions {symbol}: {e}")
 
     async def _monitor_single(self, symbol: str, pos: TradePosition, chat_id: str):
-        # ── CHECK PRIORITARIO: Bybit ha già chiuso la posizione? ──
+        # ── CHECK PRIORITARIO: exchange ha già chiuso la posizione? ──
         bybit_pos = self.exchange.get_position(symbol)
         if bybit_pos is None or float(bybit_pos.get("size", 0)) == 0:
             # Posizione chiusa esternamente (TP/SL nativo Bybit o liquidazione)
@@ -999,10 +1011,10 @@ class FundingTrader:
                 f"⏱️ Durata: `{((datetime.now(timezone.utc)-pos.opened_at).seconds//60)} min`"
             )
             await self.send(chat_id, msg)
-            self._record_result(pos, pnl_usdt, pnl_pct, "BYBIT_NATIVE_CLOSE")
+            self._record_result(pos, pnl_usdt, pnl_pct, f"{self.exchange_name.upper()}_NATIVE_CLOSE")
             self._recently_closed[symbol] = time.time()
             del self.positions[symbol]
-            logger.info(f"Posizione {symbol} chiusa esternamente da Bybit — rimossa dal tracking, cooldown 30min")
+            logger.info(f"Posizione {symbol} chiusa esternamente da {self.exchange_name} — rimossa dal tracking, cooldown 30min")
             return
 
         mark_price = self.exchange.get_mark_price(symbol)
