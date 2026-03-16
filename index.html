@@ -573,7 +573,11 @@ nav {
   display: flex; justify-content: space-between; align-items: center;
   font-size: .84rem; gap: 12px;
 }
+.bot-preview-row.section-row {
+  margin-top: 8px; margin-bottom: 2px;
+}
 .bot-preview-row-label { color: var(--text3); font-family: 'DM Mono', monospace; font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; flex-shrink: 0; }
+.bot-preview-row-label.section-lbl { color: var(--gold); font-size: .65rem; letter-spacing: .12em; opacity: .7; }
 .bot-preview-row-val { color: var(--text); font-weight: 600; text-align: right; word-break: break-all; }
 .bot-preview-row-val.green { color: var(--teal2); }
 .bot-preview-row-val.gold  { color: var(--gold2); }
@@ -3268,17 +3272,7 @@ async function saveAndSendSettings() {
   const g   = JSON.parse(localStorage.getItem('fk_guardian')||'{}');
   const botOn = document.getElementById('tog-bot')?.classList.contains('on') || false;
 
-  showBotPreview('⚙️', 'Save & Send Settings', 'These values will be applied to the bot', [
-    { label: 'Auto-Trader',    value: botOn ? '🟢 ON' : '🔴 OFF',       cls: botOn ? 'green' : 'red' },
-    { label: 'Trade size',     value: `${mm.size || 50} USDT`,           cls: 'gold' },
-    { label: 'Leverage',       value: `${mm.leva || 2}×`,                cls: 'gold' },
-    { label: 'Max positions',  value: `${mm.maxpos || 2}`,               cls: '' },
-    { label: 'Stop loss',      value: `-${mm.sl || 1.2}%`,               cls: 'red' },
-    { label: 'Max drawdown',   value: `-${g.maxdd || 10}%`,              cls: 'red' },
-    { label: 'Max daily loss', value: `${g.maxdaily || 100} USDT`,       cls: 'red' },
-    { label: 'Consec. losses', value: `${g.maxloss || 3}`,               cls: '' },
-    { label: 'HIGH threshold', value: `≥ ${cfg.thr?.high || 1.00}%`,    cls: '' },
-  ], async () => {
+  showBotPreview('⚙️', 'Save & Send Settings', 'Full config snapshot sent to bot', buildBotPreviewRows(), async () => {
     const botEnabled = botOn;
     try {
       await fetch('https://api.fundshot.app/api/auto-trading', {
@@ -3335,13 +3329,7 @@ async function handleAutotraderToggle(el) {
     // Sta attivando — mostra preview prima
     const cfg = loadCfg();
     const mm  = JSON.parse(localStorage.getItem('fk_mm')||'{}');
-    showBotPreview('🤖', 'Enable Auto-Trader', 'Bot will start opening positions automatically', [
-      { label: 'Exchange',      value: '🟡 Bybit',              cls: 'gold' },
-      { label: 'Trade size',    value: `${mm.size||50} USDT`,   cls: 'gold' },
-      { label: 'Leverage',      value: `${mm.leva||2}×`,        cls: 'gold' },
-      { label: 'Max positions', value: `${mm.maxpos||2}`,        cls: '' },
-      { label: 'Min level',     value: 'HIGH+',                  cls: '' },
-    ], () => {
+    showBotPreview('🤖', 'Enable Auto-Trader', 'Full config snapshot — bot will start opening positions', buildBotPreviewRows(), () => {
       el.classList.add('on');
       botToggleFeedback(el);
       saveAndSendSettings();
@@ -3367,16 +3355,7 @@ async function saveAndSendTrading() {
   efSave();
   const mm = JSON.parse(localStorage.getItem('fk_mm')||'{}');
   const g  = JSON.parse(localStorage.getItem('fk_guardian')||'{}');
-  showBotPreview('⚡', 'Apply Trading Config', 'Guardian & Money Management settings', [
-    { label: 'Trade size',     value: `${mm.size||50} USDT`,        cls: 'gold' },
-    { label: 'Leverage',       value: `${mm.leva||2}×`,              cls: 'gold' },
-    { label: 'Max positions',  value: `${mm.maxpos||2}`,              cls: '' },
-    { label: 'Stop loss',      value: `-${mm.sl||1.2}%`,             cls: 'red' },
-    { label: 'Max drawdown',   value: `-${g.maxdd||10}%`,            cls: 'red' },
-    { label: 'Daily limit',    value: `${g.maxdaily||100} USDT`,     cls: 'red' },
-    { label: 'Consec. losses', value: `${g.maxloss||3}`,              cls: '' },
-    { label: 'Cooldown',       value: `${g.cooldown||30} min`,        cls: '' },
-  ], async () => {
+  showBotPreview('⚡', 'Apply Trading Config', 'Full config snapshot sent to bot', buildBotPreviewRows(), async () => {
     await sendToBot('trading');
   });
 }
@@ -4271,6 +4250,87 @@ async function testExchangeKeys() {
   }
 }
 
+
+// ─── HELPER: leggi tutti i valori per il preview ────────────────────────────
+function _tgl(id) { const el = document.getElementById(id); return el?.classList.contains('on') ?? false; }
+function _val(id, def='—') { const el = document.getElementById(id); return el ? (el.value || def) : def; }
+function _on(v) { return v ? { text: '✅ ON', cls: 'green' } : { text: '🔴 OFF', cls: 'red' }; }
+
+function buildBotPreviewRows() {
+  const mm  = JSON.parse(localStorage.getItem('fk_mm')  || '{}');
+  const g   = JSON.parse(localStorage.getItem('fk_guardian') || '{}');
+  const cfg = loadCfg();
+  const t   = cfg.tog || {};
+  const thr = cfg.thr || {};
+
+  // Legge i valori live dai campi (potrebbero essere stati modificati ma non ancora salvati)
+  const size   = _val('mm-size',    mm.size    ?? 50);
+  const leva   = _val('mm-leva',    mm.leva    ?? 2);
+  const maxpos = _val('mm-maxpos',  mm.maxpos  ?? 2);
+  const sl     = _val('mm-sl',      mm.sl      ?? 1.2);
+  const maxdd  = _val('g-maxdd',    g.maxdd    ?? 10);
+  const maxloss= _val('g-maxloss',  g.maxloss  ?? 3);
+  const maxd   = _val('g-maxdaily', g.maxdaily ?? 100);
+  const cd     = _val('g-cooldown', g.cooldown ?? 30);
+
+  // Filtri entrata
+  const efPersist  = _val('ef-persist',  2);
+  const efOI       = _val('ef-oi',       1.5);
+  const efMinreset = _val('ef-minreset', 30);
+  const efCooldown = _val('ef-cooldown', 0);
+
+  const rows = [];
+
+  // ── Bot control ──
+  rows.push({ label: '─── BOT CONTROL ───', value: '', cls: 'section' });
+  const bot_on = _on(_tgl('tog-bot'));
+  rows.push({ label: '🤖 Auto-Trader',    value: bot_on.text,                             cls: bot_on.cls });
+  rows.push({ label: '🧪 Testnet Mode',   value: _on(_tgl('tog-testnet')).text,            cls: _tgl('tog-testnet') ? 'green' : '' });
+
+  // ── Alert levels ──
+  rows.push({ label: '─── ALERT LEVELS ───', value: '', cls: 'section' });
+  rows.push({ label: '🤑 JACKPOT',   value: _on(_tgl('tog-jackpot')).text,  cls: _on(_tgl('tog-jackpot')).cls });
+  rows.push({ label: '🔴 HARD',      value: _on(_tgl('tog-hard')).text,     cls: _on(_tgl('tog-hard')).cls });
+  rows.push({ label: '🔥 EXTREME',   value: _on(_tgl('tog-extreme')).text,  cls: _on(_tgl('tog-extreme')).cls });
+  rows.push({ label: '🚨 HIGH',      value: _on(_tgl('tog-high')).text,     cls: _on(_tgl('tog-high')).cls });
+  rows.push({ label: '📊 BASE',      value: _on(_tgl('tog-base')).text,     cls: _on(_tgl('tog-base')).cls });
+
+  // ── Trading options ──
+  rows.push({ label: '─── TRADING OPTIONS ───', value: '', cls: 'section' });
+  rows.push({ label: '🛡️ Stop Loss',       value: _on(_tgl('tog-sl')).text,    cls: _on(_tgl('tog-sl')).cls });
+  rows.push({ label: '🎯 TP1 Dinamico',    value: _on(_tgl('tog-tp1')).text,   cls: _on(_tgl('tog-tp1')).cls });
+  rows.push({ label: '📈 Trailing Stop',   value: _on(_tgl('tog-trail')).text, cls: _on(_tgl('tog-trail')).cls });
+  rows.push({ label: '📊 Filtro OI',       value: _on(_tgl('tog-oi')).text,    cls: _on(_tgl('tog-oi')).cls });
+  rows.push({ label: '⏱️ Filtro Persist.', value: _on(_tgl('tog-persist')).text, cls: _on(_tgl('tog-persist')).cls });
+
+  // ── Money Management ──
+  rows.push({ label: '─── MONEY MANAGEMENT ───', value: '', cls: 'section' });
+  rows.push({ label: 'Trade size',     value: `${size} USDT`,  cls: 'gold' });
+  rows.push({ label: 'Leverage',       value: `${leva}×`,      cls: 'gold' });
+  rows.push({ label: 'Max positions',  value: `${maxpos}`,     cls: '' });
+  rows.push({ label: 'Stop loss',      value: `-${sl}%`,       cls: 'red' });
+
+  // ── Guardian ──
+  rows.push({ label: '─── GUARDIAN ───', value: '', cls: 'section' });
+  rows.push({ label: 'Max Drawdown',   value: `-${maxdd}%`,    cls: 'red' });
+  rows.push({ label: 'Consec. losses', value: `${maxloss}`,    cls: '' });
+  rows.push({ label: 'Daily limit',    value: `${maxd} USDT`,  cls: 'red' });
+  rows.push({ label: 'Cooldown',       value: `${cd} min`,     cls: '' });
+
+  // ── Entry Filters ──
+  rows.push({ label: '─── ENTRY FILTERS ───', value: '', cls: 'section' });
+  rows.push({ label: '📊 Filtro OI',       value: _on(_tgl('ef-tog-oi')).text,       cls: _on(_tgl('ef-tog-oi')).cls });
+  rows.push({ label: '⏱️ Filtro Persist.',  value: _on(_tgl('ef-tog-persist')).text,  cls: _on(_tgl('ef-tog-persist')).cls });
+  rows.push({ label: '⏰ Filtro Reset',     value: _on(_tgl('ef-tog-reset')).text,    cls: _on(_tgl('ef-tog-reset')).cls });
+  rows.push({ label: '🚫 Cooldown',         value: _on(_tgl('ef-tog-cooldown')).text, cls: _on(_tgl('ef-tog-cooldown')).cls });
+  rows.push({ label: '⏱️ Persistenza min',  value: `${efPersist} cicli`,              cls: '' });
+  rows.push({ label: '📊 OI change min',    value: `${efOI}%`,                        cls: '' });
+  rows.push({ label: '⏰ Min al reset',      value: `${efMinreset} min`,               cls: '' });
+  rows.push({ label: '🚫 Cooldown post',    value: `${efCooldown} min`,               cls: '' });
+
+  return rows;
+}
+
 // ─── BOT ACTION PREVIEW ──────────────────────────────────────────────────────
 let _bp_callback = null;
 
@@ -4281,6 +4341,11 @@ function showBotPreview(icon, title, subtitle, rows, onConfirm) {
 
   const container = document.getElementById('bp-items');
   container.innerHTML = rows.map(r => {
+    if (r.cls === 'section') {
+      return `<div class="bot-preview-row section-row">
+        <span class="bot-preview-row-label section-lbl">${r.label}</span>
+      </div>`;
+    }
     const cls = r.cls || '';
     return `<div class="bot-preview-row">
       <span class="bot-preview-row-label">${r.label}</span>
