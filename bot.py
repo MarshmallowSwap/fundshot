@@ -795,6 +795,9 @@ async def trading_job(context):
                     _exchange_traders["bybit"] = _funding_trader
                     TRADING_ENABLED = True
 
+                    # Carica config dashboard prima di inizializzare i trader
+                    for _ex in ("bybit", "binance"):
+                        _check_config_flag(_ex)
                     # Avvia anche Binance se le chiavi sono nel DB
                     await _init_exchange_traders(context.bot)
 
@@ -1427,7 +1430,10 @@ async def post_init(app):
             _exchange_traders["bybit"] = _funding_trader
 
             env_label = "🎮 DEMO" if TRADING_DEMO else ("🧪 TESTNET" if TRADING_TESTNET else "🔴 MAINNET")
-            # Inizializza traders per altri exchange (es. Binance)
+            # Carica config dashboard se disponibile
+            for _ex in ("bybit", "binance"):
+                _check_config_flag(_ex)
+            # Inizializza traders per tutti gli exchange
             await _init_exchange_traders(app.bot)
 
             logger.info(
