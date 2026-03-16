@@ -176,8 +176,14 @@ class BinanceClient(ExchangeClient):
             # Coins con saldo
             assets = data.get("assets", [])
             coins = [
-                {"coin": a.get("asset"), "walletBalance": self._sf(a.get("walletBalance")),
-                 "usdValue": self._sf(a.get("walletBalance")), "unrealisedPnl": self._sf(a.get("unrealizedProfit"))}
+                {
+                    "coin":             a.get("asset"),
+                    "walletBalance":    self._sf(a.get("walletBalance")),
+                    "marginBalance":    self._sf(a.get("marginBalance")),
+                    "unrealisedPnl":    self._sf(a.get("unrealizedProfit")),
+                    "availableBalance": self._sf(a.get("availableBalance") or a.get("crossWalletBalance")),
+                    "usdValue":         self._sf(a.get("marginBalance")),
+                }
                 for a in assets if self._sf(a.get("walletBalance")) != 0
             ]
             return WalletBalance(

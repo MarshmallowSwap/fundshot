@@ -3057,17 +3057,37 @@ async function loadWallet(){
     const mp=parseFloat(eq)>0?((parseFloat(mg)/parseFloat(eq))*100).toFixed(1):0;
     const pc=parseFloat(pn)>=0?'var(--teal2)':'var(--red2)';
     const coins = (r.coins||[]).filter(c=>parseFloat(c.walletBalance||0)!==0);
-    const coinsHtml = coins.length ? `
-      <div style="grid-column:1/-1;border-top:1px solid rgba(255,255,255,.06);padding-top:10px;margin-top:4px">
-        <div style="font-size:.65rem;color:var(--text3);font-family:'DM Mono',monospace;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px">Assets</div>
-        <div style="display:flex;flex-wrap:wrap;gap:8px">
-          ${coins.map(c=>`<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:4px 10px;font-size:.78rem">
-            <span style="color:var(--text3)">${c.coin}</span>
-            <span style="color:var(--text);font-weight:600;margin-left:6px">${parseFloat(c.walletBalance).toFixed(4)}</span>
-          </div>`).join('')}
-        </div>
-      </div>` : '';
-    el.innerHTML=`<div class="wg">
+    let coinsHtml = '';
+    if (coins.length) {
+      let rows = '';
+      coins.forEach(c => {
+        const wb  = parseFloat(c.walletBalance||0);
+        const mb  = parseFloat(c.marginBalance||c.walletBalance||0);
+        const upl = parseFloat(c.unrealisedPnl||0);
+        const av  = parseFloat(c.availableBalance||c.walletBalance||0);
+        const uplClr = upl>=0 ? 'var(--teal2)' : 'var(--red2)';
+        const dec = c.coin==='BTC' ? 8 : c.coin==='ETH' ? 6 : 2;
+        const uplStr = (upl>=0?'+':'') + upl.toFixed(dec);
+        rows += '<tr style="border-bottom:1px solid rgba(255,255,255,.04)">'
+              + '<td style="padding:5px 8px 5px 0;font-weight:700;color:var(--gold2)">' + c.coin + '</td>'
+              + '<td style="padding:5px 8px;text-align:right;color:var(--text)">' + wb.toFixed(dec) + '</td>'
+              + '<td style="padding:5px 8px;text-align:right;color:var(--text)">' + mb.toFixed(dec) + '</td>'
+              + '<td style="padding:5px 8px;text-align:right;color:' + uplClr + '">' + uplStr + '</td>'
+              + '<td style="padding:5px 0 5px 8px;text-align:right;color:var(--teal2)">' + av.toFixed(dec) + '</td>'
+              + '</tr>';
+      });
+      coinsHtml = '<div style="grid-column:1/-1;border-top:1px solid rgba(255,255,255,.07);padding-top:12px;margin-top:4px">'
+        + '<div style="font-size:.65rem;color:var(--text3);font-family:DM Mono,monospace;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px">Assets</div>'
+        + '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.78rem">'
+        + '<thead><tr style="color:var(--text3);font-family:DM Mono,monospace;font-size:.65rem;text-transform:uppercase;letter-spacing:.06em">'
+        + '<th style="text-align:left;padding:4px 8px 6px 0;border-bottom:1px solid rgba(255,255,255,.07)">Asset</th>'
+        + '<th style="text-align:right;padding:4px 8px 6px;border-bottom:1px solid rgba(255,255,255,.07)">Wallet Bal.</th>'
+        + '<th style="text-align:right;padding:4px 8px 6px;border-bottom:1px solid rgba(255,255,255,.07)">Margin Bal.</th>'
+        + '<th style="text-align:right;padding:4px 8px 6px;border-bottom:1px solid rgba(255,255,255,.07)">Unreal. PnL</th>'
+        + '<th style="text-align:right;padding:4px 0 6px 8px;border-bottom:1px solid rgba(255,255,255,.07)">Available</th>'
+        + '</tr></thead><tbody>' + rows + '</tbody></table></div></div>';
+    }
+        el.innerHTML=`<div class="wg">
       <div class="wi"><div class="wi-label">Total Equity</div><div class="wi-val" style="color:var(--text)">${eq} <span style="font-size:12px;color:var(--text3)">USDT</span></div></div>
       <div class="wi"><div class="wi-label">Available</div><div class="wi-val" style="color:var(--teal2)">${av} <span style="font-size:12px;color:var(--text3)">USDT</span></div></div>
       <div class="wi"><div class="wi-label">Margin Used</div><div class="wi-val" style="color:var(--amber2)">${mg} <span style="font-size:12px;color:var(--text3)">USDT</span></div>
