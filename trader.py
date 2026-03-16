@@ -1004,7 +1004,7 @@ class FundingTrader:
             msg = (
                 f"🔔 *POSITION CLOSED — {pos.direction} {symbol}*\n"
                 f"━━━━━━━━━━━━━━━━━━\n"
-                f"📌 Reason:    `Closed by Bybit (native TP/SL)`\n"
+                f"📌 Reason:    `Closed by {self.exchange_name.capitalize()} (native TP/SL)`\n"
                 f"💰 Price:     `${mark_price:.6f}`\n"
                 f"📈 Est. PnL:  `{pnl_usdt:+.2f} USDT` ({pnl_pct:+.2f}%)\n"
                 f"━━━━━━━━━━━━━━━━━━\n"
