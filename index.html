@@ -1018,14 +1018,6 @@ nav {
 <!-- PAGE: POSIZIONI                             -->
 <!-- ═══════════════════════════════════════════ -->
 <div class="page" id="page-positions">
-  <div class="slabel" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
-    <span>Wallet & Positions</span>
-    <div id="exchange-selector" style="display:flex;gap:8px;align-items:center">
-      <span style="font-size:11px;color:var(--text3)">Exchange:</span>
-      <!-- populated by JS -->
-    </div>
-  </div>
-  <div id="pos-warn" class="warn" style="display:none"></div>
 
   <!-- Upgrade banner Free users -->
   <div class="upgrade-banner" id="banner-positions" style="display:none">
@@ -1039,21 +1031,32 @@ nav {
     <a href="https://t.me/FundShot_bot?start=upgrade_pro" target="_blank" class="plan-lock-btn" style="padding:10px 22px;font-size:13px;margin-top:0;box-shadow:0 3px 14px rgba(201,168,76,.35)">Activate Auto-Trading →</a>
   </div>
 
-  <!-- WALLET ROW -->
+  <!-- EXCHANGE SELECTOR con loghi -->
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+    <span style="font-size:.75rem;color:var(--text3);font-family:'DM Mono',monospace;letter-spacing:.08em;text-transform:uppercase">Exchange:</span>
+    <div id="exchange-selector" style="display:flex;gap:8px">
+      <!-- populated by JS with logo buttons -->
+    </div>
+    <span style="font-size:.8rem;color:var(--text2);font-family:'Syne',sans-serif;font-weight:600" id="pos-exchange-label">🟡 Bybit</span>
+    <button class="btn btn-ghost btn-sm" onclick="loadPrivate()" style="margin-left:auto">↺ Refresh</button>
+  </div>
+
+  <div id="pos-warn" class="warn" style="display:none"></div>
+
+  <!-- WALLET + POSITIONS per exchange selezionato -->
   <div class="g2eq" id="wallet-row">
     <div class="card">
       <div class="ch">
-        <div class="ct">💼 Wallet</div>
-        <button class="btn btn-ghost btn-sm" onclick="loadPrivate()">↺</button>
+        <div class="ct" id="wallet-title">💼 Wallet</div>
       </div>
-      <div id="wallet-wrap"><div class="empty-state"><div class="ei">🔑</div>Configura API Key nelle Settings</div></div>
+      <div id="wallet-wrap"><div class="empty-state"><div class="ei">🔑</div>Configure API Keys in Settings</div></div>
     </div>
     <div class="card">
       <div class="ch">
-        <div class="ct">📂 Open Positions</div>
+        <div class="ct" id="positions-title">📂 Open Positions</div>
         <span class="badge" id="pos-cnt">—</span>
       </div>
-      <div id="pos-wrap"><div class="empty-state"><div class="ei">📊</div>Configura API Key nelle Settings</div></div>
+      <div id="pos-wrap"><div class="empty-state"><div class="ei">📊</div>Configure API Keys in Settings</div></div>
     </div>
   </div>
 
@@ -3117,50 +3120,66 @@ function initPositionsPage(){
 }
 
 // ── Exchange selector ────────────────────────────────────────────────────────
-window._activeExchange = 'bybit';
+window._activeExchange = localStorage.getItem('fk_positions_exchange') || 'bybit';
 
 const EXCHANGE_META_JS = {
-  bybit:   { emoji: '🟡', name: 'Bybit'   },
-  binance: { emoji: '🟠', name: 'Binance' },
-  okx:     { emoji: '🔵', name: 'OKX'     },
+  bybit:   { emoji: '🟡', name: 'Bybit',   logo: '/bybit-logo.svg'   },
+  binance: { emoji: '🟠', name: 'Binance', logo: '/binance-logo.svg' },
+  okx:     { emoji: '🔵', name: 'OKX',     logo: '/okx-logo.svg'     },
 };
 
 async function initExchangeSelector() {
   const container = document.getElementById('exchange-selector');
   if (!container) return;
   try {
-    const token = localStorage.getItem('fs_token');
-    if (!token) return;
-    const r = await fetch('https://api.fundshot.app/api/user/exchanges', {
-      headers: { 'Authorization': 'Bearer ' + token }
-    });
-    const data = await r.json();
-    const exchanges = data.exchanges || ['bybit'];
+    const d = await authFetch('/api/user/exchanges');
+    const exchanges = (d.ok && d.exchanges)
+      ? d.exchanges.map(e => typeof e === 'string' ? e : e.exchange)
+      : ['bybit'];
 
     container.innerHTML = exchanges.map(ex => {
-      const m = EXCHANGE_META_JS[ex] || { emoji: '🏦', name: ex };
-      const active = ex === window._activeExchange ? 'style="border-color:var(--gold);color:var(--gold)"' : '';
-      return `<button class="btn btn-ghost btn-sm" ${active}
+      const m = EXCHANGE_META_JS[ex] || { logo: '', name: ex };
+      const isActive = ex === window._activeExchange;
+      return `<button class="exch-logo-btn exch-pos-btn ${isActive ? 'active-exch' : ''}"
+        data-exchange="${ex}"
         onclick="switchExchange('${ex}')"
-        id="ex-btn-${ex}">${m.emoji} ${m.name}</button>`;
+        id="ex-btn-${ex}"
+        title="${m.name}">
+        <img src="${m.logo}" alt="${m.name}" style="max-height:22px;max-width:80px;object-fit:contain">
+      </button>`;
     }).join('');
+
+    updatePosExchangeLabel();
   } catch(e) {
     console.warn('initExchangeSelector:', e);
+    // Fallback: mostra almeno Bybit
+    const container2 = document.getElementById('exchange-selector');
+    if (container2) container2.innerHTML = `<button class="exch-logo-btn active-exch" onclick="switchExchange('bybit')">
+      <img src="/bybit-logo.svg" alt="Bybit" style="max-height:22px;object-fit:contain">
+    </button>`;
   }
 }
 
 function switchExchange(ex) {
   window._activeExchange = ex;
-  // Aggiorna stile bottoni
-  document.querySelectorAll('[id^="ex-btn-"]').forEach(btn => {
-    btn.style.borderColor = '';
-    btn.style.color = '';
+  localStorage.setItem('fk_positions_exchange', ex);
+  // Aggiorna active state bottoni
+  document.querySelectorAll('.exch-pos-btn').forEach(b => {
+    b.classList.toggle('active-exch', b.dataset.exchange === ex);
   });
-  const active = document.getElementById('ex-btn-' + ex);
-  if (active) { active.style.borderColor = 'var(--gold)'; active.style.color = 'var(--gold)'; }
-  // Ricarica dati
+  updatePosExchangeLabel();
   loadWallet();
   loadPositions();
+}
+
+function updatePosExchangeLabel() {
+  const m   = EXCHANGE_META_JS[window._activeExchange] || { emoji:'🏦', name: window._activeExchange };
+  const lbl = document.getElementById('pos-exchange-label');
+  const wt  = document.getElementById('wallet-title');
+  const pt  = document.getElementById('positions-title');
+  if (lbl) lbl.textContent = m.emoji + ' ' + m.name;
+  if (wt)  wt.innerHTML   = `💼 Wallet <span style="font-size:.7rem;color:var(--text3);font-weight:400;margin-left:4px">${m.name}</span>`;
+  if (pt)  pt.innerHTML   = `📂 Open Positions <span style="font-size:.7rem;color:var(--text3);font-weight:400;margin-left:4px">${m.name}</span>`;
 }
 
 async function authFetch(path, method='GET', body=null) {
