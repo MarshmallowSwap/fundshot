@@ -86,16 +86,9 @@ def _notify_config(exchange, body, user):
         mm  = body.get("mm", {})
         g   = body.get("guardian", {})
         tog = body.get("tog", {})
-        env_label = "🔴 Live"
-        if user:
-            try:
-                from db.supabase_client import get_user as _gu, get_credentials as _gcr
-                _u = _aio.run(_gu(user["chat_id"]))
-                _cr = _aio.run(_gcr(_u.id, exchange)) if _u else None
-                if _cr and _cr.environment == "demo":
-                    env_label = "🧪 Demo"
-            except Exception:
-                pass
+        # Leggi environment dal payload (inviato dalla dashboard)
+        raw_env = body.get("environment", "mainnet")
+        env_label = "🧪 Demo" if raw_env in ("demo", "testnet") else "🔴 Live"
         ex_em   = {"bybit": "🟡", "binance": "🟠", "okx": "🔵"}.get(exchange, "⚡")
         bot_on  = "🟢 ON" if tog.get("bot") else "🔴 OFF"
         tp_icon = "✅" if tog.get("tp1")   else "❌"

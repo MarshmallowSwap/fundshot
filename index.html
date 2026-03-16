@@ -3471,9 +3471,12 @@ async function sendToBot(source='settings') {
   const cfg = loadCfg();
   const mm  = JSON.parse(localStorage.getItem(_mmKey())||'{}');
   const g   = JSON.parse(localStorage.getItem(_gKey())||'{}');
+  // Leggi environment dal DB locale (_exchConfigs)
+  const _envLocal = (_exchConfigs[_tradingExchange] || {}).env || 'mainnet';
   const payload = {
     ...cfg,
     exchange: _tradingExchange,
+    environment: _envLocal,
     mm: { size: mm.size||50, leva: mm.leva||2, risk: mm.risk||1.0,
           maxpos: mm.maxpos||2, sl: mm.sl||1.2 },
     guardian: { maxdd: g.maxdd||10, maxloss: g.maxloss||3,
