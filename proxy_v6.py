@@ -851,6 +851,49 @@ class ProxyHandler(BaseHTTPRequestHandler):
             if not user: return
             if self.do_GET_keys(p, user): return
 
+        # GET /api/test/okx — test OKX auth con log dettagliato
+        if p == "/api/test/okx":
+            user = self._auth()
+            if not user: return
+            try:
+                import asyncio, aiohttp, base64, hashlib, hmac
+                from datetime import datetime, timezone
+                from db.supabase_client import get_user, get_credentials
+                u    = asyncio.run(get_user(user["chat_id"]))
+                cred = asyncio.run(get_credentials(u.id, "okx")) if u else None
+                if not cred:
+                    self._json({"ok": False, "error": "No OKX credentials"})
+                    return
+                pp = getattr(cred, "passphrase", "") or ""
+                log.info("OKX TEST: api_key=%s... passphrase_len=%d env=%s", 
+                         cred.api_key[:8] if cred.api_key else "EMPTY", len(pp), cred.environment)
+                
+                # Fai una chiamata test
+                ts  = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+                path = "/api/v5/account/balance"
+                msg  = ts + "GET" + path
+                sig  = base64.b64encode(hmac.new(cred.api_secret.encode(), msg.encode(), hashlib.sha256).digest()).decode()
+                headers = {
+                    "OK-ACCESS-KEY": cred.api_key,
+                    "OK-ACCESS-SIGN": sig,
+                    "OK-ACCESS-TIMESTAMP": ts,
+                    "OK-ACCESS-PASSPHRASE": pp,
+                    "x-simulated-trading": "1" if cred.environment == "demo" else "0",
+                    "Content-Type": "application/json",
+                }
+                async def _test():
+                    async with aiohttp.ClientSession() as s:
+                        async with s.get("https://www.okx.com" + path, headers=headers, timeout=aiohttp.ClientTimeout(total=10)) as r:
+                            return await r.json()
+                result = asyncio.run(_test())
+                log.info("OKX TEST result: code=%s msg=%s", result.get("code"), result.get("msg"))
+                self._json({"ok": True, "okx_code": result.get("code"), "okx_msg": result.get("msg"), 
+                            "has_data": bool(result.get("data"))})
+            except Exception as e:
+                log.error("OKX TEST error: %s", e)
+                self._json({"ok": False, "error": str(e)})
+            return
+
         self._json({"ok": False, "error": "Not Found"}, 404)
 
     # ── DELETE ────────────────────────────────────────────────────────────────
