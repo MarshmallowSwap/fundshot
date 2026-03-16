@@ -535,6 +535,67 @@ nav {
 }
 .exch-logo-btn.active-exch img { filter: drop-shadow(0 0 6px rgba(212,168,67,.4)); }
 
+.bot-preview-overlay {
+  position: fixed; inset: 0; z-index: 2000;
+  background: rgba(0,0,0,.75); backdrop-filter: blur(10px);
+  display: flex; align-items: center; justify-content: center;
+  animation: fadeIn .15s ease;
+}
+.bot-preview-overlay.hidden { display: none; }
+.bot-preview-modal {
+  background: linear-gradient(145deg, rgba(14,11,28,.98), rgba(8,6,16,.98));
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 20px; padding: 28px 32px;
+  max-width: 480px; width: 92%;
+  box-shadow: 0 32px 80px rgba(0,0,0,.7);
+  position: relative; overflow: hidden;
+}
+.bot-preview-modal::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--teal), var(--gold), transparent);
+}
+.bot-preview-header {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 20px;
+}
+.bot-preview-icon { font-size: 1.8rem; }
+.bot-preview-title {
+  font-family: 'Syne', sans-serif; font-weight: 800;
+  font-size: 1.1rem; color: var(--text); line-height: 1.2;
+}
+.bot-preview-subtitle { font-size: .75rem; color: var(--text3); margin-top: 2px; font-family: 'DM Mono', monospace; }
+.bot-preview-items {
+  background: rgba(0,0,0,.3); border: 1px solid rgba(255,255,255,.07);
+  border-radius: 12px; padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 8px;
+  margin-bottom: 20px; max-height: 280px; overflow-y: auto;
+}
+.bot-preview-row {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: .84rem; gap: 12px;
+}
+.bot-preview-row-label { color: var(--text3); font-family: 'DM Mono', monospace; font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; flex-shrink: 0; }
+.bot-preview-row-val { color: var(--text); font-weight: 600; text-align: right; word-break: break-all; }
+.bot-preview-row-val.green { color: var(--teal2); }
+.bot-preview-row-val.gold  { color: var(--gold2); }
+.bot-preview-row-val.red   { color: var(--red2); }
+.bot-preview-actions { display: flex; gap: 10px; }
+.bot-preview-confirm {
+  flex: 1; padding: 11px 20px; border-radius: 11px; border: none;
+  background: linear-gradient(135deg, var(--gold), var(--teal));
+  color: #05040a; font-weight: 800; font-size: .9rem;
+  cursor: pointer; font-family: 'Syne', sans-serif;
+  transition: all .2s; box-shadow: 0 4px 16px rgba(212,168,67,.3);
+}
+.bot-preview-confirm:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(212,168,67,.4); }
+.bot-preview-cancel {
+  padding: 11px 20px; border-radius: 11px;
+  background: rgba(255,255,255,.05); color: var(--text3);
+  border: 1px solid rgba(255,255,255,.08); font-weight: 600;
+  font-size: .85rem; cursor: pointer; font-family: 'DM Sans', sans-serif;
+  transition: all .2s;
+}
+.bot-preview-cancel:hover { color: var(--text); border-color: rgba(255,255,255,.15); }
+
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(212,168,67,.2); border-radius: 4px; }
@@ -3161,16 +3222,32 @@ async function sendToBot(source='settings') {
 
 async function saveAndSendSettings() {
   saveAll();
-  // Invia toggle bot separatamente all'endpoint dedicato
-  const botEnabled = document.getElementById('tog-bot')?.classList.contains('on') || false;
-  try {
-    await fetch('https://api.fundshot.app/api/auto-trading', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({enabled: botEnabled})
-    });
-  } catch(e) { console.warn('auto-trading endpoint:', e); }
-  await sendToBot('settings');
+  const cfg = loadCfg();
+  const mm  = JSON.parse(localStorage.getItem('fk_mm')||'{}');
+  const g   = JSON.parse(localStorage.getItem('fk_guardian')||'{}');
+  const botOn = document.getElementById('tog-bot')?.classList.contains('on') || false;
+
+  showBotPreview('⚙️', 'Save & Send Settings', 'These values will be applied to the bot', [
+    { label: 'Auto-Trader',    value: botOn ? '🟢 ON' : '🔴 OFF',       cls: botOn ? 'green' : 'red' },
+    { label: 'Trade size',     value: `${mm.size || 50} USDT`,           cls: 'gold' },
+    { label: 'Leverage',       value: `${mm.leva || 2}×`,                cls: 'gold' },
+    { label: 'Max positions',  value: `${mm.maxpos || 2}`,               cls: '' },
+    { label: 'Stop loss',      value: `-${mm.sl || 1.2}%`,               cls: 'red' },
+    { label: 'Max drawdown',   value: `-${g.maxdd || 10}%`,              cls: 'red' },
+    { label: 'Max daily loss', value: `${g.maxdaily || 100} USDT`,       cls: 'red' },
+    { label: 'Consec. losses', value: `${g.maxloss || 3}`,               cls: '' },
+    { label: 'HIGH threshold', value: `≥ ${cfg.thr?.high || 1.00}%`,    cls: '' },
+  ], async () => {
+    const botEnabled = botOn;
+    try {
+      await fetch('https://api.fundshot.app/api/auto-trading', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({enabled: botEnabled})
+      });
+    } catch(e) { console.warn('auto-trading endpoint:', e); }
+    await sendToBot('settings');
+  });
 }
 
 function botToggleFeedback(el) {
@@ -3214,10 +3291,20 @@ async function handleAutotraderToggle(el) {
 
     document.getElementById('autotrader-off-modal').classList.remove('hidden');
   } else {
-    // Sta attivando — nessuna conferma necessaria
-    el.classList.add('on');
-    botToggleFeedback(el);
-    saveAndSendSettings();
+    // Sta attivando — mostra preview prima
+    const cfg = loadCfg();
+    const mm  = JSON.parse(localStorage.getItem('fk_mm')||'{}');
+    showBotPreview('🤖', 'Enable Auto-Trader', 'Bot will start opening positions automatically', [
+      { label: 'Exchange',      value: '🟡 Bybit',              cls: 'gold' },
+      { label: 'Trade size',    value: `${mm.size||50} USDT`,   cls: 'gold' },
+      { label: 'Leverage',      value: `${mm.leva||2}×`,        cls: 'gold' },
+      { label: 'Max positions', value: `${mm.maxpos||2}`,        cls: '' },
+      { label: 'Min level',     value: 'HIGH+',                  cls: '' },
+    ], () => {
+      el.classList.add('on');
+      botToggleFeedback(el);
+      saveAndSendSettings();
+    });
   }
 }
 
@@ -3237,7 +3324,20 @@ async function saveAndSendTrading() {
   mmSave();
   guardianSave();
   efSave();
-  await sendToBot('trading');
+  const mm = JSON.parse(localStorage.getItem('fk_mm')||'{}');
+  const g  = JSON.parse(localStorage.getItem('fk_guardian')||'{}');
+  showBotPreview('⚡', 'Apply Trading Config', 'Guardian & Money Management settings', [
+    { label: 'Trade size',     value: `${mm.size||50} USDT`,        cls: 'gold' },
+    { label: 'Leverage',       value: `${mm.leva||2}×`,              cls: 'gold' },
+    { label: 'Max positions',  value: `${mm.maxpos||2}`,              cls: '' },
+    { label: 'Stop loss',      value: `-${mm.sl||1.2}%`,             cls: 'red' },
+    { label: 'Max drawdown',   value: `-${g.maxdd||10}%`,            cls: 'red' },
+    { label: 'Daily limit',    value: `${g.maxdaily||100} USDT`,     cls: 'red' },
+    { label: 'Consec. losses', value: `${g.maxloss||3}`,              cls: '' },
+    { label: 'Cooldown',       value: `${g.cooldown||30} min`,        cls: '' },
+  ], async () => {
+    await sendToBot('trading');
+  });
 }
 
 function updateSummary(cfg) {
@@ -4061,40 +4161,57 @@ async function saveExchangeKeys() {
     if (msg) { msg.style.color='var(--red2)'; msg.textContent='Passphrase required for OKX'; }
     return;
   }
-  if (msg) { msg.style.color='var(--text3)'; msg.textContent='Saving...'; }
-  try {
-    const body = { exchange: _activeExchTab, api_key: key, api_secret: sec, environment: env };
-    if (pass) body.passphrase = pass;
-    const d = await authFetch('/api/user/keys', 'POST', body);
-    if (d.ok) {
-      _exchConfigs[_activeExchTab] = { env, configured: true };
-      renderExchStatusBar();
-      if (msg) { msg.style.color='var(--teal2)'; msg.textContent=`✓ ${info.emoji} ${info.label} keys saved`; }
-      ['ink','ins','inp-passphrase'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
-    } else {
-      if (msg) { msg.style.color='var(--red2)'; msg.textContent=`✗ ${d.error || 'Error saving keys'}`; }
+
+  const maskedKey = key.slice(0,6) + '••••••••' + key.slice(-4);
+  const rows = [
+    { label: 'Exchange',    value: `${info.emoji} ${info.label}`, cls: 'gold' },
+    { label: 'Mode',        value: env === 'demo' ? '🧪 Demo' : '🔴 Live', cls: env === 'demo' ? '' : 'red' },
+    { label: 'API Key',     value: maskedKey,                     cls: '' },
+    { label: 'API Secret',  value: '••••••••••••',                cls: '' },
+  ];
+  if (pass) rows.push({ label: 'Passphrase', value: '••••••••', cls: '' });
+
+  showBotPreview('🔑', `Save ${info.label} API Keys`, 'Keys are encrypted before storage', rows, async () => {
+    if (msg) { msg.style.color='var(--text3)'; msg.textContent='Saving...'; }
+    try {
+      const body = { exchange: _activeExchTab, api_key: key, api_secret: sec, environment: env };
+      if (pass) body.passphrase = pass;
+      const d = await authFetch('/api/user/keys', 'POST', body);
+      if (d.ok) {
+        _exchConfigs[_activeExchTab] = { env, configured: true };
+        renderExchStatusBar();
+        if (msg) { msg.style.color='var(--teal2)'; msg.textContent=`✓ ${info.emoji} ${info.label} keys saved`; }
+        ['ink','ins','inp-passphrase'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+      } else {
+        if (msg) { msg.style.color='var(--red2)'; msg.textContent=`✗ ${d.error || 'Error saving keys'}`; }
+      }
+    } catch(e) {
+      if (msg) { msg.style.color='var(--red2)'; msg.textContent=`Network error: ${e.message}`; }
     }
-  } catch(e) {
-    if (msg) { msg.style.color='var(--red2)'; msg.textContent=`Network error: ${e.message}`; }
-  }
+  });
 }
 
 async function deleteExchangeKeys() {
   const info = EXCH_INFO[_activeExchTab] || { emoji:'🏦', label: _activeExchTab };
-  if (!confirm(`Remove ${info.emoji} ${info.label} API keys? This stops alerts and trading for this exchange.`)) return;
-  const msg = document.getElementById('key-msg');
-  try {
-    const d = await authFetch('/api/user/keys/' + _activeExchTab, 'DELETE');
-    if (d.ok) {
-      delete _exchConfigs[_activeExchTab];
-      renderExchStatusBar();
-      if (msg) { msg.style.color='var(--amber2)'; msg.textContent=`${info.emoji} ${info.label} keys removed`; }
-    } else {
-      if (msg) { msg.style.color='var(--red2)'; msg.textContent=d.error||'Error removing keys'; }
+  showBotPreview('🗑️', `Remove ${info.label} Keys`, 'This will stop alerts and trading for this exchange', [
+    { label: 'Exchange',  value: `${info.emoji} ${info.label}`, cls: 'gold' },
+    { label: 'Action',    value: 'Deactivate API keys',         cls: 'red'  },
+    { label: 'Effect',    value: 'Alerts & trading disabled',   cls: 'red'  },
+  ], async () => {
+    const msg = document.getElementById('key-msg');
+    try {
+      const d = await authFetch('/api/user/keys/' + _activeExchTab, 'DELETE');
+      if (d.ok) {
+        delete _exchConfigs[_activeExchTab];
+        renderExchStatusBar();
+        if (msg) { msg.style.color='var(--amber2)'; msg.textContent=`${info.emoji} ${info.label} keys removed`; }
+      } else {
+        if (msg) { msg.style.color='var(--red2)'; msg.textContent=d.error||'Error removing keys'; }
+      }
+    } catch(e) {
+      if (msg) { msg.style.color='var(--red2)'; msg.textContent='Network error'; }
     }
-  } catch(e) {
-    if (msg) { msg.style.color='var(--red2)'; msg.textContent='Network error'; }
-  }
+  });
 }
 
 async function testExchangeKeys() {
@@ -4112,6 +4229,42 @@ async function testExchangeKeys() {
     if (msg) { msg.style.color='var(--red2)'; msg.textContent='Network error'; }
   }
 }
+
+// ─── BOT ACTION PREVIEW ──────────────────────────────────────────────────────
+let _bp_callback = null;
+
+function showBotPreview(icon, title, subtitle, rows, onConfirm) {
+  document.getElementById('bp-icon').textContent     = icon;
+  document.getElementById('bp-title').textContent    = title;
+  document.getElementById('bp-subtitle').textContent = subtitle;
+
+  const container = document.getElementById('bp-items');
+  container.innerHTML = rows.map(r => {
+    const cls = r.cls || '';
+    return `<div class="bot-preview-row">
+      <span class="bot-preview-row-label">${r.label}</span>
+      <span class="bot-preview-row-val ${cls}">${r.value}</span>
+    </div>`;
+  }).join('');
+
+  _bp_callback = onConfirm;
+  document.getElementById('bot-preview-modal').classList.remove('hidden');
+}
+
+function botPreviewConfirm() {
+  document.getElementById('bot-preview-modal').classList.add('hidden');
+  if (_bp_callback) { _bp_callback(); _bp_callback = null; }
+}
+
+function botPreviewCancel() {
+  document.getElementById('bot-preview-modal').classList.add('hidden');
+  _bp_callback = null;
+}
+
+// Close on overlay click
+document.getElementById('bot-preview-modal')?.addEventListener('click', function(e) {
+  if (e.target === this) botPreviewCancel();
+});
 
 // ─── DASHBOARD LOGOUT ───
 function dashLogout() {
