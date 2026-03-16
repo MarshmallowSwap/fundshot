@@ -358,11 +358,17 @@ class ProxyHandler(BaseHTTPRequestHandler):
         # ── POST /api/config — salva config trading dal dashboard ────────────
         if p == "/api/config":
             try:
-                body = self._body()
+                body     = self._body()
+                exchange = body.get("exchange", "bybit").lower().strip() or "bybit"
+                # Scrivi config per-exchange + globale
+                fname = f"/tmp/fs_config_{exchange}.json"
+                with open(fname, "w") as _f:
+                    json.dump(body, _f)
+                # Aggiorna anche il globale come fallback
                 with open("/tmp/fs_config.json", "w") as _f:
                     json.dump(body, _f)
-                log.info("config updated from dashboard, source=%s", body.get("_source","?"))
-                self._json({"ok": True, "saved": True})
+                log.info("config updated exchange=%s source=%s", exchange, body.get("_source","?"))
+                self._json({"ok": True, "saved": True, "exchange": exchange})
             except Exception as e:
                 self._json({"ok": False, "error": str(e)}, 500)
             return

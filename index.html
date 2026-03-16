@@ -1353,6 +1353,24 @@ nav {
     </div>
   </div>
 
+  <!-- EXCHANGE SELECTOR -->
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+    <span style="font-size:.75rem;color:var(--text3);font-family:'DM Mono',monospace;letter-spacing:.08em;text-transform:uppercase">Configuring:</span>
+    <div style="display:flex;gap:8px">
+      <button class="exch-logo-btn exch-trading-btn active-exch" data-exchange="bybit" onclick="setTradingExchange('bybit')" title="Bybit">
+        <img src="/bybit-logo.svg" alt="Bybit">
+      </button>
+      <button class="exch-logo-btn exch-trading-btn" data-exchange="binance" onclick="setTradingExchange('binance')" title="Binance">
+        <img src="/binance-logo.svg" alt="Binance">
+      </button>
+      <button class="exch-logo-btn exch-trading-btn" data-exchange="okx" onclick="setTradingExchange('okx')" title="OKX">
+        <img src="/okx-logo.svg" alt="OKX">
+      </button>
+    </div>
+    <span style="font-size:.8rem;color:var(--text2);font-family:'Syne',sans-serif;font-weight:600" id="trading-exchange-label">🟡 Bybit</span>
+    <span style="font-size:.75rem;color:var(--text3);font-family:'DM Mono',monospace">— MM, Guardian &amp; config saved independently per exchange</span>
+  </div>
+
   <!-- BOT CONTROLS CARD -->
   <div class="card" style="margin-bottom:20px">
     <div class="ch">
@@ -2647,7 +2665,7 @@ function goto(id, btn) {
   if (id === 'positions') { initPositionsPage(); }
   if (id === 'settings')  { initSettings(); initExchangeSettings(); }
   if (id === 'funding')   { renderFundTable(); }
-  if (id === 'trading')   { initTradingPage(); fetchResults(); fetchClosedPnl(); fetchUnrealizedPnl(); }
+  if (id === 'trading')   { initTradingPage(); fetchResults(); fetchClosedPnl(); fetchUnrealizedPnl(); setTradingExchange(_tradingExchange); }
   if (id === 'docs')     { /* static, no fetch needed */ }
 }
 
@@ -3240,10 +3258,11 @@ function saveAll() {
 // ─── SEND TO BOT ───────────────────────────────────
 async function sendToBot(source='settings') {
   const cfg = loadCfg();
-  const mm  = JSON.parse(localStorage.getItem('fk_mm')||'{}');
-  const g   = JSON.parse(localStorage.getItem('fk_guardian')||'{}');
+  const mm  = JSON.parse(localStorage.getItem(_mmKey())||'{}');
+  const g   = JSON.parse(localStorage.getItem(_gKey())||'{}');
   const payload = {
     ...cfg,
+    exchange: _tradingExchange,
     mm: { size: mm.size||50, leva: mm.leva||2, risk: mm.risk||1.0,
           maxpos: mm.maxpos||2, sl: mm.sl||1.2 },
     guardian: { maxdd: g.maxdd||10, maxloss: g.maxloss||3,
@@ -3414,6 +3433,33 @@ const TS = {
 };
 
 const MM_DEFAULTS = { size:50, leva:2, risk:1.0, maxpos:2, sl:1.2 };
+const GUARDIAN_DEFAULTS_DEF = { maxdd:10, maxloss:3, maxdaily:100, cooldown:30 };
+
+// ─── EXCHANGE ATTIVO (Trading page) ──────────────────────────────────────────
+let _tradingExchange = localStorage.getItem('fk_trading_exchange') || 'bybit';
+
+function setTradingExchange(ex) {
+  _tradingExchange = ex;
+  localStorage.setItem('fk_trading_exchange', ex);
+  // Aggiorna tutti i bottoni exchange
+  document.querySelectorAll('.exch-trading-btn').forEach(b => {
+    b.classList.toggle('active-exch', b.dataset.exchange === ex);
+  });
+  // Ricarica i valori per questo exchange
+  mmLoad();
+  guardianLoad();
+  updateExchangeLabel();
+}
+
+function _mmKey()  { return 'fk_mm_'       + _tradingExchange; }
+function _gKey()   { return 'fk_guardian_' + _tradingExchange; }
+function _cfgKey() { return 'fk_cfg_'      + _tradingExchange; }
+
+function updateExchangeLabel() {
+  const info = { bybit:'🟡 Bybit', binance:'🟠 Binance', okx:'🔵 OKX' };
+  const el = document.getElementById('trading-exchange-label');
+  if (el) el.textContent = info[_tradingExchange] || _tradingExchange;
+}
 const GUARDIAN_DEFAULTS = { maxdd:10, maxloss:3, maxdaily:100, cooldown:30 };
 
 let pnlMiniChart = null;
@@ -3505,8 +3551,8 @@ function mmSave() {
     maxpos: parseFloat(document.getElementById('mm-maxpos').value)||2,
     sl:     parseFloat(document.getElementById('mm-sl').value)||1.2,
   };
-  localStorage.setItem('fk_mm', JSON.stringify(m));
-  toast('✅ Money Management salvato');
+  localStorage.setItem(_mmKey(), JSON.stringify(m));
+  toast('✅ MM salvato per ' + _tradingExchange);
 }
 
 // ─── PNL MINI CHART ───
@@ -3704,7 +3750,7 @@ function pnlReset() {
 
 // ─── GUARDIAN CONFIG ───
 function loadGuardianCfg() {
-  const g = JSON.parse(localStorage.getItem('fk_guardian')||'null') || GUARDIAN_DEFAULTS;
+  const g = JSON.parse(localStorage.getItem(_gKey())||'null') || GUARDIAN_DEFAULTS;
   const dd  = document.getElementById('g-maxdd');
   const ml  = document.getElementById('g-maxloss');
   const md  = document.getElementById('g-maxdaily');
@@ -3760,13 +3806,13 @@ function guardianSave() {
     maxdaily:parseFloat(document.getElementById('g-maxdaily')?.value)||100,
     cooldown:parseInt(document.getElementById('g-cooldown')?.value)||30,
   };
-  localStorage.setItem('fk_guardian', JSON.stringify(g));
+  localStorage.setItem(_gKey(), JSON.stringify(g));
   guardianUpdate();
-  toast('🛡️ Guardian salvato');
+  toast('🛡️ Guardian salvato per ' + _tradingExchange);
 }
 
 function guardianCheck() {
-  const g = JSON.parse(localStorage.getItem('fk_guardian')||'null') || GUARDIAN_DEFAULTS;
+  const g = JSON.parse(localStorage.getItem(_gKey())||'null') || GUARDIAN_DEFAULTS;
   const eq = parseFloat(localStorage.getItem('fk_equity')||'1000');
   const dd = eq>0 ? (Math.abs(Math.min(0,TS.realized))/eq*100) : 0;
 
@@ -3794,7 +3840,7 @@ function guardianCheck() {
 }
 
 function guardianUpdate() {
-  const g = JSON.parse(localStorage.getItem('fk_guardian')||'null') || GUARDIAN_DEFAULTS;
+  const g = JSON.parse(localStorage.getItem(_gKey())||'null') || GUARDIAN_DEFAULTS;
   const eq = parseFloat(localStorage.getItem('fk_equity')||'1000');
   const dd = eq>0 ? (Math.abs(Math.min(0,TS.realized))/eq*100) : 0;
   const ddPct = dd.toFixed(1)+'%';
@@ -4269,8 +4315,9 @@ function _val(id, def='—') { const el = document.getElementById(id); return el
 function _on(v) { return v ? { text: '✅ ON', cls: 'green' } : { text: '🔴 OFF', cls: 'red' }; }
 
 function buildBotPreviewRows() {
-  const mm  = JSON.parse(localStorage.getItem('fk_mm')  || '{}');
-  const g   = JSON.parse(localStorage.getItem('fk_guardian') || '{}');
+  const mm  = JSON.parse(localStorage.getItem(_mmKey())  || '{}');
+  const g   = JSON.parse(localStorage.getItem(_gKey()) || '{}');
+  const exchInfo = { bybit:'🟡 Bybit', binance:'🟠 Binance', okx:'🔵 OKX' };
   const cfg = loadCfg();
   const t   = cfg.tog || {};
   const thr = cfg.thr || {};
@@ -4295,6 +4342,7 @@ function buildBotPreviewRows() {
 
   // ── Bot control ──
   rows.push({ label: '─── BOT CONTROL ───', value: '', cls: 'section' });
+  rows.push({ label: '🏦 Exchange',     value: exchInfo[_tradingExchange] || _tradingExchange, cls: 'gold' });
   const bot_on = _on(_tgl('tog-bot'));
   rows.push({ label: '🤖 Auto-Trader',    value: bot_on.text,                             cls: bot_on.cls });
   rows.push({ label: '🧪 Testnet Mode',   value: _on(_tgl('tog-testnet')).text,            cls: _tgl('tog-testnet') ? 'green' : '' });
