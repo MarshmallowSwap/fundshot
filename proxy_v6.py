@@ -500,6 +500,29 @@ class ProxyHandler(BaseHTTPRequestHandler):
         if p == "/api/oi":
             try:
                 data = json.load(open("/tmp/fs_oi.json")) if os.path.exists("/tmp/fs_oi.json") else {}
+                # Se vuoto (bot non ancora scritto), fallback a Bybit public API
+                if not data:
+                    try:
+                        from urllib.request import urlopen
+                        import json as _j2
+                        top = ["BTCUSDT","ETHUSDT","SOLUSDT","XRPUSDT","BNBUSDT"]
+                        fallback = {}
+                        for sym in top:
+                            try:
+                                url = f"https://api.bybit.com/v5/market/open-interest?category=linear&symbol={sym}&intervalTime=5min&limit=2"
+                                r   = _j2.loads(urlopen(url, timeout=3).read())
+                                items = r.get("result", {}).get("list", [])
+                                if len(items) >= 2:
+                                    curr = float(items[0]["openInterest"])
+                                    prev = float(items[1]["openInterest"])
+                                    chg  = round((curr - prev) / prev * 100, 3) if prev else 0
+                                    fallback[sym] = {"change_5m": chg, "oi": curr, "funding": 0, "spike": abs(chg) >= 3}
+                            except Exception:
+                                pass
+                        if fallback:
+                            data = fallback
+                    except Exception:
+                        pass
                 self._json({"ok": True, "oi": data})
             except Exception as e:
                 self._json({"ok": False, "error": str(e)})

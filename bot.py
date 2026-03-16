@@ -665,7 +665,9 @@ async def trading_job(context):
 
     # Controlla flag dalla dashboard (toggle in tempo reale)
     flag_state = _check_autotrader_flag()
-    _check_config_flag(exchange)
+    # Controlla config per tutti gli exchange supportati
+    for _ex in ("bybit", "binance", "okx"):
+        _check_config_flag(_ex)
     if flag_state is not None and flag_state != TRADING_ENABLED:
         if flag_state:
             # Avvia trader se non già attivo

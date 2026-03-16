@@ -4579,6 +4579,13 @@ async function deleteExchangeKeys() {
 async function testExchangeKeys() {
   const msg  = document.getElementById('key-msg');
   const info = EXCH_INFO[_activeExchTab] || { emoji:'🏦', label: _activeExchTab };
+
+  // OKX geo-bloccato in EU
+  if (_activeExchTab === 'okx') {
+    if (msg) { msg.style.color='var(--amber2)'; msg.textContent='🌍 OKX not available in EU — coming soon'; }
+    return;
+  }
+
   if (msg) { msg.style.color='var(--text3)'; msg.textContent='Testing connection...'; }
   try {
     // Prima verifica cosa è salvato nel DB
@@ -4587,20 +4594,17 @@ async function testExchangeKeys() {
       if (msg) { msg.style.color='var(--red2)'; msg.textContent=`✗ No keys configured for ${info.label}`; }
       return;
     }
-    if (info.passphrase && !check.has_passphrase) {
-      if (msg) { msg.style.color='var(--red2)'; msg.textContent=`✗ ${info.label} needs passphrase — re-save keys with passphrase`; }
-      return;
-    }
-    // Poi testa il wallet reale
+    // Testa il wallet reale
     const d = await authFetch('/api/user/wallet?exchange=' + _activeExchTab);
     if (d.ok) {
       const eq = parseFloat(d.equity||0).toFixed(2);
-      if (msg) { msg.style.color='var(--teal2)'; msg.textContent=`✓ ${info.emoji} ${info.label} OK — equity: ${eq} USDT`; }
+      const env = d.env === 'demo' ? '🧪 Demo' : '🔴 Live';
+      if (msg) { msg.style.color='var(--teal2)'; msg.textContent=`✓ ${info.emoji} ${info.label} connected · ${env} · equity: ${eq} USDT`; }
     } else {
       if (msg) { msg.style.color='var(--red2)'; msg.textContent=`✗ ${d.error||'Connection failed'}`; }
     }
   } catch(e) {
-    if (msg) { msg.style.color='var(--red2)'; msg.textContent='Network error'; }
+    if (msg) { msg.style.color='var(--red2)'; msg.textContent=`Network error: ${e.message}`; }
   }
 }
 
