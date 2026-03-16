@@ -661,7 +661,10 @@ class ProxyHandler(BaseHTTPRequestHandler):
                     self._json({"ok": False, "error": f"{exchange} wallet error: {str(_we)[:150]}"}, 500)
                     return
                 if not wb:
-                    self._json({"ok": False, "error": f"Cannot fetch {exchange} wallet — check API keys and permissions"})
+                    if exchange == "okx":
+                        self._json({"ok": False, "error": "OKX: API key not found for this mode. Demo mode requires Paper Trading keys from okx.com/account/demo/trade — Live mode requires Live keys."})
+                    else:
+                        self._json({"ok": False, "error": f"Cannot fetch {exchange} wallet — check API keys and permissions"})
                     return
 
                 result = {

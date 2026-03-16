@@ -208,7 +208,13 @@ class OKXClient(ExchangeClient):
         try:
             data = await self._auth_get("/api/v5/account/balance")
             if data.get("code") != "0":
-                logger.error("get_wallet_balance OKX code=%s msg=%s", data.get("code"), data.get("msg"))
+                code = data.get("code")
+                msg  = data.get("msg", "")
+                if code == "50119":
+                    hint = "API key not found — for Demo mode use Paper Trading keys from okx.com/account/demo/trade"
+                    logger.error("get_wallet_balance OKX: %s | hint: %s", msg, hint)
+                else:
+                    logger.error("get_wallet_balance OKX code=%s msg=%s", code, msg)
                 return None
             acc     = data.get("data", [{}])[0]
             details = acc.get("details", [])
