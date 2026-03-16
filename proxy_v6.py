@@ -703,14 +703,14 @@ class ProxyHandler(BaseHTTPRequestHandler):
             if not user:
                 return
             try:
-                body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+                body    = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
                 enabled = bool(body.get("enabled", False))
-                # Scrivi flag file letto da bot.py ogni ciclo
+                action  = body.get("action", "off_only")  # "close_all" | "off_only"
                 flag_file = "/tmp/fs_autotrader.flag"
                 with open(flag_file, "w") as f:
-                    json.dump({"enabled": enabled, "ts": time.time()}, f)
-                log.info("auto-trading toggle: %s", "ON" if enabled else "OFF")
-                self._json({"ok": True, "enabled": enabled})
+                    json.dump({"enabled": enabled, "action": action, "ts": time.time()}, f)
+                log.info("auto-trading toggle: %s action=%s", "ON" if enabled else "OFF", action)
+                self._json({"ok": True, "enabled": enabled, "action": action})
             except Exception as e:
                 self._json({"ok": False, "error": str(e)}, 500)
             return

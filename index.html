@@ -461,6 +461,54 @@ nav {
 .warn { background: rgba(244,63,94,.08); border: 1px solid rgba(244,63,94,.25); border-radius: 12px; padding: 11px 14px; color: var(--red2); font-size: 12px; font-weight: 600; margin-bottom: 16px; display: none; }
 
 /* ── SCROLLBAR ── */
+.confirm-modal-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,.7); backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
+  animation: fadeIn .2s ease;
+}
+.confirm-modal-overlay.hidden { display: none; }
+.confirm-modal {
+  background: linear-gradient(135deg, rgba(20,15,35,.98), rgba(10,8,20,.98));
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 20px; padding: 32px;
+  max-width: 420px; width: 90%;
+  box-shadow: 0 24px 80px rgba(0,0,0,.6);
+  position: relative; overflow: hidden;
+}
+.confirm-modal::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--red2), transparent);
+}
+.confirm-modal-icon { font-size: 2.5rem; margin-bottom: 12px; }
+.confirm-modal-title {
+  font-family: 'Syne', sans-serif; font-size: 1.2rem;
+  font-weight: 800; color: var(--text); margin-bottom: 8px;
+}
+.confirm-modal-sub { font-size: .875rem; color: var(--text2); line-height: 1.6; margin-bottom: 24px; }
+.confirm-modal-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.confirm-btn {
+  flex: 1; padding: 11px 16px; border-radius: 12px;
+  font-size: .85rem; font-weight: 700; cursor: pointer;
+  border: none; font-family: 'DM Sans', sans-serif;
+  transition: all .2s; min-width: 120px;
+}
+.confirm-btn-close-all {
+  background: linear-gradient(135deg, var(--red2), #c0392b);
+  color: #fff; box-shadow: 0 4px 16px rgba(244,63,94,.35);
+}
+.confirm-btn-close-all:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(244,63,94,.5); }
+.confirm-btn-off-only {
+  background: rgba(255,255,255,.06); color: var(--text2);
+  border: 1px solid rgba(255,255,255,.1);
+}
+.confirm-btn-off-only:hover { border-color: rgba(212,168,67,.3); color: var(--text); }
+.confirm-btn-cancel {
+  background: transparent; color: var(--text3);
+  border: 1px solid rgba(255,255,255,.07); flex: 0;
+}
+.confirm-btn-cancel:hover { color: var(--text2); }
+
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(212,168,67,.2); border-radius: 4px; }
@@ -1056,7 +1104,7 @@ nav {
         <div style="border-right:1px solid var(--border);padding-right:18px">
           <div class="tr">
             <div><div class="tr-label">🤖 Auto-Trader</div><div class="tr-sub">Automatic position opening</div></div>
-            <button class="tgl" id="tog-bot" onclick="this.classList.toggle('on');botToggleFeedback(this)"></button>
+            <button class="tgl" id="tog-bot" onclick="handleAutotraderToggle(this)"></button>
           </div>
           <div class="tr">
             <div><div class="tr-label">🧪 Testnet Mode</div><div class="tr-sub">Usa sandbox Bybit</div></div>
@@ -3082,6 +3130,58 @@ function botToggleFeedback(el) {
   if (label) {
     label.style.color = on ? 'var(--teal2)' : 'var(--text)';
   }
+}
+
+// ── Autotrader OFF modal ──────────────────────────────────────────────────────
+async function handleAutotraderToggle(el) {
+  const wasOn = el.classList.contains('on');
+
+  if (wasOn) {
+    // Sta disattivando — mostra modal
+    el.classList.remove('on');
+    botToggleFeedback(el);
+
+    // Recupera posizioni aperte
+    let openCount = 0;
+    try {
+      const r = await authFetch('/api/user/positions');
+      const d = await r.json();
+      if (d.ok && d.positions) openCount = d.positions.filter(p => p.size > 0).length;
+    } catch(e) {}
+
+    const countEl = document.getElementById('modal-open-count');
+    if (countEl) {
+      countEl.textContent = openCount > 0
+        ? `${openCount} open position${openCount > 1 ? 's' : ''}`
+        : 'no open positions';
+      countEl.style.color = openCount > 0 ? 'var(--red2)' : 'var(--teal2)';
+    }
+
+    // Se non ci sono posizioni aperte, disattiva direttamente
+    if (openCount === 0) {
+      autotraderOffAction('off_only');
+      return;
+    }
+
+    document.getElementById('autotrader-off-modal').classList.remove('hidden');
+  } else {
+    // Sta attivando — nessuna conferma necessaria
+    el.classList.add('on');
+    botToggleFeedback(el);
+    saveAndSendSettings();
+  }
+}
+
+async function autotraderOffAction(action) {
+  closeAutotraderModal();
+  try {
+    await authFetch('/api/auto-trading', 'POST', { enabled: false, action });
+  } catch(e) { console.warn('autotrader off:', e); }
+  await sendToBot('settings');
+}
+
+function closeAutotraderModal() {
+  document.getElementById('autotrader-off-modal').classList.add('hidden');
 }
 
 async function saveAndSendTrading() {

@@ -821,22 +821,46 @@ async def cmd_autotrader_toggle(update, context):
             return
 
         open_pos = len(_funding_trader.positions) if _funding_trader else 0
-        TRADING_ENABLED = False
-        _funding_trader = None
-        _bybit_trader   = None
 
-        warning = (
-            f"\n⚠️ *{open_pos} open position(s) not closed automatically.* Check Bybit."
-            if open_pos > 0 else ""
-        )
-        await update.message.reply_text(
-            f"🔴 *Auto-Trader disabled*\n"
-            f"Exchange: `🟡 Bybit`\n"
-            f"No new trades will be opened.\n"
-            f"Funding alerts are still active ✅"
-            f"{warning}",
-            parse_mode="Markdown"
-        )
+        if open_pos == 0:
+            # Nessuna posizione aperta — disattiva direttamente
+            TRADING_ENABLED = False
+            _funding_trader = None
+            _bybit_trader   = None
+            await update.message.reply_text(
+                "🔴 *Auto-Trader disabled*\n"
+                "Exchange: `🟡 Bybit`\n"
+                "No new trades will be opened.\n"
+                "Funding alerts are still active ✅",
+                parse_mode="Markdown"
+            )
+        else:
+            # Posizioni aperte — chiedi conferma con InlineKeyboard
+            from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+            keyboard = InlineKeyboardMarkup([
+                [
+                    InlineKeyboardButton(
+                        f"❌ Close all {open_pos} position(s) & disable",
+                        callback_data="autotrader_off_close_all"
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        "⏸ Disable only (keep positions open)",
+                        callback_data="autotrader_off_only"
+                    ),
+                ],
+                [
+                    InlineKeyboardButton("🚫 Cancel", callback_data="autotrader_off_cancel"),
+                ],
+            ])
+            await update.message.reply_text(
+                f"⚠️ *Auto-Trader — Confirm disable*\n\n"
+                f"You have *{open_pos} open position(s)* on 🟡 Bybit.\n"
+                f"What do you want to do?",
+                parse_mode="Markdown",
+                reply_markup=keyboard,
+            )
 
 
 # ── Comando /stats trading ────────────────────────────────────────────────────
@@ -1406,6 +1430,55 @@ def main():
     app.add_handler(CommandHandler("posizioni_trader", cmd_posizioni_trader))
     app.add_handler(CommandHandler("autotrader",       cmd_autotrader_toggle))
     app.add_handler(CommandHandler("plan",             commands.cmd_plan))
+
+    # ── Inline keyboard callbacks ────────────────────────────────────────────
+    from telegram.ext import CallbackQueryHandler as CQH
+
+    async def _autotrader_off_callback(update, context):
+        global TRADING_ENABLED, _funding_trader, _bybit_trader
+        q = update.callback_query
+        await q.answer()
+
+        if q.data == "autotrader_off_cancel":
+            await q.edit_message_text("✅ *Cancelled.* Auto-Trader is still running.", parse_mode="Markdown")
+            return
+
+        if q.data == "autotrader_off_close_all":
+            open_pos = len(_funding_trader.positions) if _funding_trader else 0
+            # Chiudi tutte le posizioni
+            closed = 0
+            if _funding_trader and _bybit_trader:
+                for sym in list(_funding_trader.positions.keys()):
+                    try:
+                        await _bybit_trader.close_position(sym)
+                        closed += 1
+                    except Exception as e:
+                        logger.error("close_position %s: %s", sym, e)
+            TRADING_ENABLED = False
+            _funding_trader = None
+            _bybit_trader   = None
+            await q.edit_message_text(
+                f"🔴 *Auto-Trader disabled*\n"
+                f"Exchange: `🟡 Bybit`\n"
+                f"Closed: *{closed}/{open_pos}* positions\n"
+                f"Funding alerts are still active ✅",
+                parse_mode="Markdown"
+            )
+
+        elif q.data == "autotrader_off_only":
+            open_pos = len(_funding_trader.positions) if _funding_trader else 0
+            TRADING_ENABLED = False
+            _funding_trader = None
+            _bybit_trader   = None
+            await q.edit_message_text(
+                f"🔴 *Auto-Trader disabled*\n"
+                f"Exchange: `🟡 Bybit`\n"
+                f"⚠️ *{open_pos} position(s) left open* — manage manually on exchange.\n"
+                f"Funding alerts are still active ✅",
+                parse_mode="Markdown"
+            )
+
+    app.add_handler(CQH(_autotrader_off_callback, pattern="^autotrader_off_"))
 
     logger.info(
         "🚀 FundShot Bot avviato — interval=%ds | soglie=%s | trading=%s",
