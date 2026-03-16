@@ -39,7 +39,7 @@ STARTING_CAPITAL = 10_000.0   # capitale iniziale simulato
 SIZE_USDT        = 500.0      # size per trade (5% del capitale)
 LEVERAGE         = 10         # leva 10x
 MAX_POS          = 5          # max 5 posizioni contemporanee
-MIN_LEVEL        = "high"     # HIGH+ (>= 1%) — più trade senza degradare qualità
+MIN_LEVEL        = "soft"     # SOFT+ (>= 0.5%) — massimizza numero trade
 
 
 async def fetch_60d(symbol: str) -> list[dict]:
@@ -110,7 +110,7 @@ def run_backtest_filtered(symbol: str, entries: list[dict]):
     result     = BacktestResult(symbol=symbol, interval_h=interval_h,
                                 start_ts=start_ts, end_ts=end_ts, total_cycles=len(entries))
     open_trade: Optional[Trade] = None
-    HIGH_LEVELS = ("high", "extreme", "hard", "critico")  # >= 1% funding
+    HIGH_LEVELS = ("soft", "high", "extreme", "hard", "critico")  # >= 0.5% funding
 
     for entry in entries:
         ts       = int(entry["fundingRateTimestamp"])

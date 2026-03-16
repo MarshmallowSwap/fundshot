@@ -480,9 +480,9 @@ section { position: relative; z-index: 1; padding: 120px 48px; }
 }
 @media(max-width:768px) {
   .tr-grid { grid-template-columns: repeat(2,1fr); }
-  .tr-table-header, .tr-table-row { grid-template-columns: 2fr 1fr 1fr; }
-  .tr-table-header > *:last-child,
-  .tr-table-row > *:last-child { display: none; }
+  .tr-table-header, .tr-table-row { grid-template-columns: 2fr 1fr 1fr !important; }
+  .tr-table-header > *:nth-child(n+4),
+  .tr-table-row > *:nth-child(n+4) { display: none; }
 }
 
 .guardian-section {
@@ -713,9 +713,9 @@ section { position: relative; z-index: 1; padding: 120px 48px; }
 }
 @media(max-width:768px) {
   .tr-grid { grid-template-columns: repeat(2,1fr); }
-  .tr-table-header, .tr-table-row { grid-template-columns: 2fr 1fr 1fr; }
-  .tr-table-header > *:last-child,
-  .tr-table-row > *:last-child { display: none; }
+  .tr-table-header, .tr-table-row { grid-template-columns: 2fr 1fr 1fr !important; }
+  .tr-table-header > *:nth-child(n+4),
+  .tr-table-row > *:nth-child(n+4) { display: none; }
 }
 
 .guardian-section { padding: 80px 24px; }
@@ -1217,7 +1217,7 @@ footer {
     Updated daily.
   </p>
 
-  <!-- Stats grid -->
+  <!-- Stats grid — row 1 -->
   <div class="tr-grid" id="tr-stats">
     <div class="tr-stat">
       <div class="tr-stat-val green" id="tr-wr">—</div>
@@ -1228,22 +1228,42 @@ footer {
       <div class="tr-stat-lbl">Total Trades</div>
     </div>
     <div class="tr-stat">
-      <div class="tr-stat-val" id="tr-pnl">—</div>
+      <div class="tr-stat-val green" id="tr-return">—</div>
+      <div class="tr-stat-lbl">Total Return</div>
+    </div>
+    <div class="tr-stat">
+      <div class="tr-stat-val red" id="tr-dd">—</div>
+      <div class="tr-stat-lbl">Max Drawdown</div>
+    </div>
+  </div>
+  <!-- Stats grid — row 2 -->
+  <div class="tr-grid" style="margin-top:-8px">
+    <div class="tr-stat">
+      <div class="tr-stat-val" id="tr-start-cap">$10,000</div>
+      <div class="tr-stat-lbl">Starting Capital</div>
+    </div>
+    <div class="tr-stat">
+      <div class="tr-stat-val green" id="tr-final-cap">—</div>
+      <div class="tr-stat-lbl">Final Capital</div>
+    </div>
+    <div class="tr-stat">
+      <div class="tr-stat-val green" id="tr-pnl">—</div>
       <div class="tr-stat-lbl">Avg PnL / Trade</div>
     </div>
     <div class="tr-stat">
-      <div class="tr-stat-val" id="tr-best">—</div>
+      <div class="tr-stat-val green" id="tr-best">—</div>
       <div class="tr-stat-lbl">Best Trade</div>
     </div>
   </div>
 
   <!-- Top symbols table -->
   <div class="tr-table">
-    <div class="tr-table-header">
+    <div class="tr-table-header" style="grid-template-columns:2fr 1fr 1fr 1fr 1fr">
       <span>Symbol</span>
       <span>Trades</span>
+      <span>W/L</span>
       <span>Win Rate</span>
-      <span>PnL</span>
+      <span>Total PnL</span>
     </div>
     <div id="tr-table-body">
       <div class="tr-loading">Loading performance data...</div>
@@ -1696,6 +1716,13 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ── Track Record ──────────────────────────────────────────────────────────────
+function fmtUsd(v) {
+  return '$' + Math.round(v).toLocaleString('en-US');
+}
+function fmtPct(v, dec=2) {
+  return (v >= 0 ? '+' : '') + v.toFixed(dec) + '%';
+}
+
 async function loadTrackRecord() {
   try {
     const r = await fetch('https://api.fundshot.app/api/track-record');
@@ -1704,7 +1731,7 @@ async function loadTrackRecord() {
     const rec = d.record;
     const s   = rec.summary;
 
-    // Stats
+    // Row 1 stats
     const wr = s.win_rate_pct;
     const wrEl = document.getElementById('tr-wr');
     if (wrEl) { wrEl.textContent = wr.toFixed(1) + '%'; wrEl.className = 'tr-stat-val ' + (wr >= 60 ? 'green' : wr >= 45 ? '' : 'red'); }
@@ -1712,30 +1739,51 @@ async function loadTrackRecord() {
     const trEl = document.getElementById('tr-trades');
     if (trEl) trEl.textContent = s.total_trades;
 
+    const retEl = document.getElementById('tr-return');
+    if (retEl) {
+      retEl.textContent = fmtPct(s.total_return_pct || 0, 1);
+      retEl.className = 'tr-stat-val ' + ((s.total_return_pct||0) >= 0 ? 'green' : 'red');
+    }
+
+    const ddEl = document.getElementById('tr-dd');
+    if (ddEl) {
+      ddEl.textContent = '-' + (s.max_dd_pct || 0).toFixed(1) + '%';
+      ddEl.className = 'tr-stat-val red';
+    }
+
+    // Row 2 stats
+    const startEl = document.getElementById('tr-start-cap');
+    if (startEl) startEl.textContent = fmtUsd(s.starting_capital || 10000);
+
+    const finalEl = document.getElementById('tr-final-cap');
+    if (finalEl) {
+      finalEl.textContent = fmtUsd(s.final_capital || 0);
+      finalEl.className = 'tr-stat-val ' + ((s.final_capital||0) >= (s.starting_capital||10000) ? 'green' : 'red');
+    }
+
     const pnlEl = document.getElementById('tr-pnl');
     if (pnlEl) {
-      const avg = s.avg_pnl_pct;
-      pnlEl.textContent = (avg >= 0 ? '+' : '') + avg.toFixed(3) + '%';
-      pnlEl.className = 'tr-stat-val ' + (avg >= 0 ? 'green' : 'red');
+      pnlEl.textContent = fmtPct(s.avg_pnl_pct, 3);
+      pnlEl.className = 'tr-stat-val ' + (s.avg_pnl_pct >= 0 ? 'green' : 'red');
     }
 
     const bestEl = document.getElementById('tr-best');
-    if (bestEl) {
-      bestEl.textContent = '+' + s.best_trade_pct.toFixed(3) + '%';
-      bestEl.className = 'tr-stat-val green';
-    }
+    if (bestEl) { bestEl.textContent = fmtPct(s.best_trade_pct, 3); bestEl.className = 'tr-stat-val green'; }
 
-    // Table
+    // Table — mostra top 15 simboli
     const tbody = document.getElementById('tr-table-body');
     if (tbody && rec.top_symbols) {
-      tbody.innerHTML = rec.top_symbols.slice(0, 8).map(sym => {
+      tbody.innerHTML = rec.top_symbols.slice(0, 15).map(sym => {
         const pnl = sym.total_pnl_pct;
         const cls = pnl >= 0 ? 'tr-pos' : 'tr-neg';
-        return '<div class="tr-table-row">'
+        const wins = Math.round(sym.trades * sym.win_rate / 100);
+        const losses = sym.trades - wins;
+        return '<div class="tr-table-row" style="grid-template-columns:2fr 1fr 1fr 1fr 1fr">'
           + '<span class="tr-sym">' + sym.symbol + '</span>'
           + '<span class="tr-neutral">' + sym.trades + '</span>'
+          + '<span class="tr-neutral">' + wins + 'W / ' + losses + 'L</span>'
           + '<span class="tr-neutral">' + sym.win_rate.toFixed(0) + '%</span>'
-          + '<span class="' + cls + '">' + (pnl >= 0 ? '+' : '') + pnl.toFixed(3) + '%</span>'
+          + '<span class="' + cls + '">' + fmtPct(pnl, 3) + '</span>'
           + '</div>';
       }).join('');
     }
@@ -1744,8 +1792,11 @@ async function loadTrackRecord() {
     const metaEl = document.getElementById('tr-meta');
     if (metaEl && rec.generated_at) {
       const dt = new Date(rec.generated_at).toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'});
-      metaEl.innerHTML = 'Backtest simulation · ' + rec.days + ' days · ' + rec.exchange + ' linear perpetuals<br>'
-        + 'Fees included · Updated: ' + dt + ' · Not financial advice';
+      const cfg = rec.config || {};
+      metaEl.innerHTML = 'Simulated on ' + rec.days + '-day Bybit funding rate history · '
+        + (cfg.size_usdt||500) + ' USDT size · ' + (cfg.leverage||10) + 'x leverage<br>'
+        + 'Taker fees + slippage included · Starting capital $' + ((cfg.starting_capital||10000)).toLocaleString()
+        + ' · Updated ' + dt + ' · Not financial advice';
     }
   } catch(e) {
     console.warn('loadTrackRecord:', e);
