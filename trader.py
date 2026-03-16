@@ -639,12 +639,13 @@ class BinanceFuturesTrader:
         order_id = str(r["orderId"])
         logger.info("BinanceFutures market order OK: %s %s qty=%s id=%s", symbol, bn_side, qty, order_id)
 
-        # 2. Stop Loss separato
+        # 2. Stop Loss separato — usa quantity esplicita (closePosition non funziona in demo)
+        qty_str = str(qty)
         r_sl = self._post("/fapi/v1/order", {
             "symbol": symbol, "side": sl_side,
             "type": "STOP_MARKET", "stopPrice": sl_str,
-            "closePosition": "true", "workingType": "MARK_PRICE",
-            "priceProtect": "true",
+            "quantity": qty_str, "workingType": "MARK_PRICE",
+            "reduceOnly": "true",
         })
         if "orderId" in r_sl:
             logger.info("BinanceFutures SL OK: %s stopPrice=%s", symbol, sl_str)
@@ -656,8 +657,8 @@ class BinanceFuturesTrader:
             r_tp = self._post("/fapi/v1/order", {
                 "symbol": symbol, "side": sl_side,
                 "type": "TAKE_PROFIT_MARKET", "stopPrice": tp_str,
-                "closePosition": "true", "workingType": "MARK_PRICE",
-                "priceProtect": "true",
+                "quantity": qty_str, "workingType": "MARK_PRICE",
+                "reduceOnly": "true",
             })
             if "orderId" in r_tp:
                 logger.info("BinanceFutures TP OK: %s stopPrice=%s", symbol, tp_str)
@@ -673,18 +674,28 @@ class BinanceFuturesTrader:
         if not price or price == 0:
             return False
         callback_pct = max(0.1, min(10.0, round(trailing_dist / price * 100, 1)))
-        sl_side = "SELL" if side == "Buy" else "BUY"
+        ts_side = "SELL" if side == "Buy" else "BUY"
+        tick = self.get_tick_size(symbol)
+        act_str = self._round_price(active_price, tick)
+
+        # Ottieni quantità residua dalla posizione aperta
+        pos = self.get_position(symbol)
+        qty_str = str(abs(float(pos["size"]))) if pos else "0"
+
         r = self._post("/fapi/v1/order", {
-            "symbol":         symbol,
-            "side":           sl_side,
-            "type":           "TRAILING_STOP_MARKET",
-            "callbackRate":   str(callback_pct),
-            "activationPrice": str(round(active_price, 4)),
-            "closePosition":  "true",
-            "workingType":    "MARK_PRICE",
+            "symbol":          symbol,
+            "side":            ts_side,
+            "type":            "TRAILING_STOP_MARKET",
+            "callbackRate":    str(callback_pct),
+            "activationPrice": act_str,
+            "quantity":        qty_str,
+            "workingType":     "MARK_PRICE",
+            "reduceOnly":      "true",
         })
         ok = "orderId" in r
-        if not ok:
+        if ok:
+            logger.info("BinanceFutures trailing OK: %s callback=%s%% active=%s", symbol, callback_pct, act_str)
+        else:
             logger.warning("BinanceFutures set_trailing_stop %s: %s", symbol, r)
         return ok
 
