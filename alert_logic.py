@@ -571,31 +571,35 @@ def reset_state(symbol: str, exchange: str = ""):
 _funded_symbols: set[str] = set()
 
 
-def _can_send_alert(symbol: str, level: str) -> bool:
+def _can_send_alert(symbol: str, level: str, exchange: str = "") -> bool:
     """True se non abbiamo gia inviato questo livello per questo simbolo
     nell'ultimo MIN_RESEND_INTERVAL[level] secondi."""
     min_interval = MIN_RESEND_INTERVAL.get(level, 0)
     if min_interval == 0:
         return True
-    last = _last_alert_time.get(symbol, {}).get(level, 0.0)
+    key = f"{exchange}:{symbol}" if exchange else symbol
+    last = _last_alert_time.get(key, {}).get(level, 0.0)
     return (time.monotonic() - last) >= min_interval
 
 
-def _record_alert(symbol: str, level: str) -> None:
-    """Registra l'istante di invio per symbol+level."""
-    if symbol not in _last_alert_time:
-        _last_alert_time[symbol] = {}
-    _last_alert_time[symbol][level] = time.monotonic()
+def _record_alert(symbol: str, level: str, exchange: str = "") -> None:
+    """Registra l'istante di invio per symbol+level+exchange."""
+    key = f"{exchange}:{symbol}" if exchange else symbol
+    if key not in _last_alert_time:
+        _last_alert_time[key] = {}
+    _last_alert_time[key][level] = time.monotonic()
 
 
-def mark_funded(symbol: str) -> None:
+def mark_funded(symbol: str, exchange: str = "") -> None:
     """Registra che il simbolo ha ricevuto almeno un alert HIGH/EXTREME/HARD."""
-    _funded_symbols.add(symbol)
+    key = f"{exchange}:{symbol}" if exchange else symbol
+    _funded_symbols.add(key)
 
 
-def is_funded(symbol: str) -> bool:
+def is_funded(symbol: str, exchange: str = "") -> bool:
     """True se il simbolo ha ricevuto un alert HIGH/EXTREME/HARD in questa sessione."""
-    return symbol in _funded_symbols
+    key = f"{exchange}:{symbol}" if exchange else symbol
+    return key in _funded_symbols
 
 
 def get_funded_symbols() -> set[str]:
@@ -655,18 +659,18 @@ def process_funding(symbol: str, rate_pct: float, interval_h, last_price: float 
     if new_level == "warn_tip":
         return None   # alert PERICOLO CHIUSURA rimosso: non inviare mai
 
-    if new_level == "close_tip" and not is_funded(symbol):
+    if new_level == "close_tip" and not is_funded(symbol, exchange):
         return None   # CONSIGLIO CHIUSURA solo se simbolo gia funded
     # ─────────────────────────────────────────────────────────────────────────
 
     # Segna il simbolo come funded per CRITICO / HIGH / EXTREME / HARD
     if new_level in ("critico", "high", "extreme", "hard", "soft"):
-        mark_funded(symbol)
+        mark_funded(symbol, exchange)
 
     # Anti-duplicato temporale
-    if not _can_send_alert(symbol, new_level):
+    if not _can_send_alert(symbol, new_level, exchange):
         return None
-    _record_alert(symbol, new_level)
+    _record_alert(symbol, new_level, exchange)
 
     return format_alert(symbol, rate_pct, interval_h, new_level, prev_level,
                         last_price=last_price, pct_24h=pct_24h,
