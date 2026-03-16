@@ -2330,8 +2330,7 @@ window.addPartialClose = function(pnlUsdt) {
 // ─── FETCH CLOSED PNL DA BYBIT ───
 async function fetchClosedPnl() {
   try {
-    const proxy = proxyBase();
-    const r = await fetch(proxy + '/api/closed-pnl');
+    const r = await fetch('https://api.fundshot.app/api/closed-pnl');
     if (!r.ok) return;
     const data = await r.json();
     if (!data.ok || !data.trades || !data.trades.length) return;
@@ -2426,8 +2425,7 @@ async function fetchUnrealizedPnl() {
 // ─── FETCH RESULTS DAL SERVER ───
 async function fetchResults() {
   try {
-    const proxy = proxyBase();
-    const r = await fetch(proxy + '/api/results');
+    const r = await fetch('https://api.fundshot.app/api/results');
     if (!r.ok) return;
     const data = await r.json();
     if (!data.ok || !data.results) return;
@@ -2550,13 +2548,12 @@ async function loadPublic() {
 // Il proxy (port 8080) firma le richieste con le chiavi del .env server-side
 // Evita il problema crypto.subtle su HTTP
 function proxyBase() {
-  const h = window.location.hostname;
-  return `http://${h}:8080`;
+  return 'https://api.fundshot.app';
 }
 
 async function priv(path, params={}) {
   // Mappa i path Bybit agli endpoint proxy
-  const proxy = proxyBase();
+  const proxy = 'https://api.fundshot.app';
   let url;
   if (path.includes('wallet-balance')) {
     url = proxy + '/api/wallet';
@@ -2755,8 +2752,7 @@ function updateOICard(oi) {
 
 async function fetchMonitoring() {
   try {
-    const pb = typeof proxyBase === 'function' ? proxyBase() : ('http://'+window.location.hostname+':8080');
-    const r = await fetch(pb + '/api/monitoring', { signal: AbortSignal.timeout(5000) });
+    const r = await fetch('https://api.fundshot.app/api/monitoring', { signal: AbortSignal.timeout(5000) });
     const d = await r.json();
     return d.ok ? d.monitoring : {};
   } catch(e) { return {}; }
@@ -3112,8 +3108,7 @@ async function sendToBot(source='settings') {
     _ts: Date.now()
   };
 
-  const BASE = localStorage.getItem('fk_proxy') || proxyBase();
-  const url  = BASE.replace(/\/+$/, '') + '/api/config';
+  const url  = 'https://api.fundshot.app/api/config';
 
   const statusEl = document.getElementById(source==='settings' ? 'key-msg' : 'trading-send-msg');
 
