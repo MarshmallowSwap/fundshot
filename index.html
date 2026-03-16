@@ -3056,13 +3056,25 @@ async function loadWallet(){
     const pn=parseFloat(r.unrealisedPnl||0).toFixed(2);
     const mp=parseFloat(eq)>0?((parseFloat(mg)/parseFloat(eq))*100).toFixed(1):0;
     const pc=parseFloat(pn)>=0?'var(--teal2)':'var(--red2)';
+    const coins = (r.coins||[]).filter(c=>parseFloat(c.walletBalance||0)!==0);
+    const coinsHtml = coins.length ? `
+      <div style="grid-column:1/-1;border-top:1px solid rgba(255,255,255,.06);padding-top:10px;margin-top:4px">
+        <div style="font-size:.65rem;color:var(--text3);font-family:'DM Mono',monospace;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px">Assets</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          ${coins.map(c=>`<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:4px 10px;font-size:.78rem">
+            <span style="color:var(--text3)">${c.coin}</span>
+            <span style="color:var(--text);font-weight:600;margin-left:6px">${parseFloat(c.walletBalance).toFixed(4)}</span>
+          </div>`).join('')}
+        </div>
+      </div>` : '';
     el.innerHTML=`<div class="wg">
-      <div class="wi"><div class="wi-label">Equity</div><div class="wi-val" style="color:var(--text)">${eq} <span style="font-size:12px;color:var(--text3)">USDT</span></div></div>
-      <div class="wi"><div class="wi-label">Disponibile</div><div class="wi-val" style="color:var(--teal2)">${av} <span style="font-size:12px;color:var(--text3)">USDT</span></div></div>
-      <div class="wi"><div class="wi-label">Margine Usato</div><div class="wi-val" style="color:var(--amber2)">${mg} <span style="font-size:12px;color:var(--text3)">USDT</span></div>
-        <div class="bar-wrap"><div class="bar-row"><span>Utilizzo</span><span>${mp}%</span></div><div class="bar-bg"><div class="bar-fill" style="width:${Math.min(parseFloat(mp),100)}%"></div></div></div>
+      <div class="wi"><div class="wi-label">Total Equity</div><div class="wi-val" style="color:var(--text)">${eq} <span style="font-size:12px;color:var(--text3)">USDT</span></div></div>
+      <div class="wi"><div class="wi-label">Available</div><div class="wi-val" style="color:var(--teal2)">${av} <span style="font-size:12px;color:var(--text3)">USDT</span></div></div>
+      <div class="wi"><div class="wi-label">Margin Used</div><div class="wi-val" style="color:var(--amber2)">${mg} <span style="font-size:12px;color:var(--text3)">USDT</span></div>
+        <div class="bar-wrap"><div class="bar-row"><span>Usage</span><span>${mp}%</span></div><div class="bar-bg"><div class="bar-fill" style="width:${Math.min(parseFloat(mp),100)}%"></div></div></div>
       </div>
-      <div class="wi"><div class="wi-label">PnL Non Realizzato</div><div class="wi-val" style="color:${pc}">${parseFloat(pn)>=0?'+':''}${pn} <span style="font-size:12px;color:var(--text3)">USDT</span></div></div>
+      <div class="wi"><div class="wi-label">Unrealised PnL</div><div class="wi-val" style="color:${pc}">${parseFloat(pn)>=0?'+':''}${pn} <span style="font-size:12px;color:var(--text3)">USDT</span></div></div>
+      ${coinsHtml}
     </div>`;
   }catch(e){
     el.innerHTML=`<div class="empty-state" style="color:var(--red2)">❌ ${e.message}</div>`;

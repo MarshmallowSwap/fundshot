@@ -173,12 +173,20 @@ class BinanceClient(ExchangeClient):
             if "totalWalletBalance" not in data:
                 logger.error("get_wallet_balance Binance unexpected response: %s", str(data)[:200])
                 return None
+            # Coins con saldo
+            assets = data.get("assets", [])
+            coins = [
+                {"coin": a.get("asset"), "walletBalance": self._sf(a.get("walletBalance")),
+                 "usdValue": self._sf(a.get("walletBalance")), "unrealisedPnl": self._sf(a.get("unrealizedProfit"))}
+                for a in assets if self._sf(a.get("walletBalance")) != 0
+            ]
             return WalletBalance(
                 total_equity=self._sf(data.get("totalMarginBalance")),
                 total_wallet_balance=self._sf(data.get("totalWalletBalance")),
                 total_available_balance=self._sf(data.get("availableBalance")),
                 total_perp_upl=self._sf(data.get("totalUnrealizedProfit")),
                 total_margin_balance=self._sf(data.get("totalMaintMargin")),
+                coins=coins,
                 exchange=self.EXCHANGE_ID,
             )
         except Exception as e:

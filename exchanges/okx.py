@@ -206,18 +206,29 @@ class OKXClient(ExchangeClient):
 
     async def get_wallet_balance(self) -> Optional[WalletBalance]:
         try:
-            data = await self._auth_get("/api/v5/account/balance", {"ccy": "USDT"})
+            data = await self._auth_get("/api/v5/account/balance")
             if data.get("code") != "0":
                 logger.error("get_wallet_balance OKX code=%s msg=%s", data.get("code"), data.get("msg"))
                 return None
-            details = data.get("data", [{}])[0].get("details", [])
-            usdt    = next((d for d in details if d.get("ccy") == "USDT"), {})
+            acc     = data.get("data", [{}])[0]
+            details = acc.get("details", [])
+            # Equity totale account (tutti i coin valorizzati in USD)
+            total_eq  = self._sf(acc.get("totalEq"))
+            total_avl = sum(self._sf(d.get("availEq")) for d in details)
+            total_upl = sum(self._sf(d.get("upl"))     for d in details)
+            # Coins con saldo
+            coins = [
+                {"coin": d.get("ccy"), "walletBalance": self._sf(d.get("eq")),
+                 "usdValue": self._sf(d.get("eq")), "unrealisedPnl": self._sf(d.get("upl"))}
+                for d in details if self._sf(d.get("eq")) != 0
+            ]
             return WalletBalance(
-                total_equity=self._sf(usdt.get("eq")),
-                total_wallet_balance=self._sf(usdt.get("eq")),
-                total_available_balance=self._sf(usdt.get("availEq")),
-                total_perp_upl=self._sf(usdt.get("upl")),
-                total_margin_balance=self._sf(usdt.get("eq")) - self._sf(usdt.get("availEq")),
+                total_equity=total_eq,
+                total_wallet_balance=total_eq,
+                total_available_balance=total_avl,
+                total_perp_upl=total_upl,
+                total_margin_balance=total_eq - total_avl,
+                coins=coins,
                 exchange=self.EXCHANGE_ID,
             )
         except Exception as e:

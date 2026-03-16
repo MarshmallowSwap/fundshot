@@ -655,6 +655,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
                     "available":     str(wb.total_available_balance),
                     "margin":        str(round(wb.total_equity - wb.total_available_balance, 4)),
                     "unrealisedPnl": str(wb.total_perp_upl),
+                    "coins":         wb.coins or [],
                     "exchange":      exchange,
                     "env":           cred.environment,
                 }
