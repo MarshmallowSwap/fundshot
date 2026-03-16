@@ -605,7 +605,7 @@ def get_funded_symbols() -> set[str]:
 # LOGICA PRINCIPALE FUNDING (Opzione A)
 # ══════════════════════════════════════════════════════════════════════════════
 
-def process_funding(symbol: str, rate_pct: float, interval_h, last_price: float = 0.0, pct_24h: float = 0.0) -> str | None:
+def process_funding(symbol: str, rate_pct: float, interval_h, last_price: float = 0.0, pct_24h: float = 0.0, exchange: str = "", env: str = "") -> str | None:
     """
     Opzione A: reset stato solo quando rate <= THRESHOLD_RIENTRO (effettivo).
     Usa soglie ibride (fisse + dinamiche).
