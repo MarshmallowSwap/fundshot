@@ -299,6 +299,7 @@ async def _process_exchange_tickers(
     exchange: str,          # "bybit" | "binance" | "okx"
     positions_all: list,    # posizioni pre-fetchate per questo exchange
     target_chat_ids: list,  # chat_id degli utenti con questo exchange configurato
+    env: str = "mainnet",   # "mainnet" | "testnet"
 ):
     """
     Processa i ticker di un singolo exchange: alert funding, level change,
@@ -330,7 +331,7 @@ async def _process_exchange_tickers(
         ex_kwargs = {"exchange": exchange}
 
         # 1. Alert funding rate
-        alert_text = al.process_funding(symbol, rate_pct, interval_h, last_price=last_price, pct_24h=pct_24h)
+        alert_text = al.process_funding(symbol, rate_pct, interval_h, last_price=last_price, pct_24h=pct_24h, exchange=exchange, env=env)
         if alert_text:
             level = al.classify(symbol, rate_pct)
             for cid in target_chat_ids:
@@ -343,6 +344,7 @@ async def _process_exchange_tickers(
             level_alert = al.check_level_change(
                 symbol, al.classify(symbol, rate_pct),
                 rate_pct=rate_pct, last_price=last_price, pct_24h=pct_24h,
+                exchange=exchange, env=env,
             )
             if level_alert:
                 level = al.classify(symbol, rate_pct)
@@ -353,7 +355,7 @@ async def _process_exchange_tickers(
 
         # 2. Alert pre-settlement (Pro/Elite only)
         if next_ts:
-            next_text = al.process_next_funding(symbol, rate_pct, interval_h, next_ts, last_price=last_price, pct_24h=pct_24h)
+            next_text = al.process_next_funding(symbol, rate_pct, interval_h, next_ts, last_price=last_price, pct_24h=pct_24h, exchange=exchange, env=env)
             if next_text:
                 for cid in target_chat_ids:
                     # Controlla piano — solo Pro/Elite ricevono pre-settlement
@@ -480,6 +482,7 @@ async def funding_job(context):
 
                 await _process_exchange_tickers(
                     bot, bot_data, tickers, exchange, positions_all, chat_ids,
+                    env="testnet" if TRADING_TESTNET else "mainnet",
                 )
 
             except Exception as e_ex:

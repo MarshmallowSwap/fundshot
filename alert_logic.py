@@ -348,6 +348,16 @@ def _get_oi(symbol: str) -> str:
     return "`n/d`"
 
 
+def _exchange_footer(exchange: str = "", env: str = "") -> str:
+    """Riga footer con exchange e modalità (Live/Demo)."""
+    if not exchange:
+        return ""
+    ex_label = exchange.capitalize()
+    ex_emoji = {"bybit": "🟡", "binance": "🟠", "okx": "🔵"}.get(exchange.lower(), "⚡")
+    mode = "🔴 Live" if env in ("mainnet", "live", "") else "🧪 Demo"
+    return f"\n{ex_emoji} {ex_label} · {mode}"
+
+
 def format_alert(
     symbol: str,
     rate_pct: float,
@@ -356,6 +366,8 @@ def format_alert(
     prev_level: str = "none",
     last_price: float = 0.0,
     pct_24h: float = 0.0,
+    exchange: str = "",
+    env: str = "",
 ) -> str:
     emoji, title = _LEVEL_META.get(level, ("\U0001f4ca", "FUNDING"))
     interval  = _interval_label(interval_h)
@@ -381,6 +393,7 @@ def format_alert(
             f"📈 OI 5m:   {oi_str}\n"
             f"━━━━━━━━━━━━━━━━━━\n"
             f"✅ Excess cleared — positions safe"
+            f"{_exchange_footer(exchange, env)}"
         )
 
     if level == "critico":
@@ -396,6 +409,7 @@ def format_alert(
             f"━━━━━━━━━━━━━━━━━━\n"
             f"💰 MAX FUNDING — {income}\n"
             f"🚀 Hold / Open *{side}* — RARE opportunity!"
+            f"{_exchange_footer(exchange, env)}"
         )
 
     if level == "close_tip":
@@ -409,6 +423,7 @@ def format_alert(
             f"📈 OI 5m:   {oi_str}\n"
             f"━━━━━━━━━━━━━━━━━━\n"
             f"🔔 Consider {action} — funding retreating"
+            f"{_exchange_footer(exchange, env)}"
         )
 
     if level == "warn_tip":
@@ -422,6 +437,7 @@ def format_alert(
             f"📈 OI 5m:   {oi_str}\n"
             f"━━━━━━━━━━━━━━━━━━\n"
             f"⚠️ Funding on {side} still active — monitor"
+            f"{_exchange_footer(exchange, env)}"
         )
 
     # BASE / HIGH / EXTREME / HARD
@@ -434,6 +450,7 @@ def format_alert(
         f"📈 OI 5m:   {oi_str}\n"
         f"━━━━━━━━━━━━━━━━━━\n"
         f"🎯 Signal: {direction}"
+        f"{_exchange_footer(exchange, env)}"
     )
 
 
@@ -664,6 +681,8 @@ def process_next_funding(
     next_funding_ts_ms: int,
     last_price: float = 0.0,
     pct_24h: float = 0.0,
+    exchange: str = "",
+    env: str = "",
 ) -> str | None:
     """Alert unificato PRE-SETTLEMENT: countdown + next funding + suggerimento.
     Scatta FUNDING_ALERT_MINUTES minuti prima del settlement per tutti i simboli
@@ -733,6 +752,7 @@ def process_next_funding(
         f"━━━━━━━━━━━━━━━━━━\n"
         f"📌 *{symbol}*  {lvl_emoji} `{lvl_lbl}`\n"
         f"📊 Funding:  `{sign}{rate_pct:.4f}%`  |  {direction}\n"
+        f"📈 OI 5m:   {_get_oi(symbol)}\n"
         f"{price_line}"
         f"━━━━━━━━━━━━━━━━━━\n"
         f"🕐 Settlement: `{settlement_str}`\n"
@@ -740,6 +760,7 @@ def process_next_funding(
         f"━━━━━━━━━━━━━━━━━━\n"
         f"{pos_line}\n"
         f"{suggerimento}"
+        f"{_exchange_footer(exchange, env)}"
     )
 
 
@@ -790,7 +811,8 @@ _LEVEL_CHANGE_CD_SEC = 300   # 5 minuti
 
 
 def check_level_change(symbol: str, new_level: str, rate_pct: float = 0.0, prev_rate_pct: float = 0.0,
-                        last_price: float = 0.0, pct_24h: float = 0.0) -> str | None:
+                        last_price: float = 0.0, pct_24h: float = 0.0,
+                        exchange: str = "", env: str = "") -> str | None:
     if not _alert_enabled('level_change'):
         return None
 
@@ -850,6 +872,7 @@ def check_level_change(symbol: str, new_level: str, rate_pct: float = 0.0, prev_
     p24_str   = f"{p24_arrow} `{('+' if pct_24h>=0 else '')}{pct_24h:.2f}%`" if pct_24h != 0 else ""
     price_line = f"💵 Price:  {price_str}  |  24h: {p24_str}\n" if last_price > 0 else ""
 
+    oi_str = _get_oi(symbol)
     return (
         f'{danger} *LEVEL CHANGE {direction}*\n'
         f'━━━━━━━━━━━━━━━━━━\n'
@@ -858,9 +881,11 @@ def check_level_change(symbol: str, new_level: str, rate_pct: float = 0.0, prev_
         f'━━━━━━━━━━━━━━━━━━\n'
         f'📊 Prev. funding: `{sign_old}{old_rate:.4f}%`\n'
         f'📊 Curr. funding: `{sign_new}{rate_pct:.4f}%`\n'
+        f'📈 OI 5m:   {oi_str}\n'
         f'{price_line}'
         f'━━━━━━━━━━━━━━━━━━\n'
         f'🔍 Check your open position!'
+        f'{_exchange_footer(exchange, env)}'
     )
 
 
