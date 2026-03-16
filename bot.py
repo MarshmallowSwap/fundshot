@@ -1439,7 +1439,7 @@ async def post_init(app):
                     chart_buf = None
                     if symbol and rate is not None:
                         try:
-                            chart_buf = generate_chart(symbol, rate, exchange=exchange or "bybit")
+                            chart_buf = generate_chart(symbol, rate, exchange="bybit")
                         except Exception as _ce:
                             logger.warning("Grafico trader non generato: %s", _ce)
                     if chart_buf:
