@@ -32,12 +32,14 @@ logger = logging.getLogger(__name__)
 TZ_IT   = ZoneInfo("Europe/Rome")
 DAYS    = 60          # backtest 60 giorni
 OUTPUT  = "/tmp/fs_track_record.json"
-TOP_N   = 30          # top simboli per volume/funding
+TOP_N   = 200         # tutti i simboli USDT perpetual
 
-# Config simulata (allineata ai default del bot)
-SIZE_USDT  = 100.0
-LEVERAGE   = 5
-MAX_POS    = 4
+# Config simulata — aggressiva ma realistica per trader esperti
+STARTING_CAPITAL = 10_000.0   # capitale iniziale simulato
+SIZE_USDT        = 500.0      # size per trade (5% del capitale)
+LEVERAGE         = 10         # leva 10x
+MAX_POS          = 5          # max 5 posizioni contemporanee
+MIN_LEVEL        = "high"     # HIGH+ (>= 1%) — più trade senza degradare qualità
 
 
 async def fetch_60d(symbol: str) -> list[dict]:
@@ -73,17 +75,75 @@ async def fetch_60d(symbol: str) -> list[dict]:
 
 
 async def get_top_symbols() -> list[str]:
-    """Prendi i top N simboli per funding rate assoluto medio o volume."""
+    """Prendi TUTTI i simboli USDT perpetual attivi su Bybit."""
     try:
         tickers = await bc.get_funding_tickers()
-        # Ordina per |funding rate| decrescente e prendi top N
-        sorted_t = sorted(tickers, key=lambda t: abs(float(t.get("fundingRate", 0))), reverse=True)
-        return [t["symbol"] for t in sorted_t[:TOP_N] if t.get("symbol", "").endswith("USDT")]
+        # Filtra USDT perp e ordina per funding rate assoluto
+        # Esclude simboli con funding quasi zero (< 0.01%) — nessun segnale storico
+        candidates = [
+            t for t in tickers
+            if t.get("symbol","").endswith("USDT")
+            and abs(float(t.get("fundingRate", 0))) * 100 >= 0.005
+        ]
+        # Ordina per funding assoluto — i più attivi prima (timeout priority)
+        candidates.sort(key=lambda t: abs(float(t.get("fundingRate", 0))), reverse=True)
+        symbols = [t["symbol"] for t in candidates[:TOP_N]]
+        logger.info("Simboli selezionati: %d (filtrati da %d totali)", len(symbols), len(tickers))
+        return symbols
     except Exception as e:
         logger.error("get_top_symbols: %s", e)
-        # Fallback: simboli più noti
         return ["BTCUSDT","ETHUSDT","SOLUSDT","BNBUSDT","XRPUSDT",
                 "DOGEUSDT","AVAXUSDT","ADAUSDT","DOTUSDT","LINKUSDT"]
+
+
+def run_backtest_filtered(symbol: str, entries: list[dict]):
+    """Backtest filtrando solo livelli HIGH+ (no SOFT) per simulazione più conservativa."""
+    from backtester import BacktestResult, Trade, _infer_interval
+    from typing import Optional
+
+    if not entries:
+        return BacktestResult(symbol=symbol, interval_h=8, start_ts=0, end_ts=0, total_cycles=0)
+
+    interval_h = _infer_interval(entries)
+    start_ts   = int(entries[0]["fundingRateTimestamp"])
+    end_ts     = int(entries[-1]["fundingRateTimestamp"])
+    result     = BacktestResult(symbol=symbol, interval_h=interval_h,
+                                start_ts=start_ts, end_ts=end_ts, total_cycles=len(entries))
+    open_trade: Optional[Trade] = None
+    HIGH_LEVELS = ("high", "extreme", "hard", "critico")  # >= 1% funding
+
+    for entry in entries:
+        ts       = int(entry["fundingRateTimestamp"])
+        rate_pct = float(entry.get("fundingRate", 0)) * 100
+        abs_rate = abs(rate_pct)
+        level    = al.classify(symbol, rate_pct)
+
+        if open_trade is not None:
+            open_trade.cycles.append(rate_pct)
+            rientro_thr    = al.get_effective_threshold(symbol, "rientro")
+            should_close   = (level == "none" and abs_rate <= rientro_thr)
+            new_dir        = "SHORT" if rate_pct > 0 else "LONG"
+            direction_flip = (level in HIGH_LEVELS and open_trade.direction != new_dir)
+            if should_close or direction_flip:
+                open_trade.exit_ts     = ts
+                open_trade.exit_reason = "rientro" if should_close else "flip"
+                result.trades.append(open_trade)
+                open_trade = None
+                if direction_flip:
+                    open_trade = Trade(symbol=symbol, direction=new_dir, level=level,
+                                       entry_ts=ts, exit_ts=0, entry_rate=rate_pct)
+
+        if open_trade is None and level in HIGH_LEVELS:
+            direction  = "SHORT" if rate_pct > 0 else "LONG"
+            open_trade = Trade(symbol=symbol, direction=direction, level=level,
+                               entry_ts=ts, exit_ts=0, entry_rate=rate_pct)
+
+    if open_trade is not None and open_trade.cycles:
+        open_trade.exit_ts     = end_ts
+        open_trade.exit_reason = "end_of_data"
+        result.trades.append(open_trade)
+
+    return result
 
 
 async def main():
@@ -94,7 +154,7 @@ async def main():
 
     all_trades  = []
     all_results = []
-    sem = asyncio.Semaphore(5)
+    sem = asyncio.Semaphore(10)  # 10 richieste parallele per velocizzare
 
     async def process(sym):
         async with sem:
@@ -102,7 +162,7 @@ async def main():
             entries = await fetch_60d(sym)
             if not entries:
                 return None
-            result = run_backtest(sym, entries)
+            result = run_backtest_filtered(sym, entries)
             return result
 
     tasks = [asyncio.create_task(process(s)) for s in symbols]
@@ -122,9 +182,26 @@ async def main():
     losses       = [t for t in all_trades if not t.is_win]
     win_rate     = len(wins) / total_trades * 100 if total_trades else 0
 
-    # P&L cumulativo simulando SIZE_USDT per trade
+    # P&L in USDT su capitale simulato
     total_pnl_usdt = sum(t.net_pnl * SIZE_USDT * LEVERAGE for t in all_trades)
     avg_pnl_pct    = sum(t.net_pnl_pct for t in all_trades) / total_trades if total_trades else 0
+    final_capital  = STARTING_CAPITAL + total_pnl_usdt
+    total_return_pct = (total_pnl_usdt / STARTING_CAPITAL) * 100
+
+    # Max drawdown reale sull'equity curve
+    sorted_trades = sorted(all_trades, key=lambda t: t.entry_ts)
+    peak_eq  = STARTING_CAPITAL
+    max_dd_usdt = 0.0
+    max_dd_pct  = 0.0
+    cum_eq   = STARTING_CAPITAL
+    for t in sorted_trades:
+        cum_eq  += t.net_pnl * SIZE_USDT * LEVERAGE
+        if cum_eq > peak_eq:
+            peak_eq = cum_eq
+        dd = peak_eq - cum_eq
+        if dd > max_dd_usdt:
+            max_dd_usdt = dd
+            max_dd_pct  = (dd / peak_eq) * 100
 
     # Top simboli per P&L
     sym_pnl = {}
@@ -151,20 +228,18 @@ async def main():
                 monthly[m]["wins"] += 1
             monthly[m]["pnl_pct"] = round(monthly[m]["pnl_pct"] + t.net_pnl_pct, 4)
 
-    # Equity curve (cumulativo per trade ordinato per data)
-    sorted_trades = sorted(all_trades, key=lambda t: t.entry_ts)
-    equity = []
-    cum = 0.0
+    # Equity curve in USDT (partendo da STARTING_CAPITAL)
+    equity = [{"ts": sorted_trades[0].entry_ts if sorted_trades else 0, "eq": STARTING_CAPITAL}]
+    cum = STARTING_CAPITAL
     for t in sorted_trades:
         cum += t.net_pnl * SIZE_USDT * LEVERAGE
-        equity.append({
-            "ts": t.entry_ts,
-            "eq": round(cum, 2),
-        })
-    # Campiona max 100 punti
-    if len(equity) > 100:
-        step = len(equity) // 100
+        equity.append({"ts": t.entry_ts, "eq": round(cum, 2)})
+    # Campiona max 120 punti
+    if len(equity) > 120:
+        step = len(equity) // 120
         equity = equity[::step]
+    if equity and equity[-1]["eq"] != round(cum, 2):
+        equity.append({"ts": sorted_trades[-1].exit_ts if sorted_trades else 0, "eq": round(cum, 2)})
 
     # ── Output JSON ──────────────────────────────────────────────────────
     record = {
@@ -173,20 +248,27 @@ async def main():
         "days":            DAYS,
         "symbols_analyzed": len(symbols),
         "config": {
-            "size_usdt":  SIZE_USDT,
-            "leverage":   LEVERAGE,
-            "fee_pct":    round((TAKER_FEE + SLIPPAGE) * 100 * 2, 4),
-            "strategy":   "SHORT on HIGH+ funding, LONG on HIGH- funding",
+            "starting_capital": STARTING_CAPITAL,
+            "size_usdt":        SIZE_USDT,
+            "leverage":         LEVERAGE,
+            "min_level":        MIN_LEVEL,
+            "fee_pct":          round((TAKER_FEE + SLIPPAGE) * 100 * 2, 4),
+            "strategy":         "SHORT on HIGH+ funding, LONG on HIGH- funding",
         },
         "summary": {
-            "total_trades":    total_trades,
-            "wins":            len(wins),
-            "losses":          len(losses),
-            "win_rate_pct":    round(win_rate, 1),
-            "total_pnl_usdt":  round(total_pnl_usdt, 2),
-            "avg_pnl_pct":     round(avg_pnl_pct, 4),
-            "best_trade_pct":  round(max(t.net_pnl_pct for t in all_trades), 3),
-            "worst_trade_pct": round(min(t.net_pnl_pct for t in all_trades), 3),
+            "total_trades":     total_trades,
+            "wins":             len(wins),
+            "losses":           len(losses),
+            "win_rate_pct":     round(win_rate, 1),
+            "starting_capital": STARTING_CAPITAL,
+            "final_capital":    round(final_capital, 2),
+            "total_pnl_usdt":   round(total_pnl_usdt, 2),
+            "total_return_pct": round(total_return_pct, 2),
+            "avg_pnl_pct":      round(avg_pnl_pct, 4),
+            "max_dd_usdt":      round(max_dd_usdt, 2),
+            "max_dd_pct":       round(max_dd_pct, 2),
+            "best_trade_pct":   round(max(t.net_pnl_pct for t in all_trades), 3),
+            "worst_trade_pct":  round(min(t.net_pnl_pct for t in all_trades), 3),
         },
         "monthly":         monthly,
         "top_symbols":     top_symbols,
@@ -197,8 +279,8 @@ async def main():
         json.dump(record, f, indent=2)
 
     logger.info("Track record salvato in %s", OUTPUT)
-    logger.info("Totale: %d trades, win rate %.1f%%, PnL %.2f USDT",
-                total_trades, win_rate, total_pnl_usdt)
+    logger.info("Totale: %d trades su %d simboli — win rate %.1f%% — PnL %.2f USDT (%.1f%% return)",
+                total_trades, len(all_results), win_rate, total_pnl_usdt, total_return_pct)
 
 
 if __name__ == "__main__":
