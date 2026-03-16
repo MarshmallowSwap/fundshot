@@ -208,6 +208,7 @@ class OKXClient(ExchangeClient):
         try:
             data = await self._auth_get("/api/v5/account/balance", {"ccy": "USDT"})
             if data.get("code") != "0":
+                logger.error("get_wallet_balance OKX code=%s msg=%s", data.get("code"), data.get("msg"))
                 return None
             details = data.get("data", [{}])[0].get("details", [])
             usdt    = next((d for d in details if d.get("ccy") == "USDT"), {})

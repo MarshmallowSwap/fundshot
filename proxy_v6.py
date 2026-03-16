@@ -639,7 +639,12 @@ class ProxyHandler(BaseHTTPRequestHandler):
                     testnet=False,
                     passphrase=getattr(cred, "passphrase", ""),
                 )
-                wb = asyncio.run(client.get_wallet_balance())
+                try:
+                    wb = asyncio.run(client.get_wallet_balance())
+                except Exception as _we:
+                    log.error("get_wallet_balance %s: %s", exchange, _we)
+                    self._json({"ok": False, "error": f"{exchange} wallet error: {str(_we)[:150]}"}, 500)
+                    return
                 if not wb:
                     self._json({"ok": False, "error": f"Cannot fetch {exchange} wallet — check API keys and permissions"})
                     return

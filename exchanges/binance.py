@@ -36,7 +36,7 @@ class BinanceClient(ExchangeClient):
         **kwargs,
     ):
         super().__init__(api_key, api_secret, demo, testnet)
-        self._base = BASE_URL_TEST if testnet else BASE_URL
+        self._base = BASE_URL_TEST if (testnet or demo) else BASE_URL
 
     # ── HTTP helpers ──────────────────────────────────────────────────────────
 
@@ -171,6 +171,7 @@ class BinanceClient(ExchangeClient):
         try:
             data = await self._signed_get("/fapi/v2/account")
             if "totalWalletBalance" not in data:
+                logger.error("get_wallet_balance Binance unexpected response: %s", str(data)[:200])
                 return None
             return WalletBalance(
                 total_equity=self._sf(data.get("totalMarginBalance")),
