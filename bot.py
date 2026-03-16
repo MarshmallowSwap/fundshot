@@ -405,29 +405,44 @@ async def _process_exchange_tickers(
             _mon_remove(sym, "funding rientrato")
 
 
+_funding_job_cycles = 0
+
 async def funding_job(context):
-    global _fj_running
+    global _fj_running, _funding_job_cycles
     if _fj_running:
         logger.warning("⚠️ funding_job: job precedente ancora in esecuzione, skip")
         return
     _fj_running = True
+    _funding_job_cycles += 1
     bot: Bot = context.bot
     bot_data = context.bot_data
 
     bot_data["monitoring"] = True
     bot_data["last_cycle"] = datetime.now(TZ_IT).strftime("%d/%m/%Y %H:%M:%S %Z")
 
+    # Refresh registry ogni 5 cicli (~10 min) per captare nuove API keys
+    if _funding_job_cycles % 5 == 1:
+        try:
+            n = await _registry.refresh()
+            logger.info("Registry refreshato: %d client attivi", n)
+        except Exception as _re:
+            logger.warning("Registry refresh error: %s", _re)
+
     try:
         # ── Raggruppa utenti per exchange ────────────────────────────────────
-        # { exchange → [chat_id, ...] }
         from collections import defaultdict
         exchange_users: dict[str, list] = defaultdict(list)
         for uc in _registry.all_clients():
             exchange_users[uc.exchange].append(str(uc.chat_id))
 
-        # Fallback: se registry vuoto usa owner con Bybit
+        # Assicura sempre Bybit come fallback per l'owner
+        owner_id = os.getenv("CHAT_ID", CHAT_ID)
+        if owner_id and "bybit" not in exchange_users:
+            exchange_users["bybit"].append(owner_id)
+            logger.warning("Bybit non nel registry — aggiunto fallback owner")
+
+        # Fallback: se registry completamente vuoto
         if not exchange_users:
-            owner_id = os.getenv("CHAT_ID", CHAT_ID)
             if owner_id:
                 exchange_users["bybit"].append(owner_id)
 

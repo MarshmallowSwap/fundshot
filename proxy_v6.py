@@ -459,9 +459,11 @@ class ProxyHandler(BaseHTTPRequestHandler):
                     try:
                         from db.supabase_client import get_client as _kc
                         db = _kc()
-                        cur = set(u.active_exchanges or [])
-                        cur.add(exchange)
-                        db.table("users").update({"active_exchanges": list(cur)}).eq("id", u.id).execute()
+                        # Ri-leggi tutti gli exchange attivi da exchange_credentials (fonte di verità)
+                        _rows = db.table("exchange_credentials").select("exchange").eq("user_id", u.id).eq("is_active", True).execute()
+                        _active = list({r["exchange"] for r in (_rows.data or [])})
+                        db.table("users").update({"active_exchanges": _active}).eq("id", u.id).execute()
+                        log.info("active_exchanges sync: user=%s exchanges=%s", u.id, _active)
                     except Exception as e_upd:
                         log.warning("update active_exchanges: %s", e_upd)
                 if ok:
