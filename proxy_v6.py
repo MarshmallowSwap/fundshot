@@ -568,10 +568,47 @@ class ProxyHandler(BaseHTTPRequestHandler):
                 return
             try:
                 import asyncio
-                from db.supabase_client import get_user
+                from db.supabase_client import get_user, get_client as _ex_gc
                 u = asyncio.run(get_user(user["chat_id"]))
-                exchanges = u.active_exchanges if u else []
+                # Ritorna lista di oggetti {exchange, environment}
+                db = _ex_gc()
+                rows = db.table("exchange_credentials").select("exchange,environment").eq("user_id", u.id).eq("is_active", True).execute()
+                exchanges = [{"exchange": r["exchange"], "environment": r.get("environment","mainnet")} for r in (rows.data or [])]
                 self._json({"ok": True, "exchanges": exchanges})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)}, 500)
+            return
+
+        # ── POST /api/user/keys — salva API keys per un exchange ─────────────
+        if p == "/api/user/keys":
+            user = self._auth()
+            if not user:
+                return
+            try:
+                import asyncio
+                from db.supabase_client import get_user, save_credentials
+                body     = self._body()
+                exchange = body.get("exchange", "").lower().strip()
+                api_key  = body.get("api_key", "").strip()
+                api_sec  = body.get("api_secret", "").strip()
+                env      = body.get("environment", "mainnet")
+                passph   = body.get("passphrase", "")
+                if not exchange or not api_key or not api_sec:
+                    self._json({"ok": False, "error": "exchange, api_key and api_secret are required"}, 400)
+                    return
+                u = asyncio.run(get_user(user["chat_id"]))
+                if not u:
+                    self._json({"ok": False, "error": "User not found"}, 404)
+                    return
+                ok = asyncio.run(save_credentials(u.id, exchange, api_key, api_sec, env, passph))
+                if ok:
+                    # Aggiorna active_exchanges
+                    from db.supabase_client import get_client as _kc
+                    db = _kc()
+                    cur = set(u.active_exchanges or [])
+                    cur.add(exchange)
+                    db.table("users").update({"active_exchanges": list(cur)}).eq("id", u.id).execute()
+                self._json({"ok": ok, "exchange": exchange, "environment": env})
             except Exception as e:
                 self._json({"ok": False, "error": str(e)}, 500)
             return
@@ -719,6 +756,37 @@ class ProxyHandler(BaseHTTPRequestHandler):
         if p in ("/api/config", "/api/stats", "/api/logs",
                  "/api/bot-status", "/api/alert-config"):
             self._json({"ok": True, "msg": "v6 — usa /api/user/* con JWT", "version": "6.0"})
+            return
+
+        self._json({"ok": False, "error": "Not Found"}, 404)
+
+    # ── DELETE ────────────────────────────────────────────────────────────────
+
+    def do_DELETE(self):
+        p = urlparse(self.path).path.rstrip("/")
+
+        # DELETE /api/user/keys/:exchange
+        if p.startswith("/api/user/keys/"):
+            user = self._auth()
+            if not user:
+                return
+            exchange = p.split("/")[-1].lower()
+            try:
+                import asyncio
+                from db.supabase_client import get_user, get_client as _dk
+                u = asyncio.run(get_user(user["chat_id"]))
+                if not u:
+                    self._json({"ok": False, "error": "User not found"}, 404)
+                    return
+                db = _dk()
+                db.table("exchange_credentials").update({"is_active": False}).eq("user_id", u.id).eq("exchange", exchange).execute()
+                cur = set(u.active_exchanges or [])
+                cur.discard(exchange)
+                db.table("users").update({"active_exchanges": list(cur)}).eq("id", u.id).execute()
+                log.info("API keys removed: user=%s exchange=%s", user["chat_id"], exchange)
+                self._json({"ok": True, "exchange": exchange})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)}, 500)
             return
 
         self._json({"ok": False, "error": "Not Found"}, 404)

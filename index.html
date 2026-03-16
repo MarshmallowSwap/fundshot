@@ -974,9 +974,15 @@ nav {
 
       <!-- Exchange selector tabs -->
       <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap">
-        <button onclick="selectExchangeTab('bybit',this)"   id="tab-bybit"   class="exch-tab-btn active-exch">🟡 Bybit</button>
-        <button onclick="selectExchangeTab('binance',this)" id="tab-binance" class="exch-tab-btn">🟠 Binance</button>
-        <button onclick="selectExchangeTab('okx',this)"     id="tab-okx"     class="exch-tab-btn">🔵 OKX</button>
+        <button onclick="selectExchangeTab('bybit',this)"   id="tab-bybit"   class="exch-tab-btn active-exch">
+          <svg width="16" height="16" viewBox="0 0 32 32" style="vertical-align:middle;margin-right:5px"><circle cx="16" cy="16" r="16" fill="#F7A600"/><text x="16" y="21" text-anchor="middle" font-size="14" font-weight="bold" fill="#000" font-family="sans-serif">B</text></svg>Bybit
+        </button>
+        <button onclick="selectExchangeTab('binance',this)" id="tab-binance" class="exch-tab-btn">
+          <svg width="16" height="16" viewBox="0 0 32 32" style="vertical-align:middle;margin-right:5px"><circle cx="16" cy="16" r="16" fill="#F0B90B"/><text x="16" y="21" text-anchor="middle" font-size="14" font-weight="bold" fill="#000" font-family="sans-serif">B</text></svg>Binance
+        </button>
+        <button onclick="selectExchangeTab('okx',this)"     id="tab-okx"     class="exch-tab-btn">
+          <svg width="16" height="16" viewBox="0 0 32 32" style="vertical-align:middle;margin-right:5px"><circle cx="16" cy="16" r="16" fill="#1a1a1a"/><text x="16" y="21" text-anchor="middle" font-size="14" font-weight="bold" fill="#fff" font-family="sans-serif">O</text></svg>OKX
+        </button>
       </div>
 
       <!-- Exchange status bar -->
@@ -2497,7 +2503,7 @@ function goto(id, btn) {
   btn.classList.add('active');
   if (id === 'dashboard') { fetchAndUpdateOI(); }
   if (id === 'positions') { initPositionsPage(); }
-  if (id === 'settings')  { initSettings(); }
+  if (id === 'settings')  { initSettings(); initExchangeSettings(); }
   if (id === 'funding')   { renderFundTable(); }
   if (id === 'trading')   { initTradingPage(); fetchResults(); fetchClosedPnl(); fetchUnrealizedPnl(); }
   if (id === 'docs')     { /* static, no fetch needed */ }
@@ -2668,15 +2674,31 @@ function renderFeed(){
 
 // ─── WALLET ───
 async function fetchOI() {
+  // Prima prova il proxy (dati live dal bot)
   try {
-    const r = await fetch(proxyBase() + '/api/oi');
+    const r = await fetch('https://api.fundshot.app/api/oi');
     const d = await r.json();
-    const oi = d.ok ? d.oi : {};
-    return oi;
-  } catch(e) {
-    console.warn('fetchOI error:', e);
-    return {};
-  }
+    if (d.ok && d.oi && Object.keys(d.oi).length > 0) return d.oi;
+  } catch(e) {}
+
+  // Fallback: chiama Bybit direttamente per top 10 OI
+  try {
+    const r = await fetch(
+      'https://api.bybit.com/v5/market/open-interest?' +
+      'category=linear&symbol=BTCUSDT&intervalTime=5min&limit=2'
+    );
+    const d = await r.json();
+    if (d.retCode === 0) {
+      const items = d.result?.list || [];
+      if (items.length >= 2) {
+        const curr = parseFloat(items[0].openInterest);
+        const prev = parseFloat(items[1].openInterest);
+        const chg  = prev ? (curr - prev) / prev * 100 : 0;
+        return { BTCUSDT: { change_5m: +chg.toFixed(3), oi: curr, funding: 0, spike: Math.abs(chg) >= 3 } };
+      }
+    }
+  } catch(e) { console.warn('OI fallback error:', e); }
+  return {};
 }
 
 // Versione che aggiorna sempre la card, anche se vuota
@@ -2692,7 +2714,7 @@ function updateOICard(oi) {
 
   const entries = Object.entries(oi);
   if (!entries.length) {
-    grid.innerHTML = '<div style="color:var(--text-muted);font-size:13px;grid-column:1/-1;text-align:center;padding:8px">Nessun dato OI disponibile</div>';
+    grid.innerHTML = '<div style="color:var(--text-muted);font-size:13px;grid-column:1/-1;text-align:center;padding:8px">No OI data available — waiting for bot scan</div>';
     badge.style.display = 'none';
     return;
   }
@@ -2910,12 +2932,18 @@ function switchExchange(ex) {
   loadPositions();
 }
 
-async function authFetch(path) {
+async function authFetch(path, method='GET', body=null) {
   const token = localStorage.getItem('fs_token');
   const url   = proxyBase() + path;
-  const res   = await fetch(url, {
-    headers: token ? { 'Authorization': 'Bearer ' + token } : {}
-  });
+  const opts  = {
+    method,
+    headers: {
+      ...(token ? { 'Authorization': 'Bearer ' + token } : {}),
+      ...(body  ? { 'Content-Type': 'application/json' } : {}),
+    },
+    ...(body ? { body: JSON.stringify(body) } : {}),
+  };
+  const res = await fetch(url, opts);
   return res.json();
 }
 
@@ -3922,6 +3950,147 @@ const _counterObs = new IntersectionObserver(entries => {
 }, { threshold: .5 });
 const _statsGrid = document.querySelector('.stats-grid');
 if (_statsGrid) _counterObs.observe(_statsGrid);
+
+// ─── EXCHANGE MANAGEMENT ─────────────────────────────────────────────────────
+let _activeExchTab = 'bybit';
+let _exchConfigs   = {};
+
+const EXCH_INFO = {
+  bybit:   { label: 'Bybit',   emoji: '🟡', passphrase: false },
+  binance: { label: 'Binance', emoji: '🟠', passphrase: false },
+  okx:     { label: 'OKX',     emoji: '🔵', passphrase: true  },
+};
+
+async function initExchangeSettings() {
+  try {
+    const token = localStorage.getItem('fs_token');
+    if (!token) return;
+    const d = await authFetch('/api/user/exchanges');
+    if (d.ok && Array.isArray(d.exchanges)) {
+      d.exchanges.forEach(ex => {
+        const name = typeof ex === 'string' ? ex : ex.exchange;
+        const env  = typeof ex === 'object' ? (ex.environment || 'mainnet') : 'mainnet';
+        if (name) _exchConfigs[name] = { env, configured: true };
+      });
+    }
+    renderExchStatusBar();
+    selectExchangeTab(_activeExchTab, document.getElementById('tab-' + _activeExchTab));
+  } catch(e) { console.warn('initExchangeSettings:', e); }
+}
+
+function renderExchStatusBar() {
+  const bar   = document.getElementById('exch-status-bar');
+  const badge = document.getElementById('keys-count-badge');
+  if (!bar) return;
+  const count = Object.keys(_exchConfigs).length;
+  if (badge) badge.textContent = count + ' configured';
+  bar.innerHTML = Object.entries(EXCH_INFO).map(([ex, info]) => {
+    const cfg = _exchConfigs[ex];
+    return cfg
+      ? `<span class="exch-status-chip exch-configured">${info.emoji} ${info.label} · ${cfg.env === 'testnet' ? '🧪 Demo' : '🔴 Live'} ✓</span>`
+      : `<span class="exch-status-chip exch-missing">${info.emoji} ${info.label} · not set</span>`;
+  }).join('');
+}
+
+function selectExchangeTab(exchange, btn) {
+  _activeExchTab = exchange;
+  document.querySelectorAll('.exch-tab-btn').forEach(b => b.classList.remove('active-exch'));
+  if (btn) btn.classList.add('active-exch');
+
+  const ppGroup = document.getElementById('passphrase-group');
+  if (ppGroup) ppGroup.style.display = EXCH_INFO[exchange]?.passphrase ? 'block' : 'none';
+
+  const lblKey = document.getElementById('lbl-key');
+  const lblSec = document.getElementById('lbl-secret');
+  const info   = EXCH_INFO[exchange] || { emoji: '🏦', label: exchange };
+  if (lblKey) lblKey.textContent = `${info.emoji} ${info.label} API Key`;
+  if (lblSec) lblSec.textContent = `${info.emoji} ${info.label} API Secret`;
+
+  ['ink','ins','inp-passphrase'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+
+  const msg = document.getElementById('key-msg');
+  if (msg) {
+    const cfg = _exchConfigs[exchange];
+    msg.style.color = cfg ? 'var(--teal2)' : 'var(--text3)';
+    msg.textContent = cfg
+      ? `✓ ${info.emoji} ${info.label} configured (${cfg.env === 'testnet' ? 'Demo' : 'Live'})`
+      : 'Not configured — enter keys below';
+  }
+
+  const envEl = document.getElementById('ine');
+  if (envEl && _exchConfigs[exchange]) envEl.value = _exchConfigs[exchange].env || 'mainnet';
+}
+
+async function saveExchangeKeys() {
+  const key  = document.getElementById('ink')?.value.trim();
+  const sec  = document.getElementById('ins')?.value.trim();
+  const env  = document.getElementById('ine')?.value || 'mainnet';
+  const pass = document.getElementById('inp-passphrase')?.value.trim();
+  const msg  = document.getElementById('key-msg');
+  const info = EXCH_INFO[_activeExchTab] || { emoji:'🏦', label: _activeExchTab };
+
+  if (!key || !sec) {
+    if (msg) { msg.style.color='var(--red2)'; msg.textContent='API Key and Secret are required'; }
+    return;
+  }
+  if (EXCH_INFO[_activeExchTab]?.passphrase && !pass) {
+    if (msg) { msg.style.color='var(--red2)'; msg.textContent='Passphrase required for OKX'; }
+    return;
+  }
+  if (msg) { msg.style.color='var(--text3)'; msg.textContent='Saving...'; }
+  try {
+    const body = { exchange: _activeExchTab, api_key: key, api_secret: sec, environment: env };
+    if (pass) body.passphrase = pass;
+    const d = await authFetch('/api/user/keys', 'POST', body);
+    if (d.ok) {
+      _exchConfigs[_activeExchTab] = { env, configured: true };
+      renderExchStatusBar();
+      if (msg) { msg.style.color='var(--teal2)'; msg.textContent=`✓ ${info.emoji} ${info.label} keys saved`; }
+      ['ink','ins','inp-passphrase'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+    } else {
+      if (msg) { msg.style.color='var(--red2)'; msg.textContent=d.error||'Error saving keys'; }
+    }
+  } catch(e) {
+    if (msg) { msg.style.color='var(--red2)'; msg.textContent='Network error'; }
+  }
+}
+
+async function deleteExchangeKeys() {
+  const info = EXCH_INFO[_activeExchTab] || { emoji:'🏦', label: _activeExchTab };
+  if (!confirm(`Remove ${info.emoji} ${info.label} API keys? This stops alerts and trading for this exchange.`)) return;
+  const msg = document.getElementById('key-msg');
+  try {
+    const d = await authFetch('/api/user/keys/' + _activeExchTab, 'DELETE');
+    if (d.ok) {
+      delete _exchConfigs[_activeExchTab];
+      renderExchStatusBar();
+      if (msg) { msg.style.color='var(--amber2)'; msg.textContent=`${info.emoji} ${info.label} keys removed`; }
+    } else {
+      if (msg) { msg.style.color='var(--red2)'; msg.textContent=d.error||'Error removing keys'; }
+    }
+  } catch(e) {
+    if (msg) { msg.style.color='var(--red2)'; msg.textContent='Network error'; }
+  }
+}
+
+async function testExchangeKeys() {
+  const msg  = document.getElementById('key-msg');
+  const info = EXCH_INFO[_activeExchTab] || { emoji:'🏦', label: _activeExchTab };
+  if (msg) { msg.style.color='var(--text3)'; msg.textContent='Testing connection...'; }
+  try {
+    const d = await authFetch('/api/user/wallet?exchange=' + _activeExchTab);
+    if (d.ok) {
+      if (msg) { msg.style.color='var(--teal2)'; msg.textContent=`✓ ${info.emoji} ${info.label} OK — balance: ${d.total_equity||'—'} USDT`; }
+    } else {
+      if (msg) { msg.style.color='var(--red2)'; msg.textContent=`✗ ${d.error||'Connection failed'}`; }
+    }
+  } catch(e) {
+    if (msg) { msg.style.color='var(--red2)'; msg.textContent='Network error'; }
+  }
+}
 
 // ─── DASHBOARD LOGOUT ───
 function dashLogout() {
