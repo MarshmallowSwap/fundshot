@@ -4357,6 +4357,8 @@ async function initExchangeSettings() {
       });
     }
     renderExchStatusBar();
+    // Aggiorna badge su tutti i tab
+    Object.keys(EXCH_INFO).forEach(ex => updateExchTabBadge(ex, !!_exchConfigs[ex]));
     selectExchangeTab(_activeExchTab, document.getElementById('tab-' + _activeExchTab));
   } catch(e) { console.warn('initExchangeSettings:', e); }
 }

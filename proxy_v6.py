@@ -63,6 +63,16 @@ def cache_set(key: str, data):
     with _cache_lock:
         _cache[key] = {"data": data, "ts": time.time()}
 
+def cache_delete(key: str):
+    with _cache_lock:
+        _cache.pop(key, None)
+
+def cache_delete_prefix(prefix: str):
+    with _cache_lock:
+        keys = [k for k in _cache if k.startswith(prefix)]
+        for k in keys:
+            del _cache[k]
+
 
 # ── Bybit public API ───────────────────────────────────────────────────────────
 def bybit_get(path: str, params: dict = None) -> dict:
@@ -414,6 +424,11 @@ class ProxyHandler(BaseHTTPRequestHandler):
                         db.table("users").update({"active_exchanges": list(cur)}).eq("id", u.id).execute()
                     except Exception as e_upd:
                         log.warning("update active_exchanges: %s", e_upd)
+                if ok:
+                    # Invalida cache wallet/positions per questo utente+exchange
+                    chat_id = user.get("chat_id", "")
+                    cache_delete_prefix(f"wallet_{chat_id}_{exchange}")
+                    cache_delete_prefix(f"positions_{chat_id}_{exchange}")
                 self._json({"ok": ok, "exchange": exchange, "environment": env})
             except Exception as e:
                 log.error("POST /api/user/keys: %s", e)
@@ -881,6 +896,8 @@ class ProxyHandler(BaseHTTPRequestHandler):
                 db = _pk()
                 db.table("exchange_credentials").update({"environment": env}).eq("user_id", u.id).eq("exchange", exchange).execute()
                 log.info("environment updated: user=%s exchange=%s env=%s", user["chat_id"], exchange, env)
+                cache_delete_prefix(f"wallet_{user['chat_id']}_{exchange}")
+                cache_delete_prefix(f"positions_{user['chat_id']}_{exchange}")
                 self._json({"ok": True, "exchange": exchange, "environment": env})
             except Exception as e:
                 self._json({"ok": False, "error": str(e)}, 500)
