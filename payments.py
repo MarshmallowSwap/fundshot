@@ -3,8 +3,8 @@ payments.py — FundShot SaaS
 Integrazione NOWPayments per pagamenti crypto.
 
 Piani:
-  Pro   — $15 USDT/mese (recurring) | $20 USDT (oneshot)
-  Elite — $40 USDT/mese (recurring) | $50 USDT (oneshot)
+  Pro   — $20 USDT/mese (recurring) | $25 USDT (oneshot)
+  Elite — $45 USDT/mese (recurring) | $55 USDT (oneshot) | $300 lifetime
 
 Crypto accettate: USDT, BTC, ETH, SOL, BNB, TON
 """

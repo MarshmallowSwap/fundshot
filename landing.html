@@ -254,7 +254,36 @@ section { position: relative; z-index: 1; padding: 120px 48px; }
 .number-lbl { font-size: .8rem; color: var(--muted); font-family: 'DM Mono', monospace; letter-spacing: .05em; }
 
 /* ── Pricing ── */
-.pricing-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; margin-top: 64px; }
+.pricing-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-top: 48px; }
+.billing-toggle {
+  display: flex; align-items: center; justify-content: center;
+  gap: 0; background: var(--card); border: 1px solid var(--border);
+  border-radius: 10px; padding: 4px; margin-top: 40px; width: fit-content; margin-left: auto; margin-right: auto;
+}
+.billing-btn {
+  padding: 7px 20px; border-radius: 7px; border: none; background: transparent;
+  color: var(--muted); font-size: .85rem; font-weight: 600; cursor: pointer;
+  transition: all .2s; font-family: 'Syne', sans-serif;
+}
+.billing-btn.active { background: var(--gold); color: #05040a; }
+.billing-note { font-size: .75rem; color: var(--muted); font-family: 'DM Mono', monospace; text-align: center; margin-top: 12px; letter-spacing: .05em; }
+.plan-lifetime {
+  border-color: rgba(0,201,167,.3) !important;
+  background: linear-gradient(145deg, rgba(0,201,167,.06), var(--card)) !important;
+}
+.plan-lifetime::before { background: linear-gradient(90deg, transparent, var(--teal), transparent) !important; }
+.lifetime-badge {
+  position: absolute; top: 16px; right: 16px;
+  font-family: 'DM Mono', monospace; font-size: .6rem;
+  letter-spacing: .1em; text-transform: uppercase;
+  background: rgba(0,201,167,.15); color: var(--teal);
+  border: 1px solid rgba(0,201,167,.3);
+  padding: 3px 10px; border-radius: 3px; font-weight: 700;
+}
+.price-recurring { display: block; }
+.price-oneshot   { display: none; }
+.billing-oneshot .price-recurring { display: none; }
+.billing-oneshot .price-oneshot   { display: block; }
 .plan {
   background: var(--card); border: 1px solid var(--border);
   border-radius: 20px; padding: 36px 28px;
@@ -609,6 +638,8 @@ footer {
   .numbers { grid-template-columns: repeat(2,1fr); }
   .number-card:nth-child(2) { border-right: none; }
   .number-card:nth-child(3) { border-right: 1px solid var(--border); }
+  .pricing-grid { grid-template-columns: 1fr 1fr; }
+@media(max-width:640px) {
   .pricing-grid { grid-template-columns: 1fr; }
   .cta-inner { padding: 48px 32px; }
   footer { flex-direction: column; gap: 16px; text-align: center; }
@@ -952,7 +983,14 @@ footer {
   <h2 class="section-title fade-up">Start free.<br><em>Scale when ready.</em></h2>
   <p class="section-sub fade-up">All plans include Telegram alerts and live dashboard. Upgrade anytime with crypto — USDT, BTC, ETH, SOL, BNB, TON.</p>
 
-  <div class="pricing-grid">
+  <!-- Billing toggle -->
+  <div class="billing-toggle fade-up">
+    <button class="billing-btn active" onclick="setBilling('recurring',this)">Monthly</button>
+    <button class="billing-btn" onclick="setBilling('oneshot',this)">One-shot</button>
+  </div>
+  <div class="billing-note fade-up" id="billing-note">Monthly recurring — cancel anytime</div>
+
+  <div class="pricing-grid" id="pricing-grid">
     <!-- Free -->
     <div class="plan fade-up">
       <div class="plan-name">Free</div>
@@ -975,8 +1013,14 @@ footer {
     <div class="plan featured fade-up" style="transition-delay:.1s">
       <div class="plan-badge">Most popular</div>
       <div class="plan-name">Pro</div>
-      <div class="plan-price">$20<sub>/mo</sub></div>
-      <div class="plan-alt">Recurring $15/mo · or $20 one-shot</div>
+      <div class="price-recurring">
+        <div class="plan-price">$20<sub>/mo</sub></div>
+        <div class="plan-alt" style="font-family:'DM Mono',monospace">Billed monthly · crypto only</div>
+      </div>
+      <div class="price-oneshot">
+        <div class="plan-price">$25</div>
+        <div class="plan-alt" style="font-family:'DM Mono',monospace">30 days · one payment</div>
+      </div>
       <ul class="plan-features">
         <li><span class="feat-check">✦</span>Unlimited funding alerts</li>
         <li><span class="feat-check">✦</span>1 exchange</li>
@@ -984,7 +1028,7 @@ footer {
         <li><span class="feat-check">✦</span>TP1 + Trailing stop strategy</li>
         <li><span class="feat-check">✦</span>Pre-settlement alerts</li>
         <li><span class="feat-check">✦</span>Historical backtesting</li>
-        <li><span class="feat-check">✦</span>Custom risk settings</li>
+        <li><span class="feat-check">✦</span>Guardian risk engine</li>
         <li><span class="feat-check">✦</span>Priority support</li>
       </ul>
       <a href="https://t.me/FundShot_bot?start=upgrade_pro" target="_blank" class="btn-plan gold">Activate Pro →</a>
@@ -993,19 +1037,40 @@ footer {
     <!-- Elite -->
     <div class="plan fade-up" style="transition-delay:.2s">
       <div class="plan-name">Elite</div>
-      <div class="plan-price">$50<sub>/mo</sub></div>
-      <div class="plan-alt">Recurring $40/mo · or $50 one-shot</div>
+      <div class="price-recurring">
+        <div class="plan-price">$45<sub>/mo</sub></div>
+        <div class="plan-alt" style="font-family:'DM Mono',monospace">Billed monthly · crypto only</div>
+      </div>
+      <div class="price-oneshot">
+        <div class="plan-price">$55</div>
+        <div class="plan-alt" style="font-family:'DM Mono',monospace">30 days · one payment</div>
+      </div>
       <ul class="plan-features">
         <li><span class="feat-check">✦</span>Everything in Pro</li>
         <li><span class="feat-check">✦</span>Multi-exchange (Bybit, Binance, OKX)</li>
         <li><span class="feat-check">✦</span>Unlimited positions</li>
         <li><span class="feat-check">✦</span>Custom thresholds per symbol</li>
-        <li><span class="feat-check">✦</span>API access for integrations</li>
-        <li><span class="feat-check">✦</span>Custom webhooks</li>
         <li><span class="feat-check">✦</span>Dedicated support</li>
         <li><span class="feat-check">✦</span>Referral: 10% commission</li>
       </ul>
       <a href="https://t.me/FundShot_bot?start=upgrade_elite" target="_blank" class="btn-plan">Activate Elite →</a>
+    </div>
+
+    <!-- Elite Lifetime -->
+    <div class="plan plan-lifetime fade-up" style="transition-delay:.3s">
+      <span class="lifetime-badge">Lifetime</span>
+      <div class="plan-name" style="color:var(--teal)">Elite</div>
+      <div class="plan-price" style="color:var(--teal)">$300</div>
+      <div class="plan-alt" style="font-family:'DM Mono',monospace">Pay once · never again</div>
+      <ul class="plan-features">
+        <li><span class="feat-check" style="color:var(--teal)">✦</span>All Elite features forever</li>
+        <li><span class="feat-check" style="color:var(--teal)">✦</span>All future updates included</li>
+        <li><span class="feat-check" style="color:var(--teal)">✦</span>Hyperliquid (coming soon)</li>
+        <li><span class="feat-check" style="color:var(--teal)">✦</span>No subscription, no renewal</li>
+        <li><span class="feat-check" style="color:var(--teal)">✦</span>VIP Telegram group access</li>
+        <li><span class="feat-check" style="color:var(--teal)">✦</span>Direct founder support</li>
+      </ul>
+      <a href="https://t.me/FundShot_bot?start=upgrade_elite_lifetime" target="_blank" class="btn-plan" style="border-color:rgba(0,201,167,.4);color:var(--teal)">Get Lifetime →</a>
     </div>
   </div>
 </div>
@@ -1131,6 +1196,21 @@ function animateTickers() {
   if (lv) lv.textContent = ext;
 }
 setInterval(animateTickers, 3000);
+
+// ── Billing toggle ───────────────────────────────────────────────────────────
+function setBilling(type, btn) {
+  const grid = document.getElementById('pricing-grid');
+  const note = document.getElementById('billing-note');
+  document.querySelectorAll('.billing-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  if (type === 'oneshot') {
+    grid.classList.add('billing-oneshot');
+    if (note) note.textContent = 'One-shot · 30 days access · no auto-renewal';
+  } else {
+    grid.classList.remove('billing-oneshot');
+    if (note) note.textContent = 'Monthly recurring — cancel anytime';
+  }
+}
 
 // ── Scroll fade-up ────────────────────────────────────────────────────────────
 const obs = new IntersectionObserver(entries => {

@@ -332,8 +332,10 @@ async def _process_exchange_tickers(
         # 1. Alert funding rate
         alert_text = al.process_funding(symbol, rate_pct, interval_h, last_price=last_price, pct_24h=pct_24h)
         if alert_text:
+            level = al.classify(symbol, rate_pct)
             for cid in target_chat_ids:
-                await send_alert(bot, alert_text, target_chat_id=cid, symbol=symbol, rate=rate_pct, **ex_kwargs)
+                if al.should_send_to_user(str(cid), level, symbol):
+                    await send_alert(bot, alert_text, target_chat_id=cid, symbol=symbol, rate=rate_pct, **ex_kwargs)
             bot_data["alerts_sent"] = bot_data.get("alerts_sent", 0) + 1
 
         # 1b. Alert cambio livello
@@ -343,8 +345,10 @@ async def _process_exchange_tickers(
                 rate_pct=rate_pct, last_price=last_price, pct_24h=pct_24h,
             )
             if level_alert:
+                level = al.classify(symbol, rate_pct)
                 for cid in target_chat_ids:
-                    await send_alert(bot, level_alert, target_chat_id=cid, symbol=symbol, rate=rate_pct, **ex_kwargs)
+                    if al.should_send_to_user(str(cid), level, symbol):
+                        await send_alert(bot, level_alert, target_chat_id=cid, symbol=symbol, rate=rate_pct, **ex_kwargs)
                 bot_data["alerts_sent"] = bot_data.get("alerts_sent", 0) + 1
 
         # 2. Alert pre-settlement (Pro/Elite only)
@@ -1289,6 +1293,7 @@ async def _setup_bot_menu(bot):
         BotCommand("addinf",     "👑 Make a user Influencer (admin only)"),
         BotCommand("payoutlist", "💸 List pending referral payouts (admin only)"),
         BotCommand("clearpayouts","✅ Clear payouts after sending (admin only)"),
+        BotCommand("alertfilter","🔔 Filter alerts by level/cooldown"),
         # ── Settings ──────────────────────────────────────────────────────────
         BotCommand("start",      "🚀 Configure exchange API keys"),
         BotCommand("deletekeys", "🗑 Remove your API keys"),

@@ -76,7 +76,7 @@ async def _require_plan(update, min_plan: str = "pro") -> bool:
 
     plan_labels = {"pro": "⚡ Pro", "elite": "👑 Elite"}
     required    = plan_labels.get(min_plan, min_plan.capitalize())
-    prices      = {"pro": "$15/mo", "elite": "$40/mo"}
+    prices      = {"pro": "$20/mo", "elite": "$45/mo (or $300 lifetime)"}
     price       = prices.get(min_plan, "")
 
     await update.message.reply_text(
@@ -2382,6 +2382,7 @@ def register(app):
     app.add_handler(CommandHandler("deletekeys", deletekeys_cmd))
 
     # ── Referral ──────────────────────────────────────────────────────────────
+    app.add_handler(CommandHandler("alertfilter", cmd_alertfilter))
     app.add_handler(CommandHandler("referral",    cmd_referral))
     app.add_handler(CommandHandler("setwallet",   cmd_setwallet))
     app.add_handler(CommandHandler("addinf",      cmd_addinf))
@@ -2655,3 +2656,55 @@ async def cmd_clearpayouts(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     except Exception as e:
         await update.message.reply_text(f"❌ Error: {e}")
+
+
+async def cmd_alertfilter(update, context):
+    """Filter alerts by minimum level and per-symbol cooldown."""
+    from alert_logic import set_user_min_level, set_user_cooldown, get_user_alert_prefs
+    cid_str = str(update.effective_chat.id)
+    prefs   = get_user_alert_prefs(cid_str)
+    names   = {0: "All (SOFT+)", 1: "HIGH+", 2: "EXTREME+", 3: "HARD+", 4: "JACKPOT only"}
+
+    if not context.args:
+        await update.message.reply_text(
+            "*Alert Filter*\n\n"
+            f"Min level: *{names.get(prefs['min_level'], '?')}*\n"
+            f"Cooldown: *{prefs['cooldown_min']} min* per symbol\n\n"
+            "*Set level:*\n"
+            "`/alertfilter level 0` - All alerts\n"
+            "`/alertfilter level 1` - HIGH and above\n"
+            "`/alertfilter level 2` - EXTREME and above\n"
+            "`/alertfilter level 3` - HARD and above\n"
+            "`/alertfilter level 4` - JACKPOT only\n\n"
+            "*Set cooldown:*\n"
+            "`/alertfilter cooldown 5` - 5 min between same symbol\n"
+            "`/alertfilter cooldown 30` - 30 min (less noise)",
+            parse_mode="Markdown",
+        )
+        return
+
+    if len(context.args) < 2:
+        await update.message.reply_text("Usage: `/alertfilter level 2` or `/alertfilter cooldown 10`", parse_mode="Markdown")
+        return
+
+    param = context.args[0].lower()
+    try:
+        value = int(context.args[1])
+    except ValueError:
+        await update.message.reply_text("Value must be a number.")
+        return
+
+    if param == "level":
+        set_user_min_level(cid_str, value)
+        await update.message.reply_text(
+            f"Filter set: *{names.get(value, str(value))}*\nOnly alerts at or above this level will be sent.",
+            parse_mode="Markdown",
+        )
+    elif param == "cooldown":
+        set_user_cooldown(cid_str, value)
+        await update.message.reply_text(
+            f"Cooldown set: *{value} min* per symbol.",
+            parse_mode="Markdown",
+        )
+    else:
+        await update.message.reply_text("Unknown param. Use `level` or `cooldown`.", parse_mode="Markdown")

@@ -57,6 +57,52 @@ RESET_THRESHOLD       = 0.02
 COOLDOWN_SECONDS      = int(os.getenv("COOLDOWN_SECONDS", 120))
 FUNDING_ALERT_MINUTES = int(os.getenv("FUNDING_ALERT_MINUTES", 15))
 
+# ── Filtro alert per utente ───────────────────────────────────────────────────
+# DEFAULT: livello minimo per ricevere alert (0=tutti, 1=high+, 2=extreme+, 3=hard+, 4=jackpot)
+LEVEL_ORDER = {"soft": 0, "base": 0, "high": 1, "extreme": 2, "hard": 3, "jackpot": 4}
+DEFAULT_MIN_LEVEL = 0  # tutti gli alert
+
+# { chat_id_str: {"min_level": int, "cooldown_min": int, "_last_per_sym": {sym: timestamp}} }
+_user_alert_prefs: dict[str, dict] = {}
+
+def get_user_alert_prefs(chat_id_str: str) -> dict:
+    if chat_id_str not in _user_alert_prefs:
+        _user_alert_prefs[chat_id_str] = {
+            "min_level": DEFAULT_MIN_LEVEL,
+            "cooldown_min": 2,  # minuti tra alert dello stesso simbolo
+            "_last_per_sym": {},
+        }
+    return _user_alert_prefs[chat_id_str]
+
+def set_user_min_level(chat_id_str: str, min_level: int):
+    get_user_alert_prefs(chat_id_str)["min_level"] = max(0, min(4, min_level))
+
+def set_user_cooldown(chat_id_str: str, minutes: int):
+    get_user_alert_prefs(chat_id_str)["cooldown_min"] = max(1, min(60, minutes))
+
+def should_send_to_user(chat_id_str: str, level: str, symbol: str) -> bool:
+    """
+    Controlla se l'alert deve essere inviato a questo utente.
+    Filtra per livello minimo e cooldown per simbolo.
+    """
+    import time
+    prefs = get_user_alert_prefs(chat_id_str)
+    level_n = LEVEL_ORDER.get(level.lower(), 0)
+
+    # Filtro livello minimo
+    if level_n < prefs["min_level"]:
+        return False
+
+    # Cooldown per simbolo
+    cooldown_sec = prefs["cooldown_min"] * 60
+    last = prefs["_last_per_sym"].get(symbol, 0)
+    if time.time() - last < cooldown_sec:
+        return False
+
+    # Aggiorna timestamp
+    prefs["_last_per_sym"][symbol] = time.time()
+    return True
+
 # ── Modalita ibrida ───────────────────────────────────────────────────────────
 USE_DYNAMIC         = os.getenv("USE_DYNAMIC_THRESHOLDS", "false").lower() == "true"
 DYNAMIC_WINDOW_H    = int(os.getenv("DYNAMIC_WINDOW_HOURS", 24))
