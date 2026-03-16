@@ -700,6 +700,12 @@ class FundingTrader:
 
     # ── FILTRI INGRESSO ──
 
+    @property
+    def _ex_badge(self) -> str:
+        return {"bybit": "🟡 Bybit", "binance": "🟠 Binance", "okx": "🔵 OKX"}.get(
+            self.exchange_name, f"⚡ {self.exchange_name.capitalize()}"
+        )
+
     def get_level(self, funding_rate: float) -> Optional[str]:
         abs_rate = abs(funding_rate)
         thr = CONFIG["funding_thresholds"]
@@ -905,7 +911,7 @@ class FundingTrader:
             f"🎯 Trailing 100%: active from `${active_price:.6f}` (+{params['tp1_pct']:.2f}%), dist `{params['trailing_buffer']:.2f}%`\n"
         )
         msg = (
-            f"{emoji} *TRADE OPENED — {direction}*  {('🟡' if self.exchange_name=='bybit' else '🟠') if self.exchange_name in ('bybit','binance') else '⚡'}\n"
+            f"{emoji} *TRADE OPENED — {direction}*\n"
             f"━━━━━━━━━━━━━━━━━━\n"
             f"📌 Pair:      `{symbol}`\n"
             f"💰 Entry:     `${mark_price:.6f}`\n"
@@ -920,8 +926,9 @@ class FundingTrader:
             f"━━━━━━━━━━━━━━━━━━\n"
             f"🆔 Order: `{order_id}`"
         )
+        msg += f"\n{self._ex_badge}"
         await self.send(chat_id, msg, symbol=symbol, rate=funding_rate*100)
-        logger.info(f"Trade aperto: {direction} {symbol} @ {mark_price} | level={level}")
+        logger.info(f"Trade aperto: {direction} {symbol} @ {mark_price} | level={level} | exchange={self.exchange_name}")
 
     # ── MONITORAGGIO ──
 
@@ -1088,7 +1095,8 @@ class FundingTrader:
             f"━━━━━━━━━━━━━━━━━━\n"
             f"{'📈' if pnl >= 0 else '📉'} PnL:       `{pnl:+.2f} USDT` ({pnl_pct:+.2f}%)\n"
             f"⏱️ Duration:  `{duration} min`\n"
-            f"📋 Level:     `{pos.level.upper()}`"
+            f"📋 Level:     `{pos.level.upper()}`\n"
+            f"{self._ex_badge}"
         )
         await self.send(chat_id, msg)
         logger.info(f"Trade chiuso: {pos.direction} {pos.symbol} | {reason} | PnL: {pnl:+.2f} USDT")
