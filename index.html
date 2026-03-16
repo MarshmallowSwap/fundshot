@@ -1143,7 +1143,7 @@ nav {
         </div>
         <div class="inp-group">
           <div class="inp-label">Mode</div>
-          <select class="inp" id="ine" style="cursor:pointer">
+          <select class="inp" id="ine" style="cursor:pointer" onchange="updateExchangeEnv(this.value)">
             <option value="mainnet">🔴 Live (Mainnet)</option>
             <option value="demo">🧪 Demo (Testnet)</option>
           </select>
@@ -4338,7 +4338,7 @@ function renderExchStatusBar() {
   bar.innerHTML = Object.entries(EXCH_INFO).map(([ex, info]) => {
     const cfg = _exchConfigs[ex];
     return cfg
-      ? `<span class="exch-status-chip exch-configured">${info.emoji} ${info.label} · ${cfg.env === 'testnet' ? '🧪 Demo' : '🔴 Live'} ✓</span>`
+      ? `<span class="exch-status-chip exch-configured">${info.emoji} ${info.label} · ${['demo','testnet'].includes(cfg.env) ? '🧪 Demo' : '🔴 Live'} ✓</span>`
       : `<span class="exch-status-chip exch-missing">${info.emoji} ${info.label} · not set</span>`;
   }).join('');
 }
@@ -4367,7 +4367,7 @@ function selectExchangeTab(exchange, btn) {
     const cfg = _exchConfigs[exchange];
     msg.style.color = cfg ? 'var(--teal2)' : 'var(--text3)';
     msg.textContent = cfg
-      ? `✓ ${info.emoji} ${info.label} configured (${cfg.env === 'testnet' ? 'Demo' : 'Live'})`
+      ? `✓ ${info.emoji} ${info.label} configured (${['demo','testnet'].includes(cfg.env) ? 'Demo' : 'Live'})`
       : 'Not configured — enter keys below';
   }
 
@@ -4589,6 +4589,30 @@ document.addEventListener('DOMContentLoaded', function() {
     if (e.target === this) botPreviewCancel();
   });
 });
+
+async function updateExchangeEnv(env) {
+  // Se le keys sono già configurate, aggiorna solo l'environment senza reinserire le keys
+  if (!_exchConfigs[_activeExchTab]) return;
+  const info = EXCH_INFO[_activeExchTab] || { emoji:'🏦', label: _activeExchTab };
+  const msg  = document.getElementById('key-msg');
+  try {
+    const r = await fetch('https://api.fundshot.app/api/user/keys/' + _activeExchTab, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + localStorage.getItem('fs_token')
+      },
+      body: JSON.stringify({ environment: env })
+    });
+    const d = await r.json();
+    if (d.ok) {
+      _exchConfigs[_activeExchTab].env = d.environment;
+      renderExchStatusBar();
+      if (msg) { msg.style.color='var(--teal2)'; msg.textContent=`✓ ${info.emoji} ${info.label} mode updated → ${d.environment === 'demo' ? '🧪 Demo' : '🔴 Live'}`; }
+      setTimeout(() => { if(msg) msg.textContent=''; }, 3000);
+    }
+  } catch(e) { console.warn('updateExchangeEnv:', e); }
+}
 
 // ─── DASHBOARD LOGOUT ───
 function dashLogout() {

@@ -855,6 +855,33 @@ class ProxyHandler(BaseHTTPRequestHandler):
         self._json({"ok": False, "error": "Not Found"}, 404)
 
 
+    def do_PATCH(self):
+        p = urlparse(self.path).path.rstrip("/")
+        if p.startswith("/api/user/keys/"):
+            user = self._auth()
+            if not user:
+                return
+            exchange = p.split("/")[-1].lower()
+            try:
+                import asyncio
+                from db.supabase_client import get_user, get_client as _pk
+                body = self._body()
+                env  = body.get("environment", "mainnet")
+                if env in ("testnet", "test"): env = "demo"
+                u  = asyncio.run(get_user(user["chat_id"]))
+                if not u:
+                    self._json({"ok": False, "error": "User not found"}, 404)
+                    return
+                db = _pk()
+                db.table("exchange_credentials").update({"environment": env}).eq("user_id", u.id).eq("exchange", exchange).execute()
+                log.info("environment updated: user=%s exchange=%s env=%s", user["chat_id"], exchange, env)
+                self._json({"ok": True, "exchange": exchange, "environment": env})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)}, 500)
+            return
+        self._json({"ok": False, "error": "Not Found"}, 404)
+
+
 # ── Avvio server ───────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     log.info("🚀 FundShot Proxy v6 — porta %d", PORT)
@@ -864,3 +891,4 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         log.info("Proxy fermato.")
         server.server_close()
+# (nessuna modifica qui — fix applicato sotto)
