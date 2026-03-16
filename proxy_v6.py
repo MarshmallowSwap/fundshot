@@ -593,6 +593,9 @@ class ProxyHandler(BaseHTTPRequestHandler):
                     self._json(cached)
                     return
 
+                if exchange == "okx":
+                    self._json({"ok": False, "error": "OKX_GEO_BLOCK", "geo_blocked": True, "positions": []})
+                    return
                 client = make_client(
                     exchange=exchange,
                     api_key=cred.api_key,

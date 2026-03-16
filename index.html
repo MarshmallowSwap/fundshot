@@ -3045,9 +3045,17 @@ async function loadWallet(){
     const r=await authFetch('/api/user/wallet?exchange='+ex);
     if (!r.ok) {
       const msg = r.error || 'Unknown error';
-      el.innerHTML = msg.toLowerCase().includes('no') && msg.toLowerCase().includes('key')
-        ? `<div class="empty-state"><div class="ei">🔑</div>No API keys for ${ex}<br><small style="color:var(--text3)">Go to Settings → configure ${ex} keys</small></div>`
-        : `<div class="empty-state" style="color:var(--red2)">❌ ${msg}</div>`;
+      if (r.geo_blocked || msg === 'OKX_GEO_BLOCK') {
+        el.innerHTML = `<div class="empty-state">
+          <div class="ei">🌍</div>
+          <div style="font-size:.9rem;font-weight:700;color:var(--text);margin-bottom:6px">OKX — Coming Soon</div>
+          <div style="font-size:.8rem;color:var(--text3);line-height:1.5">OKX API is geo-restricted in the EU.<br>Our server (Helsinki) cannot connect.<br><span style="color:var(--amber2)">Support arriving with a non-EU relay.</span></div>
+        </div>`;
+      } else if (msg.toLowerCase().includes('no') && msg.toLowerCase().includes('key')) {
+        el.innerHTML = `<div class="empty-state"><div class="ei">🔑</div>No API keys for ${ex}<br><small style="color:var(--text3)">Go to Settings → configure ${ex} keys</small></div>`;
+      } else {
+        el.innerHTML = `<div class="empty-state" style="color:var(--red2)">❌ ${msg}</div>`;
+      }
       return;
     }
     const eq=parseFloat(r.equity||0).toFixed(2);
@@ -3108,6 +3116,11 @@ async function loadPositions(){
   el.innerHTML='<div class="loading"><div class="spin"></div>Loading positions...</div>';
   try{
     const r=await authFetch('/api/user/positions?exchange='+ex);
+    if (!r.ok && (r.geo_blocked || r.error === 'OKX_GEO_BLOCK')) {
+      el.innerHTML = '<div class="empty-state"><div class="ei">🌍</div><div style="font-size:.85rem;color:var(--text3)">OKX positions not available in EU<br><span style="color:var(--amber2)">Coming soon</span></div></div>';
+      if(cnt) cnt.textContent = '—';
+      return;
+    }
     const list=(r.positions || r.list||[]).filter(p=>parseFloat(p.size)>0);
     cnt.textContent=list.length+' attive';
 
