@@ -546,7 +546,7 @@ nav {
   background: linear-gradient(145deg, rgba(14,11,28,.98), rgba(8,6,16,.98));
   border: 1px solid rgba(255,255,255,.1);
   border-radius: 20px; padding: 28px 32px;
-  max-width: 480px; width: 92%;
+  max-width: 640px; width: 95%;
   box-shadow: 0 32px 80px rgba(0,0,0,.7);
   position: relative; overflow: hidden;
 }
@@ -566,19 +566,22 @@ nav {
 .bot-preview-items {
   background: rgba(0,0,0,.3); border: 1px solid rgba(255,255,255,.07);
   border-radius: 12px; padding: 14px 16px;
-  display: flex; flex-direction: column; gap: 8px;
-  margin-bottom: 20px; max-height: 280px; overflow-y: auto;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px;
+  margin-bottom: 20px; max-height: 340px; overflow-y: auto;
 }
 .bot-preview-row {
   display: flex; justify-content: space-between; align-items: center;
-  font-size: .84rem; gap: 12px;
+  font-size: .82rem; gap: 8px; padding: 3px 0;
+  border-bottom: 1px solid rgba(255,255,255,.03);
 }
 .bot-preview-row.section-row {
-  margin-top: 8px; margin-bottom: 2px;
+  grid-column: 1 / -1; margin-top: 10px; margin-bottom: 2px;
+  border-bottom: 1px solid rgba(212,168,67,.15);
+  padding-bottom: 4px;
 }
-.bot-preview-row-label { color: var(--text3); font-family: 'DM Mono', monospace; font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; flex-shrink: 0; }
-.bot-preview-row-label.section-lbl { color: var(--gold); font-size: .65rem; letter-spacing: .12em; opacity: .7; }
-.bot-preview-row-val { color: var(--text); font-weight: 600; text-align: right; word-break: break-all; }
+.bot-preview-row-label { color: var(--text3); font-family: 'DM Mono', monospace; font-size: .7rem; text-transform: uppercase; letter-spacing: .04em; flex-shrink: 0; }
+.bot-preview-row-label.section-lbl { color: var(--gold); font-size: .6rem; letter-spacing: .14em; opacity: .8; font-weight: 700; }
+.bot-preview-row-val { color: var(--text); font-weight: 600; text-align: right; word-break: break-all; font-size: .78rem; }
 .bot-preview-row-val.green { color: var(--teal2); }
 .bot-preview-row-val.gold  { color: var(--gold2); }
 .bot-preview-row-val.red   { color: var(--red2); }
@@ -1186,59 +1189,18 @@ nav {
     </div>
   </div>
 
-  <!-- ── ROW 2: Bot Controls ── -->
+  <!-- ── ROW 2: Bot Controls → moved to Trading page ── -->
   <div class="slabel">Auto Trading</div>
   <div style="margin-bottom:20px">
-    <div class="card">
-      <div class="ch">
-        <div class="ct">🤖 Controllo Bot</div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <span class="badge" style="background:rgba(244,63,94,.1);color:var(--red2);border-color:rgba(244,63,94,.25)">BETA</span>
-          <span style="font-size:11px;color:var(--text3)">Money Management e Filtri Entrata → sezione <strong style="color:var(--p2)">⚡ Trading</strong></span>
+    <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 22px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="font-size:1.4rem">🤖</span>
+        <div>
+          <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:.95rem">Bot Controls</div>
+          <div style="font-size:.8rem;color:var(--text3);margin-top:2px">Auto-Trader toggle, Stop Loss, TP1, Trailing Stop, OI filter — now in the Trading page</div>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0" class="settings-4col">
-        <div style="border-right:1px solid var(--border);padding-right:18px">
-          <div class="tr">
-            <div><div class="tr-label">🤖 Auto-Trader</div><div class="tr-sub">Automatic position opening</div></div>
-            <button class="tgl" id="tog-bot" onclick="handleAutotraderToggle(this)"></button>
-          </div>
-          <div class="tr">
-            <div><div class="tr-label">🧪 Testnet Mode</div><div class="tr-sub">Usa sandbox Bybit</div></div>
-            <button class="tgl" id="tog-testnet" onclick="this.classList.toggle('on')"></button>
-          </div>
-        </div>
-        <div style="padding:0 18px;border-right:1px solid var(--border)">
-          <div class="tr">
-            <div><div class="tr-label">🛡️ Stop Loss</div><div class="tr-sub">Attivazione automatica</div></div>
-            <button class="tgl on" id="tog-sl" onclick="this.classList.toggle('on')"></button>
-          </div>
-          <div class="tr">
-            <div><div class="tr-label">🎯 TP1 Dinamico</div><div class="tr-sub">Basato su livello funding</div></div>
-            <button class="tgl on" id="tog-tp1" onclick="this.classList.toggle('on')"></button>
-          </div>
-        </div>
-        <div style="padding:0 18px;border-right:1px solid var(--border)">
-          <div class="tr">
-            <div><div class="tr-label">📈 Trailing Stop</div><div class="tr-sub">Resto posizione dopo TP1</div></div>
-            <button class="tgl on" id="tog-trail" onclick="this.classList.toggle('on')"></button>
-          </div>
-          <div class="tr">
-            <div><div class="tr-label">📊 Filtro OI</div><div class="tr-sub">Conferma con Open Interest</div></div>
-            <button class="tgl on" id="tog-oi" onclick="this.classList.toggle('on')"></button>
-          </div>
-        </div>
-        <div style="padding-left:18px">
-          <div class="tr">
-            <div><div class="tr-label">⏱️ Filtro Persistenza</div><div class="tr-sub">Evita spike isolati</div></div>
-            <button class="tgl on" id="tog-persist" onclick="this.classList.toggle('on')"></button>
-          </div>
-          <div class="tr" style="border-bottom:none;padding-bottom:0">
-            <div><div class="tr-label" style="color:var(--text3)">⚡ Vai a Trading</div><div class="tr-sub">per MM e Filtri Entrata</div></div>
-            <button class="btn btn-ghost btn-sm" onclick="document.querySelector('[onclick*=trading]').click()">→</button>
-          </div>
-        </div>
-      </div>
+      <button class="btn btn-primary btn-sm" onclick="goto('trading',document.querySelector('[onclick*=trading]'))">⚡ Go to Trading →</button>
     </div>
   </div>
 
@@ -1388,6 +1350,56 @@ nav {
       <div class="gb-divider"></div>
       <div class="gb-stat"><div class="gb-stat-val" id="gb-trades" style="color:var(--p2)">0</div><div class="gb-stat-lbl">Trade oggi</div></div>
       <button class="btn btn-ghost btn-sm" onclick="guardianReset()" style="margin-left:8px">↺ Reset</button>
+    </div>
+  </div>
+
+  <!-- BOT CONTROLS CARD -->
+  <div class="card" style="margin-bottom:20px">
+    <div class="ch">
+      <div class="ct">🤖 Bot Controls</div>
+      <span class="badge live">LIVE</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0" class="settings-4col">
+      <div style="border-right:1px solid rgba(255,255,255,.06);padding-right:18px">
+        <div class="tr">
+          <div><div class="tr-label">🤖 Auto-Trader</div><div class="tr-sub">Automatic position opening</div></div>
+          <button class="tgl" id="tog-bot" onclick="handleAutotraderToggle(this)"></button>
+        </div>
+        <div class="tr" style="border-bottom:none">
+          <div><div class="tr-label">🧪 Testnet Mode</div><div class="tr-sub">Bybit sandbox</div></div>
+          <button class="tgl" id="tog-testnet" onclick="this.classList.toggle('on')"></button>
+        </div>
+      </div>
+      <div style="padding:0 18px;border-right:1px solid rgba(255,255,255,.06)">
+        <div class="tr">
+          <div><div class="tr-label">🛡️ Stop Loss</div><div class="tr-sub">Auto activation</div></div>
+          <button class="tgl on" id="tog-sl" onclick="this.classList.toggle('on')"></button>
+        </div>
+        <div class="tr" style="border-bottom:none">
+          <div><div class="tr-label">🎯 TP1 Dinamico</div><div class="tr-sub">Based on funding level</div></div>
+          <button class="tgl on" id="tog-tp1" onclick="this.classList.toggle('on')"></button>
+        </div>
+      </div>
+      <div style="padding:0 18px;border-right:1px solid rgba(255,255,255,.06)">
+        <div class="tr">
+          <div><div class="tr-label">📈 Trailing Stop</div><div class="tr-sub">After TP1 partial close</div></div>
+          <button class="tgl on" id="tog-trail" onclick="this.classList.toggle('on')"></button>
+        </div>
+        <div class="tr" style="border-bottom:none">
+          <div><div class="tr-label">📊 OI Filter</div><div class="tr-sub">Confirm with Open Interest</div></div>
+          <button class="tgl on" id="tog-oi" onclick="this.classList.toggle('on')"></button>
+        </div>
+      </div>
+      <div style="padding-left:18px">
+        <div class="tr">
+          <div><div class="tr-label">⏱️ Persistence Filter</div><div class="tr-sub">Avoid isolated spikes</div></div>
+          <button class="tgl on" id="tog-persist" onclick="this.classList.toggle('on')"></button>
+        </div>
+        <div class="tr" style="border-bottom:none;padding-bottom:0">
+          <div><div class="tr-label" style="color:var(--text3)">⚙️ Settings</div><div class="tr-sub">Thresholds &amp; TP levels</div></div>
+          <button class="btn btn-ghost btn-sm" onclick="goto('settings',document.querySelector('[onclick*=settings]'))">→</button>
+        </div>
+      </div>
     </div>
   </div>
 
