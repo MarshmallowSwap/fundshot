@@ -2419,6 +2419,15 @@ nav {
 
 <!-- ═══════════════════════════════════════════════════ -->
 <script>
+// ═══ DEFINIZIONI CRITICHE — devono essere le prime ═══════════════════════════
+var _tradingExchange = (function() {
+  try { return localStorage.getItem('fk_trading_exchange') || 'bybit'; }
+  catch(e) { return 'bybit'; }
+})();
+function _mmKey()  { return 'fk_mm_'       + (_tradingExchange || 'bybit'); }
+function _gKey()   { return 'fk_guardian_' + (_tradingExchange || 'bybit'); }
+function _cfgKey() { return 'fk_cfg_'      + (_tradingExchange || 'bybit'); }
+// ═══════════════════════════════════════════════════════════════════════════════
 // ─── STATE ───
 const S = {
   k: localStorage.getItem('fk_k')||'',
@@ -3210,16 +3219,6 @@ async function authFetch(path, method='GET', body=null) {
 }
 
 // ─── CONFIG DEFAULTS ───
-// ─── EXCHANGE ATTIVO — definito prima di tutto ───────────────────────────────
-let _tradingExchange = (() => {
-  try { return localStorage.getItem('fk_trading_exchange') || 'bybit'; }
-  catch { return 'bybit'; }
-})();
-
-function _mmKey()  { return 'fk_mm_'       + (_tradingExchange || 'bybit'); }
-function _gKey()   { return 'fk_guardian_' + (_tradingExchange || 'bybit'); }
-function _cfgKey() { return 'fk_cfg_'      + (_tradingExchange || 'bybit'); }
-
 const CFG_DEFAULTS = {
   // Risk
   size: 50, leva: 2, maxpos: 2, sl: 1.2, tp1pct: 30,
