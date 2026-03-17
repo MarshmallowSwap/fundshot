@@ -1,0 +1,33 @@
+{
+  "name": "FundShot — Funding Rate Intelligence",
+  "short_name": "FundShot",
+  "description": "Auto-trading bot for extreme funding rates on Bybit & Binance",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#05040a",
+  "theme_color": "#d4a843",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["finance", "utilities"],
+  "screenshots": [
+    {
+      "src": "/screenshot-mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ]
+}

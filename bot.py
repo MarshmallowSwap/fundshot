@@ -67,6 +67,7 @@ logger = logging.getLogger(__name__)
 
 BOT_TOKEN    = os.getenv("TELEGRAM_TOKEN", "")
 CHAT_ID      = os.getenv("CHAT_ID", "")
+CHANNEL_ID   = os.getenv("CHANNEL_ID", "")   # Telegram channel pubblico (es. @FundShot_channel)
 JOB_INTERVAL = int(os.getenv("JOB_INTERVAL", 60))
 
 # Abilita/disabilita auto-trading via env (default OFF per sicurezza)
@@ -227,7 +228,7 @@ def _save_alert_history(symbol: str, level: str, rate_pct: float, exchange: str,
         "level":    level,
         "rate_pct": round(rate_pct, 4),
         "exchange": exchange,
-        "ex_em":    {"bybit":"🟡","binance":"🟠","okx":"🔵"}.get(exchange.lower(),"⚡"),
+        "ex_em":    {"bybit":"🟡","binance":"🟠","okx":"🔵","hyperliquid":"🟣"}.get(exchange.lower(),"⚡"),
         "ts":       int(time.time()),
         "preview":  text[:120] if text else "",
     }
@@ -488,7 +489,7 @@ async def _init_exchange_traders(bot) -> None:
                     logger.error("_send trader %s: %s", exch_name, e)
             return _send
 
-        for exchange in ["bybit", "binance"]:
+        for exchange in ["bybit", "binance", "hyperliquid"]:
             if exchange in _exchange_traders:
                 continue  # già inizializzato
             try:
@@ -506,6 +507,11 @@ async def _init_exchange_traders(bot) -> None:
                         api_key=cred.api_key, api_secret=cred.api_secret,
                         demo=is_demo
                     )
+                elif exchange == "hyperliquid":
+                    # Per HL, api_key = wallet address ETH, api_secret = private key
+                    # Alert-only per ora — trading non implementato
+                    from exchanges.hyperliquid import HyperliquidClient as _HLC
+                    client = _HLC(api_key=cred.api_key, api_secret=cred.api_secret)
                 else:
                     continue
 
@@ -559,6 +565,10 @@ async def funding_job(context):
             exchange_users["bybit"].append(owner_id)
             logger.warning("Bybit non nel registry — aggiunto fallback owner")
 
+        # Hyperliquid: sempre attivo se non già nel registry (dati pubblici, no API key)
+        if owner_id and "hyperliquid" not in exchange_users:
+            exchange_users["hyperliquid"].append(owner_id)
+
         # Fallback: se registry completamente vuoto
         if not exchange_users:
             if owner_id:
@@ -572,8 +582,15 @@ async def funding_job(context):
                 # Prendi un client qualsiasi per questo exchange (tutti hanno stessi tickers pubblici)
                 uc_list = [uc for uc in _registry.all_clients() if uc.exchange == exchange]
                 if not uc_list:
+                    # Hyperliquid: usa client pubblico direttamente
+                    if exchange == "hyperliquid":
+                        from exchanges.hyperliquid import HyperliquidClient as _HLpub
+                        _hl_pub = _HLpub()
+                        tickers = await _hl_pub.get_funding_tickers()
+                        if not tickers:
+                            continue
                     # Fallback legacy per Bybit
-                    if exchange == "bybit":
+                    elif exchange == "bybit":
                         raw = await bc.get_funding_tickers()
                         from exchanges.models import FundingTicker as _FT
                         tickers = [
@@ -1492,7 +1509,7 @@ async def post_init(app):
 
             # Costruisci messaggio con config specifica per ogni exchange
             import json as _bj, os as _bos
-            _bex_em = {"bybit": "🟡", "binance": "🟠", "okx": "🔵"}
+            _bex_em = {"bybit": "🟡", "binance": "🟠", "okx": "🔵", "hyperliquid": "🟣"}
             _blines = []
             for _br in (_rows.data or []):
                 _bex  = _br["exchange"]

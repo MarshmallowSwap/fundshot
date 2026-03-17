@@ -8,13 +8,14 @@ from .base import ExchangeClient
 from .bybit import BybitClient
 from .binance import BinanceClient
 from .okx import OKXClient
+from .hyperliquid import HyperliquidClient
 
 # Registry: exchange_id → classe
 EXCHANGE_REGISTRY: dict[str, type[ExchangeClient]] = {
-    "bybit":   BybitClient,
-    "binance": BinanceClient,
-    "okx":     OKXClient,
-    # "hyperliquid": HyperliquidClient,   # FASE 5
+    "bybit":       BybitClient,
+    "binance":     BinanceClient,
+    "okx":         OKXClient,
+    "hyperliquid": HyperliquidClient,
 }
 
 SUPPORTED_EXCHANGES = list(EXCHANGE_REGISTRY.keys())

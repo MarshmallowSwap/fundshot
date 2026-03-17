@@ -131,6 +131,46 @@ def apply_discount(amount_usd: float, discount_pct: float) -> float:
     return round(amount_usd * (1 - discount_pct / 100), 2)
 
 
+
+async def _send_nowpayments_payout(wallet: str, amount_usd: float, user_id: str) -> bool:
+    """
+    Invia payout USDT via NOWPayments Mass Payout API.
+    Docs: https://documenter.getpostman.com/view/7907941/T1LSCRHZ#intro
+    """
+    import aiohttp, os as _os
+    api_key = _os.getenv("NOWPAY_API_KEY", "")
+    if not api_key:
+        logger.warning("NOWPAY_API_KEY non configurata — payout saltato")
+        return False
+    try:
+        payload = {
+            "ipn_callback_url": "https://api.fundshot.app/api/nowpay/ipn",
+            "withdrawals": [{
+                "address":    wallet,
+                "currency":   "usdttrc20",
+                "amount":     round(amount_usd, 2),
+                "ipn_extra":  f"referral_payout_{user_id}",
+            }]
+        }
+        async with aiohttp.ClientSession() as s:
+            async with s.post(
+                "https://api.nowpayments.io/v1/payout",
+                json=payload,
+                headers={"x-api-key": api_key, "Content-Type": "application/json"},
+                timeout=aiohttp.ClientTimeout(total=15),
+            ) as r:
+                data = await r.json()
+                if r.status in (200, 201) and data.get("id"):
+                    logger.info("NOWPayments payout OK: id=%s user=%s amount=%.2f",
+                                data["id"], user_id, amount_usd)
+                    return True
+                logger.error("NOWPayments payout error: %s", data)
+                return False
+    except Exception as e:
+        logger.error("_send_nowpayments_payout: %s", e)
+        return False
+
+
 async def process_monthly_payouts(bot) -> int:
     """
     Job mensile: invia payout USDT a tutti i referrer con balance >= PAYOUT_MIN_USD.
@@ -168,26 +208,36 @@ async def process_monthly_payouts(bot) -> int:
                     )
                     continue
 
-                # TODO: integrazione mass payout NOWPayments
-                # Per ora: notifica manuale + azzera balance
-                await bot.send_message(
-                    chat_id=chat_id,
-                    text=(
-                        f"💸 *Referral Payout Sent!*\n\n"
-                        f"Amount: `${balance:.2f} USDT`\n"
-                        f"Wallet: `{wallet[:6]}...{wallet[-4:]}`\n\n"
-                        f"Payment processing — arrives within 24h.\n"
-                        f"_Next payout: 1st of next month_"
-                    ),
-                    parse_mode="Markdown",
-                )
-
-                # Azzera balance (mantieni total_earned)
-                db.table("users").update({
-                    "referral_balance_usd": 0.0,
-                }).eq("id", u["id"]).execute()
-
-                count += 1
+                # Invia payout via NOWPayments Mass Payout API
+                payout_ok = await _send_nowpayments_payout(wallet, balance, str(chat_id))
+                if payout_ok:
+                    await bot.send_message(
+                        chat_id=chat_id,
+                        text=(
+                            f"💸 *Referral Payout Sent!*\n\n"
+                            f"Amount: `${balance:.2f} USDT`\n"
+                            f"Wallet: `{wallet[:6]}...{wallet[-4:]}`\n\n"
+                            f"Payment processing — arrives within 24h.\n"
+                            f"_Next payout: 1st of next month_"
+                        ),
+                        parse_mode="Markdown",
+                    )
+                    db.table("users").update({
+                        "referral_balance_usd": 0.0,
+                    }).eq("id", u["id"]).execute()
+                    count += 1
+                else:
+                    # Fallback: notifica manuale
+                    await bot.send_message(
+                        chat_id=chat_id,
+                        text=(
+                            f"💰 *Referral Balance Ready!*\n\n"
+                            f"Amount: `${balance:.2f} USDT` — processing shortly.\n"
+                            f"Wallet: `{wallet[:6]}...{wallet[-4:]}`"
+                        ),
+                        parse_mode="Markdown",
+                    )
+                    logger.warning("Payout NOWPayments fallito per %s — notifica manuale inviata", chat_id)
 
             except Exception as e:
                 logger.error("payout utente %s: %s", u.get("chat_id"), e)
