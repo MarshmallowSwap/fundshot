@@ -1820,62 +1820,6 @@ def main():
     commands.inject_bot_commands(cmd_stats, cmd_posizioni_trader)
     commands.register(app)
 
-    # ── Support commands ─────────────────────────────────────────────────────
-    async def cmd_support(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        msg = " ".join(context.args) if context.args else ""
-        user = update.effective_user
-        if not msg:
-            await update.message.reply_text(
-                "💬 *FundShot Support*\n\n"
-                "Send your question:\n"
-                "`/support your message here`\n\n"
-                "Or browse: fundshot.app/faq",
-                parse_mode="Markdown"
-            )
-            return
-        owner_id = int(os.getenv("CHAT_ID", CHAT_ID or "0"))
-        plan = "free"
-        try:
-            from db.supabase_client import get_user as _gu
-            import asyncio as _asx
-            u = await _gu(user.id)
-            if u: plan = getattr(u, "plan", "free")
-        except Exception:
-            pass
-        plan_emoji = {"elite": "👑", "pro": "⚡", "free": "🆓"}.get(plan, "🆓")
-        notify = (
-            f"📩 *SUPPORT REQUEST*\n"
-            f"👤 @{user.username or user.first_name} {plan_emoji} {plan.upper()}\n"
-            f"💬 {msg}\n"
-            f"↩️ Chat ID: `{user.id}`"
-        )
-        try:
-            await context.bot.send_message(chat_id=owner_id, text=notify, parse_mode="Markdown")
-        except Exception as e:
-            logger.warning("Support notify failed: %s", e)
-        await update.message.reply_text(
-            "✅ *Message sent!*\n\nWe'll reply soon via Telegram.\n\nFAQ: fundshot.app/faq",
-            parse_mode="Markdown"
-        )
-
-    async def cmd_reply_ticket(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        if update.effective_user.id != int(os.getenv("CHAT_ID", CHAT_ID or "0")):
-            return
-        if len(context.args) < 2:
-            await update.message.reply_text("Usage: /reply <chat_id> <message>")
-            return
-        target_id = context.args[0]
-        reply_msg = " ".join(context.args[1:])
-        try:
-            await context.bot.send_message(
-                chat_id=int(target_id),
-                text=f"💬 *FundShot Support*\n\n{reply_msg}",
-                parse_mode="Markdown"
-            )
-            await update.message.reply_text("✅ Reply sent!")
-        except Exception as e:
-            await update.message.reply_text(f"❌ Failed: {e}")
-
     # Registra handler comandi trading inline
     from telegram.ext import CommandHandler
     app.add_handler(CommandHandler("stats",            cmd_stats))
