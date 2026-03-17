@@ -725,7 +725,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
                         "size":          str(p.size),
                         "avgPrice":      str(p.avg_price),
                         "markPrice":     str(p.mark_price),
-                        "unrealisedPnl": str(p.unrealized_pnl),
+                        "unrealisedPnl": str(p.unrealised_pnl),
                         "leverage":      str(p.leverage),
                         "liqPrice":      str(p.liq_price),
                     }

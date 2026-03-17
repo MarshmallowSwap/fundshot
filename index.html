@@ -3469,7 +3469,7 @@ function initSettings() {
   sv('cfg-cooldown', cfg.cooldown);
   // TP per livello
   ['jackpot','hard','extreme','high','soft'].forEach(lvl => {
-    const t = cfg.tp[lvl] || CFG_DEFAULTS.tp[lvl];
+    const t = (cfg.tp && cfg.tp[lvl]) || (CFG_DEFAULTS.tp && CFG_DEFAULTS.tp[lvl]) || [1,1,5];
     sv(`tp-${lvl}-tp1`,   t[0]);
     sv(`tp-${lvl}-trail`, t[1]);
     sv(`tp-${lvl}-cap`,   t[2]);
@@ -3767,8 +3767,8 @@ function setTradingExchange(ex) {
     b.classList.toggle('active-exch', b.dataset.exchange === ex);
   });
   // Ricarica i valori per questo exchange
-  mmLoad();
-  guardianLoad();
+  loadMM();
+  loadGuardianCfg();
   updateExchangeLabel();
   renderAllExchangeCards();
 }
@@ -4563,7 +4563,7 @@ async function initExchangeSettings() {
     // Aggiorna il tab attivo per mostrare stato corretto
     const activeBtn = document.getElementById('tab-' + _activeExchTab);
     selectExchangeTab(_activeExchTab, activeBtn);
-    log.debug && log.debug('initExchangeSettings: loaded', Object.keys(_exchConfigs));
+    console.debug('initExchangeSettings: loaded', Object.keys(_exchConfigs));
   } catch(e) { console.warn('initExchangeSettings:', e); }
 }
 
