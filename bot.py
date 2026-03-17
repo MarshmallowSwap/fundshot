@@ -401,7 +401,7 @@ async def _process_exchange_tickers(
                         f"📊 `{rate_pct:+.4f}%` funding rate\n"
                         f"━━━━━━━━━━━━━━━━━━\n"
                         f"👉 [Activate FundShot](https://t.me/FundShot_bot?start=upgrade_pro) "
-                        f"to never miss a signal"
+                        f"for your auto-trader"
                     )
                     _chart_ch = generate_chart(symbol, rate_pct, exchange=exchange)
                     await send_to_channel(bot, _cta, photo_buf=_chart_ch)
