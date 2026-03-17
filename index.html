@@ -1227,7 +1227,8 @@ nav {
       <div id="exch-status-bar" style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap"></div>
 
       <!-- Form inputs (cambia per exchange) -->
-      <div id="exch-form">
+      <!-- Form standard: API Key + Secret -->
+      <div id="exch-form-keys">
         <div class="inp-group"><div class="inp-label" id="lbl-key">API Key</div><input class="inp" id="ink" type="text" placeholder="API Key..." autocomplete="off"></div>
         <div class="inp-group"><div class="inp-label" id="lbl-secret">API Secret</div><input class="inp" id="ins" type="password" placeholder="API Secret..." autocomplete="off"></div>
         <div class="inp-group" id="passphrase-group" style="display:none">
@@ -1242,13 +1243,26 @@ nav {
           </select>
         </div>
       </div>
+      <!-- Form Hyperliquid: solo wallet address -->
+      <div id="exch-form-hl" style="display:none">
+        <div style="background:rgba(139,92,246,.06);border:1px solid rgba(139,92,246,.2);border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:.8rem;color:var(--text2);line-height:1.5">
+          🟣 <strong>Hyperliquid</strong> — alerts only, no trading.<br>
+          Add your wallet address to monitor balance and positions.
+        </div>
+        <div class="inp-group">
+          <div class="inp-label">🟣 Wallet Address (ETH)</div>
+          <input class="inp" id="hl-wallet" type="text" placeholder="0x..." autocomplete="off" style="font-family:'DM Mono',monospace;font-size:.8rem">
+        </div>
+      </div>
+      <div id="exch-form" style="display:none"></div>
 
       <div id="key-msg" style="font-size:11px;min-height:18px;margin-top:2px"></div>
 
       <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
-        <button class="btn btn-primary btn-sm" onclick="saveExchangeKeys()">💾 Save keys</button>
-        <button class="btn btn-ghost btn-sm" onclick="testExchangeKeys()">🔧 Test connection</button>
-        <button class="btn btn-ghost btn-sm" style="border-color:rgba(255,77,109,.3);color:var(--red2)" onclick="deleteExchangeKeys()">🗑 Remove keys</button>
+        <button class="btn btn-primary btn-sm" id="btn-save-keys" onclick="saveExchangeKeys()">💾 Save keys</button>
+        <button class="btn btn-primary btn-sm" id="btn-save-hl" style="display:none" onclick="saveHLWallet()">💾 Save wallet</button>
+        <button class="btn btn-ghost btn-sm" id="btn-test-keys" onclick="testExchangeKeys()">🔧 Test connection</button>
+        <button class="btn btn-ghost btn-sm" style="border-color:rgba(255,77,109,.3);color:var(--red2)" onclick="deleteExchangeKeys()">🗑 Remove</button>
       </div>
     </div>
 
@@ -3366,12 +3380,15 @@ async function initExchangeSelector() {
           <span style="position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);font-size:.45rem;font-weight:800;color:var(--amber2);white-space:nowrap;font-family:DM Mono,monospace;letter-spacing:.05em">EU RESTRICTED</span>
         </button>`;
       }
+      const logoStyle = ex === 'hyperliquid'
+        ? 'max-height:14px;max-width:80px;object-fit:contain'
+        : 'max-height:22px;max-width:80px;object-fit:contain';
       return `<button class="exch-logo-btn exch-pos-btn ${isActive ? 'active-exch' : ''}"
         data-exchange="${ex}"
         onclick="switchExchange('${ex}')"
         id="ex-btn-${ex}"
         title="${m.name}">
-        <img src="${m.logo}" alt="${m.name}" style="max-height:22px;max-width:80px;object-fit:contain">
+        <img src="${m.logo}" alt="${m.name}" style="${logoStyle}">
       </button>`;
     }).join('');
 
@@ -4595,35 +4612,75 @@ function selectExchangeTab(exchange, btn) {
   document.querySelectorAll('.exch-logo-btn').forEach(b => b.classList.remove('active-exch'));
   if (btn) btn.classList.add('active-exch');
 
-  const ppGroup = document.getElementById('passphrase-group');
-  if (ppGroup) ppGroup.style.display = EXCH_INFO[exchange]?.passphrase ? 'block' : 'none';
+  const isHL = exchange === 'hyperliquid';
+  const formKeys = document.getElementById('exch-form-keys');
+  const formHL   = document.getElementById('exch-form-hl');
+  const btnSave  = document.getElementById('btn-save-keys');
+  const btnSaveHL= document.getElementById('btn-save-hl');
+  const btnTest  = document.getElementById('btn-test-keys');
+  if (formKeys) formKeys.style.display = isHL ? 'none' : 'block';
+  if (formHL)   formHL.style.display   = isHL ? 'block' : 'none';
+  if (btnSave)  btnSave.style.display  = isHL ? 'none' : '';
+  if (btnSaveHL)btnSaveHL.style.display= isHL ? '' : 'none';
+  if (btnTest)  btnTest.style.display  = isHL ? 'none' : '';
 
-  const lblKey = document.getElementById('lbl-key');
-  const lblSec = document.getElementById('lbl-secret');
-  const info   = EXCH_INFO[exchange] || { emoji: '🏦', label: exchange };
-  if (lblKey) lblKey.textContent = `${info.emoji} ${info.label} API Key`;
-  if (lblSec) lblSec.textContent = `${info.emoji} ${info.label} API Secret`;
-
-  // Svuota i campi solo se non ci sono già valori inseriti
-  const hasValues = ['ink','ins'].some(id => document.getElementById(id)?.value.trim());
-  if (!hasValues) {
-    ['ink','ins','inp-passphrase'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.value = '';
-    });
+  if (!isHL) {
+    const ppGroup = document.getElementById('passphrase-group');
+    if (ppGroup) ppGroup.style.display = EXCH_INFO[exchange]?.passphrase ? 'block' : 'none';
+    const lblKey = document.getElementById('lbl-key');
+    const lblSec = document.getElementById('lbl-secret');
+    const info   = EXCH_INFO[exchange] || { emoji: '🏦', label: exchange };
+    if (lblKey) lblKey.textContent = `${info.emoji} ${info.label} API Key`;
+    if (lblSec) lblSec.textContent = `${info.emoji} ${info.label} API Secret`;
+    const hasValues = ['ink','ins'].some(id => document.getElementById(id)?.value.trim());
+    if (!hasValues) {
+      ['ink','ins','inp-passphrase'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+    }
+    const envEl = document.getElementById('ine');
+    if (envEl && _exchConfigs[exchange]) envEl.value = _exchConfigs[exchange].env || 'mainnet';
   }
 
   const msg = document.getElementById('key-msg');
   if (msg) {
     const cfg = _exchConfigs[exchange];
-    msg.style.color = cfg ? 'var(--teal2)' : 'var(--text3)';
-    msg.textContent = cfg
-      ? `✓ ${info.emoji} ${info.label} configured (${['demo','testnet'].includes(cfg.env) ? 'Demo' : 'Live'})`
-      : 'Not configured — enter keys below';
+    const info = EXCH_INFO[exchange] || { emoji: '🏦', label: exchange };
+    if (isHL) {
+      msg.style.color = cfg ? 'var(--teal2)' : 'var(--text3)';
+      msg.textContent = cfg ? `✓ 🟣 Hyperliquid wallet configured` : 'Add your wallet address to monitor';
+    } else {
+      msg.style.color = cfg ? 'var(--teal2)' : 'var(--text3)';
+      msg.textContent = cfg
+        ? `✓ ${info.emoji} ${info.label} configured (${['demo','testnet'].includes(cfg.env) ? 'Demo' : 'Live'})`
+        : 'Not configured — enter keys below';
+    }
   }
+}
 
-  const envEl = document.getElementById('ine');
-  if (envEl && _exchConfigs[exchange]) envEl.value = _exchConfigs[exchange].env || 'mainnet';
+async function saveHLWallet() {
+  const wallet = document.getElementById('hl-wallet')?.value.trim();
+  const msg    = document.getElementById('key-msg');
+  if (!wallet || !wallet.startsWith('0x') || wallet.length !== 42) {
+    if (msg) { msg.style.color='var(--red2)'; msg.textContent='Enter a valid ETH wallet address (0x...)'; }
+    return;
+  }
+  if (msg) { msg.style.color='var(--text3)'; msg.textContent='Saving...'; }
+  try {
+    // Salva come API key con secret vuoto — il proxy tratta HL in modo speciale
+    const d = await authFetch('/api/user/keys', 'POST', {
+      exchange: 'hyperliquid', api_key: wallet, api_secret: '', environment: 'mainnet'
+    });
+    if (d.ok) {
+      _exchConfigs['hyperliquid'] = { env: 'mainnet', configured: true, wallet };
+      if (msg) { msg.style.color='var(--teal2)'; msg.textContent='✓ 🟣 Hyperliquid wallet saved'; }
+    } else {
+      if (msg) { msg.style.color='var(--red2)'; msg.textContent=d.error||'Save failed'; }
+    }
+  } catch(e) {
+    if (msg) { msg.style.color='var(--red2)'; msg.textContent='Network error'; }
+  }
 }
 
 async function saveExchangeKeys() {

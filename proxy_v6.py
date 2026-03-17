@@ -777,6 +777,24 @@ class ProxyHandler(BaseHTTPRequestHandler):
                     log.error("get_wallet_balance %s: %s", exchange, _we)
                     self._json({"ok": False, "error": f"{exchange} wallet error: {str(_we)[:150]}"}, 500)
                     return
+                if exchange == "hyperliquid":
+                    wallet = cred.api_key
+                    if not wallet or not wallet.startswith("0x"):
+                        self._json({"ok": False, "error": "Configure wallet address in Settings"})
+                        return
+                    import asyncio as _hlaw
+                    from exchanges.hyperliquid import HyperliquidClient as _HLW
+                    _hlw = _HLW(api_key=wallet)
+                    wb_hl = _hlaw.run(_hlw.get_wallet_balance())
+                    if wb_hl:
+                        self._json({"ok": True, "equity": str(wb_hl.total_equity),
+                            "available": str(wb_hl.total_available_balance),
+                            "margin": str(round(wb_hl.total_equity - wb_hl.total_available_balance, 4)),
+                            "unrealisedPnl": str(wb_hl.total_perp_upl),
+                            "coins": [], "exchange": "hyperliquid", "env": "mainnet"})
+                    else:
+                        self._json({"ok": False, "error": "Could not fetch Hyperliquid wallet"})
+                    return
                 if not wb:
                     if exchange == "okx":
                         self._json({"ok": False, "error": "OKX: API key not found for this mode. Demo mode requires Paper Trading keys from okx.com/account/demo/trade — Live mode requires Live keys."})
