@@ -942,6 +942,85 @@ footer {
 .footer-copy { font-size: .78rem; color: var(--muted2); font-family: 'DM Mono', monospace; }
 
 /* ── Toast ── */
+/* ── Floating Support Chat ── */
+#chat-bubble {
+  position: fixed; bottom: 28px; right: 28px; z-index: 1000;
+  width: 56px; height: 56px; border-radius: 50%;
+  background: linear-gradient(135deg, #7c3aed, #00c9a7);
+  border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 24px rgba(124,58,237,.4);
+  transition: all .3s cubic-bezier(.34,1.56,.64,1);
+  animation: chat-pulse 3s ease-in-out infinite;
+}
+#chat-bubble:hover { transform: scale(1.1); box-shadow: 0 6px 32px rgba(124,58,237,.6); }
+@keyframes chat-pulse { 0%,100%{box-shadow:0 4px 24px rgba(124,58,237,.4)} 50%{box-shadow:0 4px 32px rgba(124,58,237,.6),0 0 0 8px rgba(124,58,237,.08)} }
+#chat-bubble svg { width: 26px; height: 26px; fill: white; }
+#chat-unread {
+  position: absolute; top: -2px; right: -2px;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: #f0c96a; color: #05040a;
+  font-family: 'Syne',sans-serif; font-size: 10px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid #05040a; animation: bounce-in .4s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes bounce-in { from{transform:scale(0)} to{transform:scale(1)} }
+
+#chat-window {
+  position: fixed; bottom: 96px; right: 28px; z-index: 999;
+  width: 360px; height: 520px;
+  background: #0a0812; border: 1px solid rgba(255,255,255,.12);
+  border-radius: 20px; overflow: hidden;
+  box-shadow: 0 16px 64px rgba(0,0,0,.6);
+  display: flex; flex-direction: column;
+  transform: scale(.9) translateY(20px); opacity: 0; pointer-events: none;
+  transition: all .3s cubic-bezier(.34,1.56,.64,1);
+}
+#chat-window.open { transform: scale(1) translateY(0); opacity: 1; pointer-events: auto; }
+
+.cw-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 18px; flex-shrink: 0;
+  background: linear-gradient(135deg,rgba(124,58,237,.2),rgba(0,201,167,.1));
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.cw-header-left { display: flex; align-items: center; gap: 10px; }
+.cw-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg,#7c3aed,#00c9a7); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.cw-title { font-family: 'Syne',sans-serif; font-weight: 700; font-size: .9rem; color: #f0ecff; }
+.cw-subtitle { font-family: 'DM Mono',monospace; font-size: .65rem; color: #00c9a7; margin-top: 1px; }
+.cw-close { background: none; border: none; color: #7a738f; cursor: pointer; font-size: 18px; padding: 2px 6px; border-radius: 4px; transition: color .2s; }
+.cw-close:hover { color: #f0ecff; }
+
+.cw-msgs { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.cw-msgs::-webkit-scrollbar { width: 4px; }
+.cw-msgs::-webkit-scrollbar-track { background: transparent; }
+.cw-msgs::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 2px; }
+
+.cm { display: flex; gap: 8px; animation: msg-in .25s ease; }
+.cm.user { flex-direction: row-reverse; }
+@keyframes msg-in { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+.cm-avatar { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; margin-top: 2px; }
+.cm-avatar.bot { background: linear-gradient(135deg,rgba(124,58,237,.3),rgba(0,201,167,.2)); border: 1px solid rgba(124,58,237,.3); }
+.cm-avatar.user { background: rgba(212,168,67,.15); border: 1px solid rgba(212,168,67,.2); }
+.cm-bubble { max-width: 76%; padding: 10px 14px; border-radius: 14px; font-size: .83rem; line-height: 1.6; color: #f0ecff; }
+.cm-bubble.bot { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08); border-radius: 4px 14px 14px 14px; }
+.cm-bubble.user { background: rgba(212,168,67,.12); border: 1px solid rgba(212,168,67,.2); border-radius: 14px 4px 14px 14px; }
+.cm-typing span { display: inline-block; width: 5px; height: 5px; background: #7a738f; border-radius: 50%; animation: typing .8s infinite; margin: 0 1px; }
+.cm-typing span:nth-child(2){animation-delay:.15s} .cm-typing span:nth-child(3){animation-delay:.3s}
+@keyframes typing{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+
+.cw-quick { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 16px 10px; flex-shrink: 0; }
+.cw-quick-btn { padding: 5px 10px; border-radius: 20px; font-size: .72rem; cursor: pointer; background: rgba(124,58,237,.1); border: 1px solid rgba(124,58,237,.25); color: #c4b5fd; font-family: 'DM Mono',monospace; transition: all .2s; white-space: nowrap; }
+.cw-quick-btn:hover { background: rgba(124,58,237,.2); border-color: rgba(124,58,237,.5); }
+
+.cw-input-row { display: flex; gap: 8px; padding: 12px 14px; border-top: 1px solid rgba(255,255,255,.08); flex-shrink: 0; }
+.cw-input { flex: 1; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); border-radius: 24px; padding: 9px 14px; color: #f0ecff; font-family: 'DM Sans',sans-serif; font-size: .83rem; outline: none; transition: border-color .2s; }
+.cw-input:focus { border-color: rgba(124,58,237,.5); }
+.cw-input::placeholder { color: #4a4560; }
+.cw-send { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg,#7c3aed,#5b21b6); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all .2s; }
+.cw-send:hover { transform: scale(1.1); }
+.cw-send svg { width: 14px; height: 14px; fill: white; }
+
 .toast {
   position: fixed; bottom: 28px; right: 28px; z-index: 999;
   background: var(--card2); border: 1px solid var(--border2);
@@ -1685,6 +1764,41 @@ footer {
 </footer>
 
 <!-- Toast -->
+<!-- Floating Support Chat -->
+<button id="chat-bubble" onclick="toggleChat()" aria-label="Open support chat">
+  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.832-1.438A9.954 9.954 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2z"/></svg>
+  <span id="chat-unread">1</span>
+</button>
+
+<div id="chat-window">
+  <div class="cw-header">
+    <div class="cw-header-left">
+      <div class="cw-avatar">✦</div>
+      <div>
+        <div class="cw-title">FundShot Support</div>
+        <div class="cw-subtitle">● Online · typically replies instantly</div>
+      </div>
+    </div>
+    <button class="cw-close" onclick="toggleChat()">✕</button>
+  </div>
+
+  <div class="cw-msgs" id="cw-msgs"></div>
+
+  <div class="cw-quick" id="cw-quick">
+    <button class="cw-quick-btn" onclick="cwAsk('How do I get started?')">🚀 Get started</button>
+    <button class="cw-quick-btn" onclick="cwAsk('What are the best settings for a beginner?')">⚙️ Best settings</button>
+    <button class="cw-quick-btn" onclick="cwAsk('How much does it cost?')">💰 Pricing</button>
+    <button class="cw-quick-btn" onclick="cwAsk('Which exchange should I use?')">🏦 Exchanges</button>
+  </div>
+
+  <div class="cw-input-row">
+    <input id="cw-input" class="cw-input" type="text" placeholder="Ask anything..." onkeydown="if(event.key==='Enter')cwSend()">
+    <button class="cw-send" onclick="cwSend()">
+      <svg viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+    </button>
+  </div>
+</div>
+
 <div class="toast" id="toast"><span class="ti"></span><span class="tm"></span></div>
 
 <script>
@@ -2010,6 +2124,169 @@ async function loadMiniBar() {
   }
 }
 loadMiniBar();
+
+
+// ─── FLOATING SUPPORT CHAT ─────────────────────────────────────────────────
+let _chatOpen = false;
+let _chatTyping = false;
+
+const CW_KB = [
+  { k: ['start', 'begin', 'how', 'free', 'register', 'sign up', 'create'],
+    r: "Starting is easy and free! 🚀
+
+Just open @FundShot_bot on Telegram and send /start. No credit card, no email — just Telegram login.
+
+You'll get 10 alerts/day and full dashboard access immediately." },
+  { k: ['price', 'cost', 'plan', 'paid', 'pro', 'elite', 'subscription', 'much'],
+    r: "FundShot has 3 plans:
+
+🆓 Free — $0 forever, 10 alerts/day
+⚡ Pro — $20/mo, auto-trading on 1 exchange
+👑 Elite — $45/mo or $300 lifetime, multi-exchange + referral commissions
+
+All paid plans accept USDT, BTC, ETH, SOL and more." },
+  { k: ['exchange', 'bybit', 'binance', 'hyperliquid', 'okx', 'which'],
+    r: "We support:
+
+🟡 Bybit — full auto-trading, best for beginners
+🟠 Binance — full auto-trading, great liquidity
+🟣 Hyperliquid — alerts only (auto-trading coming soon)
+🔵 OKX, dYdX, Bitget, Gate.io — coming soon
+
+Bybit is recommended to start — it has the best demo mode." },
+  { k: ['setting', 'config', 'leverage', 'size', 'beginner', 'setup', 'parameter'],
+    r: "For beginners, I suggest:
+
+• Exchange: Bybit Demo first
+• Size: 50–100 USDT/trade
+• Leverage: 5–7x
+• Stop Loss: 5%
+• Max positions: 3
+• Guardian: ON always
+
+For personalized advice, try the ✦ AI Advisor inside the dashboard!" },
+  { k: ['safe', 'security', 'key', 'api', 'risk', 'withdraw'],
+    r: "Your funds are safe 🔐
+
+API keys are encrypted with AES-256-GCM. We only use trading permissions — never withdrawals. Even if you accidentally enabled withdrawals, our system only places and closes trades.
+
+You can revoke API keys from your exchange at any time." },
+  { k: ['result', 'test', 'performance', 'profit', 'work', 'win rate', '60'],
+    r: "We ran a 60-day live test on Bybit Demo with real market conditions:
+
+• $10,000 starting capital
+• 500 USDT/trade, 10x leverage
+• Guardian active
+
+Live results are always visible on the homepage. The strategy exploits structural funding rate imbalances — not price prediction." },
+  { k: ['guardian', 'protect', 'loss', 'risk', 'drawdown'],
+    r: "Guardian is our circuit breaker system 🛡️
+
+It automatically pauses trading when:
+• Max drawdown reached (default 10%)
+• 3 consecutive losses → 30 min cooldown
+• Daily loss limit hit → pause until midnight
+
+Always keep Guardian ON." },
+  { k: ['support', 'help', 'problem', 'issue', 'contact', 'human'],
+    r: "Happy to help! 💬
+
+For technical issues:
+• Telegram: @FundShot_bot → /support your message
+• Email: support@fundshot.app
+• FAQ: fundshot.app/faq
+
+We typically respond within a few hours." },
+];
+
+function cwMatch(text) {
+  const t = text.toLowerCase();
+  let best = null, bestScore = 0;
+  for (const item of CW_KB) {
+    const score = item.k.reduce((s, kw) => s + (t.includes(kw) ? kw.length : 0), 0);
+    if (score > bestScore) { bestScore = score; best = item; }
+  }
+  return bestScore > 0 ? best.r : null;
+}
+
+function cwAddMsg(role, text) {
+  const msgs = document.getElementById('cw-msgs');
+  const div = document.createElement('div');
+  div.className = 'cm ' + (role === 'bot' ? '' : 'user');
+  const formatted = text.replace(/
+/g, '<br>').replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  div.innerHTML = '<div class="cm-avatar ' + role + '">' + (role === 'bot' ? '✦' : '👤') + '</div>'
+    + '<div class="cm-bubble ' + role + '">' + formatted + '</div>';
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function cwShowTyping() {
+  const msgs = document.getElementById('cw-msgs');
+  const div = document.createElement('div');
+  div.className = 'cm'; div.id = 'cw-typing';
+  div.innerHTML = '<div class="cm-avatar bot">✦</div><div class="cm-bubble bot"><div class="cm-typing"><span></span><span></span><span></span></div></div>';
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function cwHideTyping() {
+  const el = document.getElementById('cw-typing');
+  if (el) el.remove();
+}
+
+async function cwAsk(q) {
+  document.getElementById('cw-quick').style.display = 'none';
+  document.getElementById('cw-input').value = q;
+  await cwSend();
+}
+
+async function cwSend() {
+  if (_chatTyping) return;
+  const input = document.getElementById('cw-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  cwAddMsg('user', text);
+  _chatTyping = true;
+  cwShowTyping();
+  await new Promise(r => setTimeout(r, 500 + Math.random() * 600));
+  cwHideTyping();
+  const reply = cwMatch(text) || 'I'm not sure about that specific question. You can:
+
+• Browse the **FAQ** at fundshot.app/faq
+• Ask on Telegram: @FundShot_bot → /support
+• Email: support@fundshot.app';
+  cwAddMsg('bot', reply);
+  _chatTyping = false;
+}
+
+function toggleChat() {
+  _chatOpen = !_chatOpen;
+  const win = document.getElementById('chat-window');
+  const unread = document.getElementById('chat-unread');
+  win.classList.toggle('open', _chatOpen);
+  if (_chatOpen) {
+    if (unread) unread.style.display = 'none';
+    // Welcome message on first open
+    const msgs = document.getElementById('cw-msgs');
+    if (msgs && msgs.children.length === 0) {
+      setTimeout(() => {
+        cwAddMsg('bot', 'Hi! 👋 I'm the FundShot assistant.
+
+Ask me anything about the bot, settings, exchanges, or pricing. I'm here to help!');
+      }, 300);
+    }
+    setTimeout(() => document.getElementById('cw-input')?.focus(), 400);
+  }
+}
+
+// Show unread indicator after 8 seconds
+setTimeout(() => {
+  const unread = document.getElementById('chat-unread');
+  if (unread && !_chatOpen) unread.style.display = 'flex';
+}, 8000);
+
 
 // Fix bfcache — impedisce al browser di conservare questa pagina in memoria
 // Metodo 1: ricarica se ripristinata dalla cache
