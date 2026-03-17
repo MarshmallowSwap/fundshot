@@ -3039,25 +3039,23 @@ function goto(id, btn) {
   if (id === 'settings')  { initSettings(); initExchangeSettings(); }
   if (id === 'funding')   { renderFundTable(); }
   if (id === 'trading')   { initTradingPage(); fetchResults(); fetchClosedPnl(); fetchUnrealizedPnl(); setTradingExchange(_tradingExchange); renderAllExchangeCards(); }
-  
-    const alerts = d.alerts;
-    if (cnt) cnt.textContent = alerts.length;
-    const LEVEL_CLS = {jackpot:'ah-jackpot',hard:'ah-hard',extreme:'ah-extreme',high:'ah-high',soft:'ah-soft',critico:'ah-jackpot'};
-    list.innerHTML = alerts.map(a => {
-      const cls  = LEVEL_CLS[a.level] || 'ah-soft';
-      const rate = (a.rate_pct >= 0 ? '+' : '') + a.rate_pct.toFixed(4) + '%';
-      const ts   = new Date(a.ts * 1000).toLocaleTimeString('it-IT', {hour:'2-digit', minute:'2-digit'});
-      const exEm = a.ex_em || {'bybit':'🟡','binance':'🟠','okx':'🔵'}[a.exchange||'bybit'] || '⚡';
-      return `<div class="alert-history-row">
-        <span class="ah-time">${ts}</span>
-        <span class="ah-sym">${a.symbol}</span>
-        <span class="ah-level ${cls}">${a.level.toUpperCase()}</span>
-        <span class="ah-rate">${rate}</span>
-        <span class="ah-time">${exEm}</span>
-      </div>`;
-    }).join('');
-  } catch(e) {
-    list.innerHTML = '<div class="empty-state"><div class="ei">🔔</div>Errore caricamento</div>';
+  if (id === 'ai') {
+    setTimeout(() => { const inp = document.getElementById('ai-input'); if(inp) inp.focus(); }, 100);
+  }
+  if (id === 'guide') {
+    fetch('https://api.fundshot.app/api/track-record').then(r=>r.json()).then(d=>{
+      if(!d.ok||!d.record) return;
+      const s=d.record.summary;
+      const se=(id,v,c)=>{const el=document.getElementById(id);if(el){el.textContent=v;if(c)el.style.color=c;}};
+      const wr=s.win_rate_pct||0;
+      se('dt-wr',wr.toFixed(1)+'%',wr>=55?'var(--teal2)':'var(--amber2)');
+      se('dt-trades',s.total_trades||'—');
+      const ret=s.total_return_pct||0;
+      se('dt-return',(ret>=0?'+':'')+ret.toFixed(1)+'%',ret>=0?'var(--teal2)':'var(--red2)');
+      const fin=s.final_capital||0;
+      se('dt-final','$'+Math.round(fin).toLocaleString(),fin>=10000?'var(--teal2)':'var(--red2)');
+      se('dt-dd','-'+(s.max_dd_pct||0).toFixed(1)+'%','var(--red2)');
+    }).catch(()=>{});
   }
 }
 
@@ -5119,10 +5117,17 @@ function aiRender(role, text) {
   const isBot = role === 'assistant';
   const div = document.createElement('div');
   div.className = 'ai-msg' + (isBot ? '' : ' user');
-  div.innerHTML = \`
-    <div class="ai-avatar \${isBot ? 'bot' : 'user'}">\${isBot ? '✦' : '👤'}</div>
-    <div class="ai-bubble \${isBot ? 'bot' : 'user'}">\${text.replace(/\n/g,'<br>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\`(.+?)\`/g,'<code style="background:rgba(255,255,255,.08);padding:1px 5px;border-radius:3px;font-family:DM Mono,monospace;font-size:.8em">$1</code>').replace(/^- (.+)/gm,'• $1')}</div>
-  \`;
+  const avatarCls = isBot ? 'bot' : 'user';
+  const avatarIcon = isBot ? '✦' : '👤';
+  const bubbleCls = isBot ? 'bot' : 'user';
+  const formatted = text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\n/g,'<br>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/`([^`]+)`/g,'<code style="background:rgba(255,255,255,.08);padding:1px 5px;border-radius:3px;font-family:\'DM Mono\',monospace;font-size:.8em">$1</code>')
+    .replace(/^• (.+)/gm,'• $1');
+  div.innerHTML = '<div class="ai-avatar ' + avatarCls + '">' + avatarIcon + '</div>'
+    + '<div class="ai-bubble ' + bubbleCls + '">' + formatted + '</div>';
   msgs.appendChild(div);
   msgs.scrollTop = msgs.scrollHeight;
 }
