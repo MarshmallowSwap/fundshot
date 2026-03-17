@@ -2202,6 +2202,8 @@ async function cwSend() {
   await new Promise(r => setTimeout(r, 500 + Math.random() * 600));
   cwHideTyping();
   const reply = cwMatch(text) || "Not sure about that. Check fundshot.app/faq or send /support on Telegram.";
+  cwAddMsg('bot', reply);
+  _chatTyping = false;
 }
 
 function toggleChat() {
