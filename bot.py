@@ -426,13 +426,13 @@ async def _process_exchange_tickers(
                         _lvl_t     = {"critico": "💎 JACKPOT", "jackpot": "💎 JACKPOT", "hard": "🔴 HARD", "extreme": "🔥 EXTREME", "high": "🚨 HIGH"}.get(_trade_level, _trade_level.upper())
                         _dir_t   = "SHORT 📉" if rate_pct > 0 else "LONG 📈"
                         _cta_t   = (
-                            f"🤖 *Trade aperto — {_dir_t}*\n"
-                            f"━━━━━━━━━━━━━━━━━━\n"
-                            f"📌 `{symbol}` · {_ex_em_t}\n"
-                            f"📊 Funding: `{rate_pct:+.4f}%` ({"JACKPOT" if _trade_level=="critico" else _trade_level.upper()})\n"
+                            f"*{_lvl_t} FUNDING ALERT — {_dir_t}*\n\n"
+                            f"📌 `{symbol}`  ·  {_ex_em_t} {_ex_name_t}\n"
+                            f"📊 `{rate_pct:+.4f}%` funding rate\n"
                             f"━━━━━━━━━━━━━━━━━━\n"
                             f"🤖 Our bot just opened this position automatically\n"
-                            f"👉 [Attiva FundShot](https://t.me/FundShot_bot?start=upgrade_pro) "
+                            f"👉 [Activate FundShot](https://t.me/FundShot_bot?start=upgrade_pro) "
+                            f"for your auto-trader"
                             f"per il tuo auto-trader"
                         )
                         _chart_t = generate_chart(symbol, rate_pct, exchange=exchange)
