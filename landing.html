@@ -1997,10 +1997,22 @@ async function loadMiniBar() {
 }
 loadMiniBar();
 
-// Fix bfcache — ricarica se la pagina viene ripristinata dalla cache del browser
+// Fix bfcache — impedisce al browser di conservare questa pagina in memoria
+// Metodo 1: ricarica se ripristinata dalla cache
 window.addEventListener('pageshow', (e) => {
-  if (e.persisted) {
-    window.location.reload();
+  if (e.persisted) window.location.reload();
+});
+// Metodo 2: click su logo/home forza reload
+document.addEventListener('DOMContentLoaded', () => {
+  const logo = document.querySelector('.nav-logo');
+  if (logo) {
+    logo.addEventListener('click', (e) => {
+      // Se siamo già su / non serve reload, ma se veniamo da un hash forziamo
+      if (window.location.hash) {
+        e.preventDefault();
+        window.location.href = '/';
+      }
+    });
   }
 });
 
