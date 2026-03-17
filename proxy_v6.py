@@ -817,6 +817,26 @@ class ProxyHandler(BaseHTTPRequestHandler):
                 self._json({"ok": False, "error": str(e)}, 500)
             return
 
+        # ── Test channel (usa ADMIN_TOKEN) ────────────────────────────────────
+        if p == "/api/admin/test-channel":
+            import os as _os
+            try:
+                import asyncio as _aio
+                from telegram import Bot as _TBot
+                _tok = _os.getenv("TELEGRAM_TOKEN", "")
+                _cid = _os.getenv("CHANNEL_ID", "")
+                if not _tok or not _cid:
+                    self._json({"ok": False, "error": f"TOKEN={bool(_tok)} CHANNEL={_cid}"})
+                    return
+                _bot = _TBot(token=_tok)
+                async def _send():
+                    return await _bot.send_message(chat_id=_cid, text="🧪 FundShot channel test")
+                msg = _aio.run(_send())
+                self._json({"ok": True, "message_id": msg.message_id, "channel": _cid})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)})
+            return
+
         # ── Admin endpoints (owner only) ─────────────────────────────────────
         if p.startswith("/api/admin/"):
             user = self._auth()
