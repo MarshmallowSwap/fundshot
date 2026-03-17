@@ -425,6 +425,14 @@ async function loadDocsStats() {
 }
 loadDocsStats();
 
+// Rileva iframe — nasconde nav e aggiusta padding
+if (window.self !== window.top) {
+  document.querySelector('nav').style.display = 'none';
+  document.querySelector('.docs-wrap').style.paddingTop = '0';
+  document.querySelector('.sidebar').style.top = '0';
+  document.querySelector('.sidebar').style.height = '100vh';
+}
+
 // Active sidebar link on scroll
 const sections = document.querySelectorAll('h2[id]');
 const sidebarLinks = document.querySelectorAll('.sidebar a');
