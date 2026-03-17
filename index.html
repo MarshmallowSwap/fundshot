@@ -3078,40 +3078,70 @@ function goto(id, btn) {
 
 async function loadPublic() {
   setStatus('loading');
-  try {
-    const r = await fetch('https://api.fundshot.app/api/tickers');
-    const j = await r.json();
-    if (!j.ok || !j.tickers) throw new Error('No data');
-    S.data = j.tickers
+
+  // Helper: parse tickers from Bybit format
+  function parseBybit(list) {
+    return (list || [])
+      .filter(t => t.symbol && t.symbol.endsWith('USDT') && t.fundingRate !== '')
       .map(t => ({
         symbol: t.symbol,
-        price:  parseFloat(t.markPrice || t.lastPrice) || 0,
+        price:  parseFloat(t.lastPrice || t.markPrice) || 0,
         rate:   parseFloat(t.fundingRate) || 0,
-        vol:    parseFloat(t.turnover24h) || 0,
+        vol:    parseFloat(t.volume24h || t.turnover24h) || 0,
       }))
-      .filter(t => t.symbol && t.rate !== 0)
+      .filter(t => t.rate !== 0)
       .sort((a, b) => Math.abs(b.rate) - Math.abs(a.rate));
-    setStatus('live');
-    renderAll();
-  } catch(e) {
-    // Fallback diretto a Bybit
-    try {
-      const r2 = await fetch('https://api.bybit.com/v5/market/tickers?category=linear');
-      const j2 = await r2.json();
-      if (j2.retCode !== 0) throw new Error(j2.retMsg);
-      S.data = (j2.result.list || [])
-        .filter(t => t.symbol.endsWith('USDT') && t.fundingRate !== '')
+  }
+
+  // Source 1: FundShot proxy (server-side, no CORS issues)
+  try {
+    const r = await fetch('https://api.fundshot.app/api/tickers', { signal: AbortSignal.timeout(5000) });
+    const j = await r.json();
+    if (j.ok && j.tickers && j.tickers.length > 0) {
+      S.data = j.tickers
         .map(t => ({
           symbol: t.symbol,
-          price:  parseFloat(t.lastPrice) || 0,
+          price:  parseFloat(t.markPrice || t.lastPrice) || 0,
           rate:   parseFloat(t.fundingRate) || 0,
-          vol:    parseFloat(t.volume24h) || 0,
+          vol:    parseFloat(t.turnover24h) || 0,
         }))
+        .filter(t => t.symbol && t.rate !== 0)
         .sort((a, b) => Math.abs(b.rate) - Math.abs(a.rate));
-      setStatus('live');
-      renderAll();
-    } catch(e2) { setStatus('error'); }
-  }
+      setStatus('live'); renderAll(); return;
+    }
+  } catch(e1) { console.warn('Source 1 failed:', e1.message); }
+
+  // Source 2: Binance Futures public API (CORS enabled)
+  try {
+    const r = await fetch('https://fapi.binance.com/fapi/v1/premiumIndex', { signal: AbortSignal.timeout(6000) });
+    const list = await r.json();
+    if (Array.isArray(list) && list.length > 0) {
+      S.data = list
+        .filter(t => t.symbol && t.symbol.endsWith('USDT') && t.lastFundingRate !== undefined)
+        .map(t => ({
+          symbol: t.symbol,
+          price:  parseFloat(t.markPrice) || 0,
+          rate:   parseFloat(t.lastFundingRate) || 0,
+          vol:    0,
+        }))
+        .filter(t => t.rate !== 0)
+        .sort((a, b) => Math.abs(b.rate) - Math.abs(a.rate));
+      if (S.data.length > 0) { setStatus('live'); renderAll(); return; }
+    }
+  } catch(e2) { console.warn('Source 2 failed:', e2.message); }
+
+  // Source 3: allorigins.win → Bybit (CORS proxy)
+  try {
+    const bybitUrl = encodeURIComponent('https://api.bybit.com/v5/market/tickers?category=linear');
+    const r = await fetch('https://api.allorigins.win/raw?url=' + bybitUrl, { signal: AbortSignal.timeout(8000) });
+    const j = await r.json();
+    if (j.retCode === 0 && j.result?.list) {
+      S.data = parseBybit(j.result.list);
+      if (S.data.length > 0) { setStatus('live'); renderAll(); return; }
+    }
+  } catch(e3) { console.warn('Source 3 failed:', e3.message); }
+
+  setStatus('error');
 }
 
 // ─── PRIVATE API via PROXY ───
