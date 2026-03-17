@@ -371,6 +371,21 @@ async def _process_exchange_tickers(
                     await send_alert(bot, alert_text, target_chat_id=cid, symbol=symbol, rate=rate_pct, **ex_kwargs)
             bot_data["alerts_sent"] = bot_data.get("alerts_sent", 0) + 1
             _save_alert_history(symbol, level, rate_pct, exchange, alert_text)
+            # Channel pubblico: solo HARD/JACKPOT (>=2%) con CTA abbonamento
+            if level in ("hard", "critico") and os.getenv("CHANNEL_ID", CHANNEL_ID):
+                try:
+                    _ex_em_ch = {"bybit": "🟡", "binance": "🟠", "hyperliquid": "🟣"}.get(exchange, "⚡")
+                    _cta = (
+                        alert_text + "\n\n"
+                        "━━━━━━━━━━━━━━━━━━\n"
+                        "🤖 *Auto-trader attivato* per gli iscritti Pro/Elite\n"
+                        "👉 [Attiva FundShot](https://t.me/FundShot_bot?start=upgrade_pro) "
+                        "per ricevere TUTTI gli alert in tempo reale"
+                    )
+                    _chart_ch = generate_chart(symbol, rate_pct, exchange=exchange)
+                    await send_to_channel(context.bot, _cta, photo_buf=_chart_ch)
+                except Exception as _ce:
+                    logger.debug("channel send: %s", _ce)
 
         # ── AUTO-TRADER: apri posizione se configurato per questo exchange ──
         if TRADING_ENABLED and exchange in _exchange_traders:
