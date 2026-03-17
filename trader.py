@@ -870,16 +870,14 @@ class FundingTrader:
         Necessario per monitorare posizioni aperte in sessioni precedenti.
         """
         try:
-            exchange_positions = await asyncio.get_event_loop().run_in_executor(
-                None, lambda: self.exchange.get_positions() if hasattr(self.exchange, 'get_positions') else []
-            )
+            raw = self.exchange.get_positions()
+            if asyncio.iscoroutine(raw):
+                exchange_positions = await raw
+            else:
+                exchange_positions = raw
         except Exception as e:
             logger.warning("reload_existing_positions: get_positions error: %s", e)
             return 0
-
-        # Usa asyncio per la versione async se disponibile
-        if asyncio.iscoroutine(exchange_positions):
-            exchange_positions = await exchange_positions
 
         loaded = 0
         for p in (exchange_positions or []):
