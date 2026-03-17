@@ -161,8 +161,8 @@ nav {
   display: inline-flex; align-items: center; gap: 8px;
   font-family: 'DM Mono', monospace; font-size: .7rem;
   color: var(--gold); letter-spacing: .15em; text-transform: uppercase;
-  border: 1px solid rgba(212,168,67,.25); background: rgba(212,168,67,.06);
-  padding: 6px 14px; border-radius: 4px; margin-bottom: 28px;
+  border: none; background: none;
+  padding: 0; border-radius: 0; margin-bottom: 28px;
 }
 .eyebrow-dot { width: 6px; height: 6px; background: var(--teal); border-radius: 50%; animation: pulse 2s ease-in-out infinite; }
 @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.8)} }
@@ -1025,20 +1025,12 @@ footer {
         <div style="display:flex;gap:8px;flex-wrap:nowrap;align-items:center;width:100%">
           <a href="https://t.me/FundShot_bot" style="text-decoration:none;flex-shrink:0">
             <div style="display:flex;align-items:center;gap:8px;background:rgba(212,168,67,.08);border:1.5px solid rgba(212,168,67,.3);border-radius:12px;padding:9px 14px;transition:all .2s">
-              <img src="/bybit-logo.svg" style="height:20px;opacity:.95">
-              <div>
-                <div style="font-size:.72rem;font-family:'DM Mono',monospace;font-weight:800;color:#e2e8f0;letter-spacing:.05em">BYBIT</div>
-                <div style="font-size:.6rem;color:#4ade80;font-family:'DM Mono',monospace;font-weight:700;letter-spacing:.06em">● LIVE</div>
-              </div>
+              <img src="/bybit-logo.svg" style="height:22px;opacity:.95">
             </div>
           </a>
           <a href="https://t.me/FundShot_bot" style="text-decoration:none;flex-shrink:0">
             <div style="display:flex;align-items:center;gap:8px;background:rgba(251,146,60,.08);border:1.5px solid rgba(251,146,60,.25);border-radius:12px;padding:9px 14px;transition:all .2s">
-              <img src="/binance-logo.svg" style="height:20px;opacity:.95;filter:brightness(1.8)">
-              <div>
-                <div style="font-size:.72rem;font-family:'DM Mono',monospace;font-weight:800;color:#e2e8f0;letter-spacing:.05em">BINANCE</div>
-                <div style="font-size:.6rem;color:#4ade80;font-family:'DM Mono',monospace;font-weight:700;letter-spacing:.06em">● LIVE</div>
-              </div>
+              <img src="/binance-logo.svg" style="height:22px;opacity:.95;filter:brightness(1.8)">
             </div>
           </a>
           <a href="https://t.me/FundShot_bot" style="text-decoration:none;flex-shrink:0">
@@ -1051,23 +1043,15 @@ footer {
             </div>
           </a>
           <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.03);border:1.5px solid rgba(255,255,255,.08);border-radius:12px;padding:9px 14px;opacity:.45;flex-shrink:0">
-            <img src="/okx-logo.svg" style="height:20px;filter:grayscale(1)">
-            <div>
-              <div style="font-size:.72rem;font-family:'DM Mono',monospace;font-weight:800;color:#94a3b8;letter-spacing:.05em">OKX</div>
-              <div style="font-size:.6rem;color:#fb923c;font-family:'DM Mono',monospace;font-weight:700;letter-spacing:.06em">○ SOON</div>
-            </div>
+            <img src="/okx-logo.svg" style="height:22px;filter:grayscale(1) opacity(0.5)">
           </div>
           <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.02);border:1.5px dashed rgba(255,255,255,.1);border-radius:12px;padding:9px 14px;opacity:.35;flex-shrink:0">
-            <span style="font-size:1rem;opacity:.6">⬡</span>
-            <div>
-              <div style="font-size:.72rem;font-family:'DM Mono',monospace;font-weight:800;color:#94a3b8;letter-spacing:.05em">MORE DEFI</div>
-              <div style="font-size:.6rem;color:#94a3b8;font-family:'DM Mono',monospace;font-weight:700;letter-spacing:.06em">○ SOON</div>
-            </div>
+            <span style="font-size:.65rem;font-family:'DM Mono',monospace;color:#94a3b8;letter-spacing:.06em;white-space:nowrap">+ MORE</span>
           </div>
         </div>
       </div>
       <h1 class="fade-up" style="animation-delay:.1s">
-        The market <em>pays you</em><br>to be on the right side.
+        The market <em>pays</em><br><em>you</em><br>to be on the right side.
       </h1>
       <p class="hero-sub fade-up" style="animation-delay:.2s">
         FundShot monitors <strong>500+ perpetual pairs</strong> 24/7, detects extreme funding rates and opens trades automatically. You get the alerts. The bot executes.
@@ -1082,7 +1066,7 @@ footer {
     </div>
 
     <!-- Live card -->
-    <div class="live-card fade-up" style="animation-delay:.4s">
+    <div class="live-card fade-up" style="animation-delay:.4s;margin-top:60px;min-width:320px">
       <div class="live-header">
         <div class="live-title">🔥 Live Funding Rates</div>
         <div class="live-badge">
