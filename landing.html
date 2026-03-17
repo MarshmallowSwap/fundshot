@@ -2211,13 +2211,10 @@ function toggleChat() {
   win.classList.toggle('open', _chatOpen);
   if (_chatOpen) {
     if (unread) unread.style.display = 'none';
-    // Welcome message on first open
     const msgs = document.getElementById('cw-msgs');
     if (msgs && msgs.children.length === 0) {
       setTimeout(() => {
-        cwAddMsg('bot', 'Hi! 👋 I'm the FundShot assistant.
-
-Ask me anything about the bot, settings, exchanges, or pricing. I'm here to help!');
+        cwAddMsg('bot', "Hi! I'm the FundShot assistant. Ask me anything about settings, exchanges, pricing, or how to get started!");
       }, 300);
     }
     setTimeout(() => document.getElementById('cw-input')?.focus(), 400);
