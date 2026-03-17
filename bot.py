@@ -396,9 +396,9 @@ async def _process_exchange_tickers(
                     _cta = (
                         alert_text + "\n\n"
                         "━━━━━━━━━━━━━━━━━━\n"
-                        f"🤖 *Auto-trader attivato* su {_ex_em_ch} {_ex_name_f} per gli iscritti Pro/Elite\n"
-                        "👉 [Attiva FundShot](https://t.me/FundShot_bot?start=upgrade_pro) "
-                        "per ricevere TUTTI gli alert in tempo reale"
+                        f"🤖 *Auto-trader activated* on {_ex_em_ch} {_ex_name_f} for Pro/Elite subscribers\n"
+                        "👉 [Activate FundShot](https://t.me/FundShot_bot?start=upgrade_pro) "
+                        "to receive ALL alerts in real time"
                     )
                     _chart_ch = generate_chart(symbol, rate_pct, exchange=exchange)
                     await send_to_channel(bot, _cta, photo_buf=_chart_ch)
@@ -426,7 +426,7 @@ async def _process_exchange_tickers(
                             f"📌 `{symbol}` · {_ex_em_t}\n"
                             f"📊 Funding: `{rate_pct:+.4f}%` ({_trade_level.upper()})\n"
                             f"━━━━━━━━━━━━━━━━━━\n"
-                            f"🤖 Il bot ha appena aperto questa posizione in automatico\n"
+                            f"🤖 Our bot just opened this position automatically\n"
                             f"👉 [Attiva FundShot](https://t.me/FundShot_bot?start=upgrade_pro) "
                             f"per il tuo auto-trader"
                         )
@@ -796,8 +796,8 @@ async def oi_spike_job(context):
                         f"📊 OI Δ5m: `{chg:+.2f}%`\n"
                         f"💰 Funding: `{funding:+.4f}%`\n"
                         f"━━━━━━━━━━━━━━━━━━\n"
-                        f"🤖 I nostri trader ricevono questo segnale in tempo reale\n"
-                        f"👉 [Attiva FundShot](https://t.me/FundShot_bot?start=upgrade_pro)"
+                        f"🤖 Our traders receive this signal in real time\n"
+                        f"👉 [Activate FundShot](https://t.me/FundShot_bot?start=upgrade_pro)"
                     )
                     try:
                         await send_to_channel(bot, _oi_ch_msg)
