@@ -2132,72 +2132,22 @@ let _chatTyping = false;
 
 const CW_KB = [
   { k: ['start', 'begin', 'how', 'free', 'register', 'sign up', 'create'],
-    r: "Starting is easy and free! 🚀
-
-Just open @FundShot_bot on Telegram and send /start. No credit card, no email — just Telegram login.
-
-You'll get 10 alerts/day and full dashboard access immediately." },
+    r: "Starting is easy and free!\n\nJust open @FundShot_bot on Telegram and send /start. No credit card, no email needed.\n\nYou get 10 alerts/day and full dashboard access immediately." },
   { k: ['price', 'cost', 'plan', 'paid', 'pro', 'elite', 'subscription', 'much'],
-    r: "FundShot has 3 plans:
-
-🆓 Free — $0 forever, 10 alerts/day
-⚡ Pro — $20/mo, auto-trading on 1 exchange
-👑 Elite — $45/mo or $300 lifetime, multi-exchange + referral commissions
-
-All paid plans accept USDT, BTC, ETH, SOL and more." },
+    r: "FundShot has 3 plans:\n\nFree: $0 forever, 10 alerts/day\nPro: $20/mo, auto-trading on 1 exchange\nElite: $45/mo or $300 lifetime, multi-exchange + referral commissions\n\nAll paid plans accept USDT, BTC, ETH, SOL and more." },
   { k: ['exchange', 'bybit', 'binance', 'hyperliquid', 'okx', 'which'],
-    r: "We support:
-
-🟡 Bybit — full auto-trading, best for beginners
-🟠 Binance — full auto-trading, great liquidity
-🟣 Hyperliquid — alerts only (auto-trading coming soon)
-🔵 OKX, dYdX, Bitget, Gate.io — coming soon
-
-Bybit is recommended to start — it has the best demo mode." },
+    r: "We support:\n\nBybit - full auto-trading, best for beginners\nBinance - full auto-trading, great liquidity\nHyperliquid - alerts only (auto-trading coming soon)\nOKX, dYdX, Bitget, Gate.io - coming soon\n\nBybit is recommended to start." },
   { k: ['setting', 'config', 'leverage', 'size', 'beginner', 'setup', 'parameter'],
-    r: "For beginners, I suggest:
-
-• Exchange: Bybit Demo first
-• Size: 50–100 USDT/trade
-• Leverage: 5–7x
-• Stop Loss: 5%
-• Max positions: 3
-• Guardian: ON always
-
-For personalized advice, try the ✦ AI Advisor inside the dashboard!" },
+    r: "Beginner setup:\n\nExchange: Bybit Demo first\nSize: 50-100 USDT/trade\nLeverage: 5-7x\nStop Loss: 5%\nMax positions: 3\nGuardian: ON always\n\nFor personalized advice, try the AI Advisor inside the dashboard!" },
   { k: ['safe', 'security', 'key', 'api', 'risk', 'withdraw'],
-    r: "Your funds are safe 🔐
-
-API keys are encrypted with AES-256-GCM. We only use trading permissions — never withdrawals. Even if you accidentally enabled withdrawals, our system only places and closes trades.
-
-You can revoke API keys from your exchange at any time." },
+    r: "Your funds are safe.\n\nAPI keys are encrypted with AES-256-GCM. We only use trading permissions, never withdrawals. You can revoke API keys from your exchange at any time." },
   { k: ['result', 'test', 'performance', 'profit', 'work', 'win rate', '60'],
-    r: "We ran a 60-day live test on Bybit Demo with real market conditions:
-
-• $10,000 starting capital
-• 500 USDT/trade, 10x leverage
-• Guardian active
-
-Live results are always visible on the homepage. The strategy exploits structural funding rate imbalances — not price prediction." },
+    r: "We ran a 60-day live test on Bybit Demo with real market conditions:\n\n$10,000 starting capital, 500 USDT/trade, 10x leverage, Guardian active.\n\nLive results are always visible on the homepage." },
   { k: ['guardian', 'protect', 'loss', 'risk', 'drawdown'],
-    r: "Guardian is our circuit breaker system 🛡️
-
-It automatically pauses trading when:
-• Max drawdown reached (default 10%)
-• 3 consecutive losses → 30 min cooldown
-• Daily loss limit hit → pause until midnight
-
-Always keep Guardian ON." },
+    r: "Guardian is our circuit breaker system.\n\nIt automatically pauses trading when:\n- Max drawdown reached (default 10%)\n- 3 consecutive losses - 30 min cooldown\n- Daily loss limit hit - pause until midnight\n\nAlways keep Guardian ON." },
   { k: ['support', 'help', 'problem', 'issue', 'contact', 'human'],
-    r: "Happy to help! 💬
-
-For technical issues:
-• Telegram: @FundShot_bot → /support your message
-• Email: support@fundshot.app
-• FAQ: fundshot.app/faq
-
-We typically respond within a few hours." },
-];
+    r: "Happy to help!\n\nFor technical issues:\n- Telegram: @FundShot_bot - /support your message\n- Email: support@fundshot.app\n- FAQ: fundshot.app/faq\n\nWe typically respond within a few hours." },
+]
 
 function cwMatch(text) {
   const t = text.toLowerCase();
@@ -2213,8 +2163,7 @@ function cwAddMsg(role, text) {
   const msgs = document.getElementById('cw-msgs');
   const div = document.createElement('div');
   div.className = 'cm ' + (role === 'bot' ? '' : 'user');
-  const formatted = text.replace(/
-/g, '<br>').replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  const formatted = text.replace(/\n/g, '<br>').replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
   div.innerHTML = '<div class="cm-avatar ' + role + '">' + (role === 'bot' ? '✦' : '👤') + '</div>'
     + '<div class="cm-bubble ' + role + '">' + formatted + '</div>';
   msgs.appendChild(div);
@@ -2252,13 +2201,7 @@ async function cwSend() {
   cwShowTyping();
   await new Promise(r => setTimeout(r, 500 + Math.random() * 600));
   cwHideTyping();
-  const reply = cwMatch(text) || 'I'm not sure about that specific question. You can:
-
-• Browse the **FAQ** at fundshot.app/faq
-• Ask on Telegram: @FundShot_bot → /support
-• Email: support@fundshot.app';
-  cwAddMsg('bot', reply);
-  _chatTyping = false;
+  const reply = cwMatch(text) || "Not sure about that. Check fundshot.app/faq or send /support on Telegram.";
 }
 
 function toggleChat() {
