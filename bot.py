@@ -1913,7 +1913,7 @@ async def cmd_test_oi(update, context):
     await update.message.reply_text(msg, parse_mode="Markdown")
 
 
-async def cmd_support(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def cmd_support(update, context):
     msg = " ".join(context.args) if context.args else ""
     user = update.effective_user
     if not msg:
@@ -1934,7 +1934,7 @@ async def cmd_support(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
-async def cmd_reply_ticket(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def cmd_reply_ticket(update, context):
     if update.effective_user.id != int(os.getenv("CHAT_ID", CHAT_ID or "0")):
         return
     if len(context.args) < 2:
