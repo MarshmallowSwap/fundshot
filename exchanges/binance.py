@@ -210,15 +210,25 @@ class BinanceClient(ExchangeClient):
                 if size == 0:
                     continue
                 side = "Buy" if size > 0 else "Sell"
+                entry  = self._sf(p.get("entryPrice"))
+                mark   = self._sf(p.get("markPrice"))
+                unr    = self._sf(p.get("unRealizedProfit"))
+                pos_im = abs(size) * entry / int(self._sf(p.get("leverage", 1)) or 1)
+                pnl_pct = (unr / pos_im * 100) if pos_im else 0
                 positions.append(Position(
                     symbol=p.get("symbol", ""),
                     side=side,
                     size=abs(size),
-                    entry_price=self._sf(p.get("entryPrice")),
-                    mark_price=self._sf(p.get("markPrice")),
-                    unrealised_pnl=self._sf(p.get("unRealizedProfit")),
+                    avg_price=entry,
+                    mark_price=mark,
                     leverage=int(self._sf(p.get("leverage", 1))),
+                    unrealised_pnl=unr,
+                    pnl_pct=pnl_pct,
+                    position_im=pos_im,
                     liq_price=self._sf(p.get("liquidationPrice")),
+                    take_profit=self._sf(p.get("stopPrice", 0)),
+                    stop_loss=0.0,
+                    cur_realised_pnl=self._sf(p.get("realizedProfit", 0)),
                     exchange=self.EXCHANGE_ID,
                 ))
             return positions

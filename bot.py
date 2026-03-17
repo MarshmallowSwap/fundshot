@@ -227,7 +227,8 @@ def _save_alert_history(symbol: str, level: str, rate_pct: float, exchange: str,
         "level":    level,
         "rate_pct": round(rate_pct, 4),
         "exchange": exchange,
-        "ts":       int(time.time() * 1000),
+        "ex_em":    {"bybit":"🟡","binance":"🟠","okx":"🔵"}.get(exchange.lower(),"⚡"),
+        "ts":       int(time.time()),
         "preview":  text[:120] if text else "",
     }
     _alert_history.append(entry)
