@@ -392,10 +392,11 @@ async def _process_exchange_tickers(
                 logger.info("Invio channel: %s %s level=%s", exchange, symbol, level)
                 try:
                     _ex_em_ch = {"bybit": "🟡", "binance": "🟠", "hyperliquid": "🟣"}.get(exchange, "⚡")
+                    _ex_name_f = {"bybit": "Bybit", "binance": "Binance", "hyperliquid": "Hyperliquid"}.get(exchange, exchange.capitalize())
                     _cta = (
                         alert_text + "\n\n"
                         "━━━━━━━━━━━━━━━━━━\n"
-                        "🤖 *Auto-trader attivato* per gli iscritti Pro/Elite\n"
+                        f"🤖 *Auto-trader attivato* su {_ex_em_ch} {_ex_name_f} per gli iscritti Pro/Elite\n"
                         "👉 [Attiva FundShot](https://t.me/FundShot_bot?start=upgrade_pro) "
                         "per ricevere TUTTI gli alert in tempo reale"
                     )
