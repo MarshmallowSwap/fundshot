@@ -724,7 +724,7 @@ async def funding_job(context):
 
                 await _process_exchange_tickers(
                     bot, bot_data, tickers, exchange, positions_all, chat_ids,
-                    env="testnet" if TRADING_TESTNET else "mainnet",
+                    env=uc_list[0].environment if uc_list else ("testnet" if TRADING_TESTNET else "mainnet"),
                 )
 
             except Exception as e_ex:
