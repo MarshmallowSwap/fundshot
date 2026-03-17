@@ -1051,7 +1051,8 @@ class FundingTrader:
             f"━━━━━━━━━━━━━━━━━━\n"
             f"🆔 Order: `{order_id}`"
         )
-        msg += f"\n{self._ex_badge}"
+        env_badge = "🟢 Demo" if getattr(self.exchange, "demo", False) else "🔴 Live"
+        msg += f"\n{self._ex_badge} · {env_badge}"
         await self.send(chat_id, msg, symbol=symbol, rate=funding_rate*100)
         logger.info(f"Trade aperto: {direction} {symbol} @ {mark_price} | level={level} | exchange={self.exchange_name}")
 
@@ -1227,7 +1228,7 @@ class FundingTrader:
             f"{'📈' if pnl >= 0 else '📉'} PnL:       `{pnl:+.2f} USDT` ({pnl_pct:+.2f}%)\n"
             f"⏱️ Duration:  `{duration} min`\n"
             f"📋 Level:     `{pos.level.upper()}`\n"
-            f"{self._ex_badge}"
+            f"{self._ex_badge} · {'🟢 Demo' if getattr(self.exchange, 'demo', False) else '🔴 Live'}"
         )
         await self.send(chat_id, msg)
         logger.info(f"Trade chiuso: {pos.direction} {pos.symbol} | {reason} | PnL: {pnl:+.2f} USDT")
