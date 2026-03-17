@@ -445,6 +445,9 @@ class ProxyHandler(BaseHTTPRequestHandler):
                 if not exchange or not api_key or (not api_sec and exchange != "hyperliquid"):
                     self._json({"ok": False, "error": "exchange, api_key and api_secret are required"}, 400)
                     return
+                # Per Hyperliquid: api_key = wallet address, api_secret = placeholder
+                if exchange == "hyperliquid" and not api_sec:
+                    api_sec = "hl-wallet-only"
                 u = asyncio.run(get_user(user["chat_id"]))
                 if not u:
                     self._json({"ok": False, "error": "User not found"}, 404)
