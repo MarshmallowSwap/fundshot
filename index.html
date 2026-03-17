@@ -2894,7 +2894,7 @@ async function loadAlertHistory() {
   const cnt  = document.getElementById('ah-count');
   if (!list) return;
   try {
-    const d = await authFetch('/api/alert-history');
+    const d = await authFetch('/api/alert-history?t=' + Date.now());
     if (!d.ok || !d.alerts || !d.alerts.length) {
       list.innerHTML = '<div class="empty-state"><div class="ei">🔔</div>Nessun alert ancora</div>';
       if (cnt) cnt.textContent = '0';
