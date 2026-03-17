@@ -234,6 +234,7 @@ _LIQ_ALERT_SENT: dict[str, float] = {}   # symbol → last liq% when alert sent
 
 # Alert history in memoria (ultimi 100 alert)
 _alert_history: list[dict] = []
+_channel_alert_ts: dict = {}  # cooldown per-symbol channel alerts
 MAX_ALERT_HISTORY = 100
 
 def _save_alert_history(symbol: str, level: str, rate_pct: float, exchange: str, text: str):
@@ -407,6 +408,34 @@ async def _process_exchange_tickers(
                     await send_to_channel(bot, _cta, photo_buf=_chart_ch)
                 except Exception as _ce:
                     logger.warning("channel send FAILED: %s", _ce)
+
+        # ── CHANNEL: alert indipendente dalla state machine ──────────────────────
+        _ch_level = al.classify(symbol, rate_pct)
+        if _ch_level in ("high", "extreme", "hard", "critico", "jackpot") and os.getenv("CHANNEL_ID", CHANNEL_ID):
+            _ch_key  = exchange + ":" + symbol
+            _now_ch  = time.time()
+            _last_ch = _channel_alert_ts.get(_ch_key, 0)
+            _cooldowns = {"high": 3600, "extreme": 1800, "hard": 900, "critico": 900, "jackpot": 900}
+            _cooldown_ch = _cooldowns.get(_ch_level, 1800)
+            if _now_ch - _last_ch >= _cooldown_ch:
+                _channel_alert_ts[_ch_key] = _now_ch
+                try:
+                    _ex_em_c2   = {"bybit": "\U0001f7e1", "binance": "\U0001f7e0", "hyperliquid": "\U0001f7e3"}.get(exchange, "\u26a1")
+                    _ex_name_c2 = {"bybit": "Bybit", "binance": "Binance", "hyperliquid": "Hyperliquid"}.get(exchange, exchange.capitalize())
+                    _lvl_map    = {"critico": "\U0001f48e JACKPOT", "jackpot": "\U0001f48e JACKPOT", "hard": "\U0001f534 HARD", "extreme": "\U0001f525 EXTREME", "high": "\U0001f6a8 HIGH"}
+                    _lvl_c2     = _lvl_map.get(_ch_level, _ch_level.upper())
+                    _dir_c2     = "SHORT \U0001f4c9" if rate_pct > 0 else "LONG \U0001f4c8"
+                    _line1 = "*" + _lvl_c2 + " FUNDING ALERT \u2014 " + _dir_c2 + "*"
+                    _line2 = "\U0001f4cc `" + symbol + "`  \u00b7  " + _ex_em_c2 + " " + _ex_name_c2
+                    _line3 = "\U0001f4ca `" + f"{rate_pct:+.4f}%" + "` funding rate"
+                    _line4 = "\u2501" * 18
+                    _line5 = "\U0001f449 [Activate FundShot](https://t.me/FundShot_bot?start=upgrade_pro) for your auto-trader"
+                    _msg_c2 = _line1 + "\n\n" + _line2 + "\n" + _line3 + "\n" + _line4 + "\n" + _line5
+                    _chart_c2 = generate_chart(symbol, rate_pct, exchange=exchange)
+                    await send_to_channel(bot, _msg_c2, photo_buf=_chart_c2)
+                    logger.info("Channel alert: %s %s %s", _ch_level, exchange, symbol)
+                except Exception as _ce2:
+                    logger.warning("channel alert FAILED: %s", _ce2)
 
         # ── AUTO-TRADER: apri posizione se configurato per questo exchange ──
         if TRADING_ENABLED and exchange in _exchange_traders:
