@@ -40,6 +40,18 @@
     {
       "src": "manifest.json",
       "use": "@vercel/static"
+    },
+    {
+      "src": "dydx-logo.svg",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "bitget-logo.svg",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gate-logo.svg",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -82,6 +94,18 @@
     {
       "src": "/manifest.json",
       "dest": "/manifest.json"
+    },
+    {
+      "src": "/dydx-logo.svg",
+      "dest": "/dydx-logo.svg"
+    },
+    {
+      "src": "/bitget-logo.svg",
+      "dest": "/bitget-logo.svg"
+    },
+    {
+      "src": "/gate-logo.svg",
+      "dest": "/gate-logo.svg"
     },
     {
       "src": "/(.*)",
