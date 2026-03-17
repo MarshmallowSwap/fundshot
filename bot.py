@@ -203,6 +203,22 @@ async def send_alert(bot: Bot, text: str, target_chat_id=None, symbol: str = Non
 
 
 # ── Helper: invia messaggio all'owner (chat_id principale) ───────────────────
+async def send_to_channel(bot, text: str, photo_buf=None, parse_mode: str = "Markdown") -> None:
+    """Invia al channel pubblico Telegram (CHANNEL_ID in .env)."""
+    cid = os.getenv("CHANNEL_ID", CHANNEL_ID)
+    if not cid:
+        return
+    try:
+        if photo_buf:
+            photo_buf.seek(0)
+            await bot.send_photo(chat_id=cid, photo=photo_buf, caption=text, parse_mode=parse_mode)
+        else:
+            await bot.send_message(chat_id=cid, text=text, parse_mode=parse_mode)
+        logger.info("send_to_channel OK: %s", cid)
+    except Exception as e:
+        logger.warning("send_to_channel FAILED: %s", e)
+
+
 async def send_to_owner(bot: Bot, text: str):
     """Invia al CHAT_ID principale (owner del bot)."""
     chat_id = os.getenv("CHAT_ID", CHAT_ID)
