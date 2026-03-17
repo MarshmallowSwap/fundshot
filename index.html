@@ -2105,6 +2105,21 @@ nav {
     </div>
   </div>
 
+  <!-- AI ADVISOR BANNER -->
+  <div style="background:linear-gradient(135deg,rgba(139,92,246,.12),rgba(212,168,67,.06));border:1px solid rgba(139,92,246,.3);border-radius:16px;padding:22px 28px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;position:relative;overflow:hidden">
+    <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(139,92,246,.6),rgba(212,168,67,.4),transparent)"></div>
+    <div style="display:flex;align-items:center;gap:14px">
+      <div style="width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,rgba(139,92,246,.3),rgba(212,168,67,.15));border:1px solid rgba(139,92,246,.4);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">✦</div>
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-size:1rem;font-weight:800;color:var(--text);margin-bottom:3px">Not sure about your settings?</div>
+        <div style="font-size:.85rem;color:var(--text2)">The <strong style="color:#c4b5fd">AI Advisor</strong> suggests the optimal configuration based on your exchange, capital and experience level.</div>
+      </div>
+    </div>
+    <button onclick="goto('ai', document.querySelector('[onclick*=\'ai\']'))" style="background:linear-gradient(135deg,rgba(139,92,246,.25),rgba(139,92,246,.15));border:1px solid rgba(139,92,246,.4);color:#c4b5fd;padding:10px 20px;border-radius:10px;font-size:.85rem;font-weight:700;cursor:pointer;white-space:nowrap;font-family:'Syne',sans-serif;transition:all .2s" onmouseover="this.style.background='rgba(139,92,246,.35)'" onmouseout="this.style.background='linear-gradient(135deg,rgba(139,92,246,.25),rgba(139,92,246,.15))'">
+      ✦ Open AI Advisor →
+    </button>
+  </div>
+
   <!-- 01. HOW IT WORKS -->
   <div id="doc-how" style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:20px;position:relative;overflow:hidden">
     <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--p1),transparent)"></div>
