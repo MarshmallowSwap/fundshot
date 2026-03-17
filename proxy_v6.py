@@ -723,7 +723,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
                         "symbol":        p.symbol,
                         "side":          p.side,
                         "size":          str(p.size),
-                        "avgPrice":      str(p.entry_price),
+                        "avgPrice":      str(p.avg_price),
                         "markPrice":     str(p.mark_price),
                         "unrealisedPnl": str(p.unrealized_pnl),
                         "leverage":      str(p.leverage),
@@ -738,6 +738,8 @@ class ProxyHandler(BaseHTTPRequestHandler):
                 log.error("positions %s: %s", exchange if 'exchange' in dir() else '?', e)
                 self._json({"ok": True, "positions": [], "error": str(e)}, 200)
             return
+
+        if p == "/api/user/wallet":
             user = self._auth()
             if not user:
                 return
