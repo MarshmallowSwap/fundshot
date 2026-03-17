@@ -418,7 +418,9 @@ async def _process_exchange_tickers(
                 _trade_level = ft.get_level(rate_pct / 100)
                 if _trade_level in ("hard", "critico") and os.getenv("CHANNEL_ID", CHANNEL_ID):
                     try:
-                        _ex_em_t = {"bybit": "🟡", "binance": "🟠", "hyperliquid": "🟣"}.get(exchange, "⚡")
+                        _ex_em_t   = {"bybit": "🟡", "binance": "🟠", "hyperliquid": "🟣"}.get(exchange, "⚡")
+                        _ex_name_t = {"bybit": "Bybit", "binance": "Binance", "hyperliquid": "Hyperliquid"}.get(exchange, exchange.capitalize())
+                        _lvl_t     = "JACKPOT" if _trade_level == "critico" else _trade_level.upper()
                         _dir_t   = "SHORT 📉" if rate_pct > 0 else "LONG 📈"
                         _cta_t   = (
                             f"🤖 *Trade aperto — {_dir_t}*\n"
