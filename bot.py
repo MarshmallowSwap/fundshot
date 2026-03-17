@@ -388,7 +388,7 @@ async def _process_exchange_tickers(
             bot_data["alerts_sent"] = bot_data.get("alerts_sent", 0) + 1
             _save_alert_history(symbol, level, rate_pct, exchange, alert_text)
             # Channel pubblico: solo HARD/JACKPOT (>=2%) con CTA abbonamento
-            if level in ("hard", "critico") and os.getenv("CHANNEL_ID", CHANNEL_ID):
+            if level in ("high", "extreme", "hard", "critico") and os.getenv("CHANNEL_ID", CHANNEL_ID):
                 logger.info("Invio channel: %s %s level=%s", exchange, symbol, level)
                 try:
                     _ex_em_ch = {"bybit": "🟡", "binance": "🟠", "hyperliquid": "🟣"}.get(exchange, "⚡")
@@ -416,11 +416,11 @@ async def _process_exchange_tickers(
                     await ft.open_trade(symbol, rate_pct / 100, owner_cid)
                 # Channel: avvisa quando il bot apre un trade HARD+ (anche se alert già inviato)
                 _trade_level = ft.get_level(rate_pct / 100)
-                if _trade_level in ("hard", "critico") and os.getenv("CHANNEL_ID", CHANNEL_ID):
+                if _trade_level in ("extreme", "hard", "critico") and os.getenv("CHANNEL_ID", CHANNEL_ID):
                     try:
                         _ex_em_t   = {"bybit": "🟡", "binance": "🟠", "hyperliquid": "🟣"}.get(exchange, "⚡")
                         _ex_name_t = {"bybit": "Bybit", "binance": "Binance", "hyperliquid": "Hyperliquid"}.get(exchange, exchange.capitalize())
-                        _lvl_t     = "JACKPOT" if _trade_level == "critico" else _trade_level.upper()
+                        _lvl_t     = {"critico": "💎 JACKPOT", "hard": "🔴 HARD", "extreme": "🔥 EXTREME", "high": "🚨 HIGH"}.get(_trade_level, _trade_level.upper())
                         _dir_t   = "SHORT 📉" if rate_pct > 0 else "LONG 📈"
                         _cta_t   = (
                             f"🤖 *Trade aperto — {_dir_t}*\n"
