@@ -802,7 +802,8 @@ async def oi_spike_job(context):
                         f"👉 [Activate FundShot](https://t.me/FundShot_bot?start=upgrade_pro)"
                     )
                     try:
-                        await send_to_channel(bot, _oi_ch_msg)
+                        _oi_chart = generate_chart(sym, funding, exchange="bybit")
+                        await send_to_channel(bot, _oi_ch_msg, photo_buf=_oi_chart)
                     except Exception as _oice:
                         logger.warning("channel OI FAILED: %s", _oice)
 
