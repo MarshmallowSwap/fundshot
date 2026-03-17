@@ -478,6 +478,27 @@ nav {
 @keyframes fadeInUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .ai-suggestion { display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:8px; font-size:.78rem; cursor:pointer; transition:all .2s; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1); color:var(--text2); margin:4px; }
 .ai-suggestion:hover { background:rgba(139,92,246,.15); border-color:rgba(139,92,246,.3); color:var(--text); }
+/* Support floating button */
+#support-fab { position:fixed; bottom:24px; right:24px; z-index:999; width:52px; height:52px; border-radius:50%; background:linear-gradient(135deg,#7c3aed,#6d28d9); border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:22px; box-shadow:0 6px 24px rgba(124,58,237,.4); transition:all .25s; }
+#support-fab:hover { transform:scale(1.1); box-shadow:0 8px 32px rgba(124,58,237,.6); }
+#support-fab .fab-badge { position:absolute; top:-2px; right:-2px; width:14px; height:14px; background:#ff4d6d; border-radius:50%; border:2px solid var(--bg); display:none; font-size:8px; align-items:center; justify-content:center; color:#fff; font-weight:700; }
+#support-panel { position:fixed; bottom:88px; right:24px; z-index:998; width:360px; max-height:520px; background:var(--bg2); border:1px solid rgba(139,92,246,.3); border-radius:20px; overflow:hidden; display:none; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,.5); animation:fadeInUp .25s ease; }
+#support-panel.open { display:flex; }
+.supp-header { padding:16px 20px; background:linear-gradient(135deg,rgba(139,92,246,.15),rgba(212,168,67,.05)); border-bottom:1px solid rgba(255,255,255,.06); display:flex; align-items:center; gap:12px; flex-shrink:0; }
+.supp-avatar { width:38px; height:38px; border-radius:12px; background:linear-gradient(135deg,rgba(139,92,246,.3),rgba(212,168,67,.15)); border:1px solid rgba(139,92,246,.3); display:flex; align-items:center; justify-content:center; font-size:18px; }
+.supp-title { font-family:'Syne',sans-serif; font-size:.95rem; font-weight:700; color:var(--text); }
+.supp-sub { font-size:.72rem; color:var(--text3); font-family:'DM Mono',monospace; }
+.supp-close { margin-left:auto; background:none; border:none; color:var(--text3); cursor:pointer; font-size:18px; padding:4px; }
+.supp-msgs { flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:12px; min-height:0; max-height:280px; }
+.supp-msg { max-width:85%; padding:10px 14px; border-radius:12px; font-size:.85rem; line-height:1.6; }
+.supp-msg.bot { background:rgba(139,92,246,.1); border:1px solid rgba(139,92,246,.15); color:var(--text); border-radius:4px 12px 12px 12px; align-self:flex-start; }
+.supp-msg.user { background:rgba(212,168,67,.1); border:1px solid rgba(212,168,67,.15); color:var(--text); border-radius:12px 4px 12px 12px; align-self:flex-end; }
+.supp-footer { padding:12px 16px; border-top:1px solid rgba(255,255,255,.06); flex-shrink:0; }
+.supp-input-row { display:flex; gap:8px; align-items:flex-end; }
+.supp-input { flex:1; background:var(--bg3); border:1px solid var(--border2); border-radius:10px; padding:10px 12px; color:var(--text); font-size:.85rem; resize:none; outline:none; font-family:'DM Sans',sans-serif; line-height:1.4; max-height:80px; transition:border-color .2s; }
+.supp-input:focus { border-color:rgba(139,92,246,.5); }
+.supp-send { width:38px; height:38px; border-radius:10px; background:linear-gradient(135deg,#7c3aed,#6d28d9); border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all .2s; }
+.supp-send:hover { transform:scale(1.05); }
 @keyframes spin { to{transform:rotate(360deg)} }
 .empty-state { text-align: center; padding: 48px 20px; color: var(--text3); font-size: 13px; font-weight: 600; }
 .empty-state .ei { font-size: 40px; opacity: .25; margin-bottom: 12px; filter: grayscale(1); }
@@ -5514,6 +5535,81 @@ setTimeout(() => fetchAndUpdateOI(), 500);
 setTimeout(() => initExchangeSettings(), 800);
 setTimeout(() => renderAllExchangeCards(), 300);
 setTimeout(() => fetchClosedPnl(), 1500);
+
+// ─── SUPPORT CHAT ─────────────────────────────────────────────────────────────
+let _suppOpen = false;
+let _suppSending = false;
+
+function toggleSupport() {
+  _suppOpen = !_suppOpen;
+  const panel = document.getElementById('support-panel');
+  const badge = document.getElementById('supp-badge');
+  if (_suppOpen) {
+    panel.classList.add('open');
+    setTimeout(() => document.getElementById('supp-input')?.focus(), 100);
+    if (badge) badge.style.display = 'none';
+  } else {
+    panel.classList.remove('open');
+  }
+}
+
+function suppAddMsg(text, role) {
+  const msgs = document.getElementById('supp-msgs');
+  const div = document.createElement('div');
+  div.className = 'supp-msg ' + role;
+  div.innerHTML = text.split('\n').join('<br>').replace(/[*][*]([^*]+)[*][*]/g,'<strong>$1</strong>');
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function suppTyping(show) {
+  const existing = document.getElementById('supp-typing');
+  if (show && !existing) {
+    const msgs = document.getElementById('supp-msgs');
+    const div = document.createElement('div');
+    div.id = 'supp-typing'; div.className = 'supp-msg bot';
+    div.innerHTML = '<div class="ai-typing"><span></span><span></span><span></span></div>';
+    msgs.appendChild(div); msgs.scrollTop = msgs.scrollHeight;
+  } else if (!show && existing) { existing.remove(); }
+}
+
+async function suppSend() {
+  if (_suppSending) return;
+  const input = document.getElementById('supp-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  suppAddMsg(text, 'user');
+  _suppSending = true;
+  suppTyping(true);
+
+  try {
+    const token = localStorage.getItem('fs_token');
+    const headers = {'Content-Type':'application/json'};
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+
+    const r = await fetch('https://api.fundshot.app/api/support', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ message: text, source: 'dashboard' })
+    });
+    const d = await r.json();
+    suppTyping(false);
+
+    if (d.has_ai_reply && d.ai_reply) {
+      suppAddMsg(d.ai_reply, 'bot');
+      suppAddMsg('Was this helpful? If not, your message has been forwarded to our team. 👆', 'bot');
+    } else if (d.ok) {
+      const tid = d.ticket_id ? d.ticket_id.slice(0,8) + '...' : '';
+      suppAddMsg('Your message has been sent to our support team! We typically respond within a few hours via Telegram.' + (tid ? ' Ticket: ' + tid : ''), 'bot');
+    } else {
+      suppAddMsg('Sorry, support is temporarily unavailable. Try again later or contact us at support@fundshot.app', 'bot');
+    }
+  } catch(e) {
+    suppTyping(false);
+    suppAddMsg('Network error — please try again.', 'bot');
+  } finally { _suppSending = false; }
+}
 
 // ── PWA Service Worker ──
 if ('serviceWorker' in navigator) {

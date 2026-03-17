@@ -484,6 +484,100 @@ class ProxyHandler(BaseHTTPRequestHandler):
                 self._json({"ok": False, "error": str(e)}, 500)
             return
 
+        if p == "/api/support":
+            try:
+                body_bytes = self.rfile.read(int(self.headers.get("Content-Length", 0)))
+                body = json.loads(body_bytes)
+                message = (body.get("message") or "").strip()[:1000]
+                source  = body.get("source", "dashboard")
+                if not message:
+                    self._json({"ok": False, "error": "Empty message"}, 400)
+                    return
+
+                chat_id = None; username = None; plan = "free"
+                try:
+                    user = self._auth()
+                    if user:
+                        from db.supabase_client import get_user
+                        import asyncio as _aio2
+                        u = _aio2.run(get_user(user["chat_id"]))
+                        if u:
+                            chat_id = u.chat_id; username = u.username; plan = u.plan or "free"
+                except Exception:
+                    pass
+
+                AI_SUPPORT = {
+                    "keys":         ["api key","api secret","connection","connect","configure","setup"],
+                    "billing":      ["payment","pay","plan","upgrade","price","invoice","refund","charge"],
+                    "bot_trading":  ["bot not working","not trading","not opening","no trade","no alert","not receiving"],
+                    "guardian":     ["guardian","paused","circuit","drawdown","daily limit","stopped"],
+                    "binance":      ["binance","4120","-4120","testnet binance"],
+                    "positions":    ["position","stuck","open","not closed","not closing","tp","sl","stop loss"],
+                    "hyperliquid":  ["hyperliquid","wallet","0x"],
+                    "refund":       ["refund","money back","cancel","cancellation"],
+                }
+                AI_ANSWERS = {
+                    "keys":        "To connect your exchange go to **Settings** and select the exchange tab. Paste your API Key and Secret — make sure Futures permission is enabled and Withdrawal is NOT enabled. If connection fails, try regenerating the keys from the exchange.",
+                    "billing":     "Payments are processed via NOWPayments in crypto (USDT, BTC, ETH, SOL, BNB, TON). After payment your plan activates within 5-10 minutes. If it does not activate, reply here with your transaction ID and we will verify manually.",
+                    "bot_trading": "If the bot is not trading: 1) Auto-Trader must be ON in the Trading page. 2) API keys must be configured and show Live in Settings. 3) Guardian must not be paused. 4) Exchange balance must cover the configured trade size.",
+                    "guardian":    "If Guardian paused trading it triggered a safety rule (max drawdown, consecutive losses, or daily limit). Reset it from Trading page -> Guardian -> Reset button. It also auto-resets at midnight UTC.",
+                    "binance":     "On Binance Testnet, native SL/TP orders are not supported (error -4120). The bot uses its own monitor loop for exits on testnet. On Mainnet everything works normally.",
+                    "positions":   "Positions are monitored every 2 minutes. The bot closes at TP1 (+0.7%), trailing stop, SL, or max cap (+3%). If the bot restarted, existing positions are automatically reloaded and monitored.",
+                    "hyperliquid": "Hyperliquid is alerts only for now. To monitor your balance add your ETH wallet address (0x...) in Settings -> Hyperliquid tab. No private key required.",
+                    "refund":      "We do not offer automatic refunds on crypto payments. If a technical issue prevented you from using the service, describe it here and we will evaluate case by case.",
+                }
+
+                msg_lower = message.lower()
+                ai_reply = None
+                for key, keywords in AI_SUPPORT.items():
+                    if any(kw in msg_lower for kw in keywords):
+                        ai_reply = AI_ANSWERS[key]
+                        break
+
+                ticket_id = None
+                if not ai_reply:
+                    try:
+                        from db.supabase_client import get_client as _sc2
+                        db2 = _sc2()
+                        row = {"message": message, "source": source, "status": "open", "plan": plan}
+                        if chat_id:  row["chat_id"]  = chat_id
+                        if username: row["username"]  = username
+                        result2 = db2.table("support_tickets").insert(row).execute()
+                        if result2.data: ticket_id = result2.data[0].get("id","")
+                    except Exception as _te:
+                        log.error("support ticket insert: %s", _te)
+
+                    try:
+                        import requests as _req2
+                        owner = os.getenv("CHAT_ID",""); token = os.getenv("TELEGRAM_TOKEN","")
+                        if owner and token:
+                            from_ = ("@" + username) if username else (("user " + str(chat_id)) if chat_id else "anonymous")
+                            plan_badge = {"free":"Free","pro":"Pro","elite":"Elite"}.get(plan,"Free")
+                            lines = [
+                                "New Support Ticket",
+                                "From: " + from_ + "  Plan: " + plan_badge,
+                                "Source: " + source,
+                                "",
+                                message[:400],
+                                "",
+                                "ID: " + str(ticket_id or "N/A"),
+                            ]
+                            notif = "\n".join(lines)
+                            _req2.post(
+                                "https://api.telegram.org/bot" + token + "/sendMessage",
+                                json={"chat_id": owner, "text": notif},
+                                timeout=5
+                            )
+                    except Exception as _ne:
+                        log.warning("support notify: %s", _ne)
+
+                self._json({"ok": True, "ai_reply": ai_reply, "ticket_id": ticket_id, "has_ai_reply": ai_reply is not None})
+            except Exception as e:
+                log.error("/api/support: %s", e)
+                self._json({"ok": False, "error": str(e)[:200]}, 500)
+            return
+
+
         if p == "/api/ai":
             try:
                 body_bytes = self.rfile.read(int(self.headers.get("Content-Length", 0)))

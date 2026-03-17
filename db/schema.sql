@@ -100,3 +100,18 @@ ALTER TABLE trades               ENABLE ROW LEVEL SECURITY;
 -- SELECT table_name FROM information_schema.tables
 -- WHERE table_schema = 'public'
 -- ORDER BY table_name;
+
+-- Support tickets
+CREATE TABLE IF NOT EXISTS support_tickets (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  chat_id       BIGINT,
+  username      TEXT,
+  plan          TEXT DEFAULT 'free',
+  message       TEXT NOT NULL,
+  ai_reply      TEXT,
+  status        TEXT DEFAULT 'open' CHECK (status IN ('open','replied','closed')),
+  admin_reply   TEXT,
+  source        TEXT DEFAULT 'dashboard' CHECK (source IN ('dashboard','telegram')),
+  created_at    TIMESTAMPTZ DEFAULT now(),
+  updated_at    TIMESTAMPTZ DEFAULT now()
+);

@@ -1827,6 +1827,8 @@ def main():
     app.add_handler(CommandHandler("posizioni_trader", cmd_posizioni_trader))
     app.add_handler(CommandHandler("autotrader",       cmd_autotrader_toggle))
     app.add_handler(CommandHandler("plan",             commands.cmd_plan))
+    app.add_handler(CommandHandler("support",          cmd_support))
+    app.add_handler(CommandHandler("reply",            cmd_reply_ticket))
 
     # ── Inline keyboard callbacks ────────────────────────────────────────────
     from telegram.ext import CallbackQueryHandler as CQH
