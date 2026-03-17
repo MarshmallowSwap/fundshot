@@ -3827,7 +3827,10 @@ async function sendToBot(source='settings') {
         ts:  Date.now()
       };
       localStorage.setItem('fk_sent_ts_' + _tradingExchange, _snap.ts.toString());
-      localStorage.setItem('fk_snap_' + _tradingExchange, JSON.stringify(_snap));
+      localStorage.setItem('fk_snap_'    + _tradingExchange, JSON.stringify(_snap));
+      // Salva anche nelle chiavi che la card legge direttamente
+      if (_snap.mm && Object.keys(_snap.mm).length) localStorage.setItem('fk_mm_'       + _tradingExchange, JSON.stringify(_snap.mm));
+      if (_snap.g  && Object.keys(_snap.g).length)  localStorage.setItem('fk_guardian_' + _tradingExchange, JSON.stringify(_snap.g));
       renderExchangeSummaryCard(_tradingExchange);
     } else {
       setMsg('<span style="color:var(--amber2)">⚠️ Bot non raggiungibile (proxy offline?)</span>');
@@ -3993,10 +3996,25 @@ function setTradingExchange(ex) {
 }
 
 function renderExchangeSummaryCard(ex) {
-  const mm  = JSON.parse(localStorage.getItem('fk_mm_' + ex) || 'null');
-  const g   = JSON.parse(localStorage.getItem('fk_guardian_' + ex) || 'null');
+  let mm  = JSON.parse(localStorage.getItem('fk_mm_' + ex) || 'null');
+  let g   = JSON.parse(localStorage.getItem('fk_guardian_' + ex) || 'null');
   const cfg = (() => { try { return JSON.parse(localStorage.getItem('fk_cfg_' + ex) || 'null'); } catch { return null; } })();
   const ts  = localStorage.getItem('fk_sent_ts_' + ex);
+
+  // Ripristino automatico da snap se le chiavi dirette mancano
+  if ((!mm || !g) && ts) {
+    const snap = (() => { try { return JSON.parse(localStorage.getItem('fk_snap_' + ex) || 'null'); } catch { return null; } })();
+    if (snap) {
+      if (!mm && snap.mm && Object.keys(snap.mm).length) {
+        mm = snap.mm;
+        localStorage.setItem('fk_mm_' + ex, JSON.stringify(mm));
+      }
+      if (!g && snap.g && Object.keys(snap.g).length) {
+        g = snap.g;
+        localStorage.setItem('fk_guardian_' + ex, JSON.stringify(g));
+      }
+    }
+  }
 
   const rowsEl  = document.getElementById('exch-card-rows-' + ex);
   const statEl  = document.getElementById('exch-status-' + ex);
@@ -4007,20 +4025,13 @@ function renderExchangeSummaryCard(ex) {
   document.querySelectorAll('.exch-summary-card').forEach(c => c.classList.remove('active-card'));
   if (ex === _tradingExchange && cardEl) cardEl.classList.add('active-card');
 
-  // Fallback: leggi dallo snapshot salvato al momento dell'ultimo send
-  let mmData = mm, gData = g, cfgData = cfg;
-  if (!mm && !g && ts) {
-    const snap = (() => { try { return JSON.parse(localStorage.getItem('fk_snap_' + ex) || 'null'); } catch { return null; } })();
-    if (snap) { mmData = snap.mm || null; gData = snap.g || null; cfgData = snap.cfg || null; }
-  }
-
-  if (!mmData && !gData) {
+  if (!mm && !g) {
     rowsEl.innerHTML = '<div class="exch-card-never">No config sent yet<br>Select ' + ex.charAt(0).toUpperCase() + ex.slice(1) + ' and save</div>';
     if (statEl) { statEl.textContent = 'Never sent'; statEl.className = 'exch-card-status not-sent'; }
     return;
   }
 
-  const tog = cfgData?.tog || cfg?.tog || {};
+  const tog = cfg?.tog || {};
   const botOn = tog.bot || false;
   const tsStr = ts ? new Date(parseInt(ts)).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '—';
 
