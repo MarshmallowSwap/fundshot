@@ -608,6 +608,15 @@ async def _init_exchange_traders(bot) -> None:
                 ft.chat_id = str(owner_chat_id)
                 _exchange_traders[exchange] = ft
                 logger.info("FundingTrader inizializzato: exchange=%s env=%s", exchange, cred.environment)
+
+                # Ricarica posizioni già aperte (sessioni precedenti)
+                if exchange != "hyperliquid":  # HL è alerts-only
+                    try:
+                        reloaded = await ft.reload_existing_positions(str(owner_chat_id))
+                        if reloaded:
+                            logger.info("Ricaricate %d posizioni esistenti per %s", reloaded, exchange)
+                    except Exception as _re:
+                        logger.warning("reload_existing_positions %s: %s", exchange, _re)
             except Exception as e:
                 logger.warning("_init_exchange_traders %s: %s", exchange, e)
 

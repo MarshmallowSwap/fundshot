@@ -864,6 +864,81 @@ class FundingTrader:
 
     # ── APERTURA ──
 
+    async def reload_existing_positions(self, chat_id: str) -> int:
+        """
+        Al boot: ricarica le posizioni già aperte sull'exchange nel tracking locale.
+        Necessario per monitorare posizioni aperte in sessioni precedenti.
+        """
+        try:
+            exchange_positions = await asyncio.get_event_loop().run_in_executor(
+                None, lambda: self.exchange.get_positions() if hasattr(self.exchange, 'get_positions') else []
+            )
+        except Exception as e:
+            logger.warning("reload_existing_positions: get_positions error: %s", e)
+            return 0
+
+        # Usa asyncio per la versione async se disponibile
+        if asyncio.iscoroutine(exchange_positions):
+            exchange_positions = await exchange_positions
+
+        loaded = 0
+        for p in (exchange_positions or []):
+            symbol = p.symbol if hasattr(p, 'symbol') else p.get('symbol', '')
+            if not symbol or symbol in self.positions:
+                continue
+            size = float(p.size if hasattr(p, 'size') else p.get('size', 0))
+            if size == 0:
+                continue
+
+            side      = p.side if hasattr(p, 'side') else p.get('side', 'Buy')
+            direction = "SHORT" if side == "Sell" else "LONG"
+            entry     = float(p.avg_price if hasattr(p, 'avg_price') else p.get('avg_price', 0))
+            if entry == 0:
+                entry = self.exchange.get_mark_price(symbol) or 1.0
+
+            # Ricostruisci TradePosition minimale per il monitoring
+            notional = entry * size
+            sl_pct   = CONFIG.get("sl_pct", 5.0)
+            buf_pct  = CONFIG.get("trailing_buffer_default", 0.7)
+            sl_price = entry * (1 + sl_pct/100) if direction == "SHORT" else entry * (1 - sl_pct/100)
+            tp1_price= entry * (1 - 0.007)     if direction == "SHORT" else entry * (1 + 0.007)
+
+            pos = TradePosition(
+                symbol           = symbol,
+                side             = side,
+                direction        = direction,
+                entry_price      = entry,
+                size_usdt        = CONFIG.get("size_usdt", 100),
+                notional         = notional,
+                level            = "unknown",
+                funding_at_open  = 0.0,
+                oi_change_at_open= 0.0,
+                tp1_pct          = 0.7,
+                trailing_buffer  = buf_pct,
+                tp_max_pct       = CONFIG.get("tp_max_pct", 3.0),
+                sl_pct           = sl_pct,
+                sl_price         = sl_price,
+                tp1_price        = tp1_price,
+                tp1_hit          = False,
+                tp1_qty          = round(size * 0.3, 4),
+                remaining_qty    = round(size * 0.7, 4),
+                best_price       = entry,
+                trailing_stop    = entry * (1 + buf_pct/100) if direction == "SHORT" else entry * (1 - buf_pct/100),
+                bybit_order_id   = "reloaded",
+            )
+            self.positions[symbol] = pos
+            loaded += 1
+            logger.info("reload_existing_positions: caricata %s %s @ %.6g (size=%.4f)",
+                        direction, symbol, entry, size)
+
+        if loaded > 0:
+            logger.info("reload_existing_positions: %d posizioni ricaricate per %s",
+                        loaded, self.exchange_name)
+            await self.send(chat_id,
+                f"♻️ *{loaded} posizioni ricaricate* — {self.exchange_name.capitalize()}\n"
+                f"Il monitor le gestirà fino alla chiusura naturale.")
+        return loaded
+
     async def open_trade(self, symbol: str, funding_rate: float, chat_id: str):
         level     = self.get_level(funding_rate)
         direction = "SHORT" if funding_rate > 0 else "LONG"
