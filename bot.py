@@ -396,6 +396,27 @@ async def _process_exchange_tickers(
                 owner_cid = os.getenv("CHAT_ID", CHAT_ID)
                 if owner_cid:
                     await ft.open_trade(symbol, rate_pct / 100, owner_cid)
+                # Channel: avvisa quando il bot apre un trade HARD+ (anche se alert già inviato)
+                _trade_level = ft.get_level(rate_pct / 100)
+                if _trade_level in ("hard", "critico") and os.getenv("CHANNEL_ID", CHANNEL_ID):
+                    try:
+                        _ex_em_t = {"bybit": "🟡", "binance": "🟠", "hyperliquid": "🟣"}.get(exchange, "⚡")
+                        _dir_t   = "SHORT 📉" if rate_pct > 0 else "LONG 📈"
+                        _cta_t   = (
+                            f"🤖 *Trade aperto — {_dir_t}*\n"
+                            f"━━━━━━━━━━━━━━━━━━\n"
+                            f"📌 `{symbol}` · {_ex_em_t}\n"
+                            f"📊 Funding: `{rate_pct:+.4f}%` ({_trade_level.upper()})\n"
+                            f"━━━━━━━━━━━━━━━━━━\n"
+                            f"🤖 Il bot ha appena aperto questa posizione in automatico\n"
+                            f"👉 [Attiva FundShot](https://t.me/FundShot_bot?start=upgrade_pro) "
+                            f"per il tuo auto-trader"
+                        )
+                        _chart_t = generate_chart(symbol, rate_pct, exchange=exchange)
+                        await send_to_channel(context.bot, _cta_t, photo_buf=_chart_t)
+                        logger.info("Channel: trade HARD aperto %s %s", exchange, symbol)
+                    except Exception as _tce:
+                        logger.debug("channel trade: %s", _tce)
 
         # 1b. Alert cambio livello
         if _bot_alert_enabled("level_change"):
