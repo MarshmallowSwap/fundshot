@@ -747,6 +747,23 @@ async def oi_spike_job(context):
                 oi_monitor._last_oi_alert[sym] = now
                 logger.info("OI spike %s: %+.2f%%", sym, chg)
                 await send_alert(bot, msg, symbol=sym, rate=funding)
+                # Channel pubblico: solo spike OI molto forti (>5% o <-5%)
+                _oi_thresh_ch = 5.0
+                if abs(chg) >= _oi_thresh_ch and os.getenv("CHANNEL_ID", CHANNEL_ID):
+                    _dir_oi = "📈 SPIKE" if chg > 0 else "📉 DROP"
+                    _oi_ch_msg = (
+                        f"⚡ *OI {_dir_oi} — {sym}*\n"
+                        f"━━━━━━━━━━━━━━━━━━\n"
+                        f"📊 OI Δ5m: `{chg:+.2f}%`\n"
+                        f"💰 Funding: `{funding:+.4f}%`\n"
+                        f"━━━━━━━━━━━━━━━━━━\n"
+                        f"🤖 I nostri trader ricevono questo segnale in tempo reale\n"
+                        f"👉 [Attiva FundShot](https://t.me/FundShot_bot?start=upgrade_pro)"
+                    )
+                    try:
+                        await send_to_channel(context.bot, _oi_ch_msg)
+                    except Exception as _oice:
+                        logger.debug("channel OI: %s", _oice)
 
         # Scrivi snapshot su file per il proxy
         try:
