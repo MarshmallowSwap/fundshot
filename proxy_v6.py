@@ -592,20 +592,21 @@ class ProxyHandler(BaseHTTPRequestHandler):
                 import urllib.request as _ur3
                 owner_id = os.getenv("CHAT_ID", "")
                 token    = os.getenv("TELEGRAM_TOKEN", "")
-                if owner_id and token:
+                if token:
+                    # Use SUPPORT_CHAT_ID if set, fallback to owner
+                    dest = os.getenv("SUPPORT_CHAT_ID") or owner_id
                     plan_emoji = {"elite": "crown", "pro": "bolt", "free": "free"}.get(plan, "free")
-                    reply_line = ("Reply to: " + str(chat_id)) if chat_id else ""
-                    lines = [
-                        "SUPPORT REQUEST",
-                        "@" + user + " [" + plan.upper() + "]",
-                        msg,
-                    ]
-                    if reply_line:
-                        lines.append(reply_line)
-                    notify = "\n".join(lines)
+                    reply_cmd = ("/reply " + str(chat_id)) if chat_id else ""
+                    notify = (
+                        "NEW SUPPORT REQUEST (web)\n"
+                        "User: @" + user + " [" + plan.upper() + "]\n"
+                        "Chat ID: " + (str(chat_id) if chat_id else "unknown") + "\n"
+                        "---\n" + msg + "\n"
+                        + ("---\nReply: " + reply_cmd if reply_cmd else "")
+                    )
                     tg_url = "https://api.telegram.org/bot" + token + "/sendMessage"
                     tg_req = _ur3.Request(tg_url,
-                        data=json.dumps({"chat_id": owner_id, "text": notify}).encode(),
+                        data=json.dumps({"chat_id": dest, "text": notify}).encode(),
                         headers={"Content-Type": "application/json"}, method="POST")
                     _ur3.urlopen(tg_req, timeout=5)
                 log.info("Support ticket from %s: %s", user, msg[:80])
