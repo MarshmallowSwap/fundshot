@@ -1157,20 +1157,6 @@ nav {
     </div>
   </div>
 
-  <!-- ALERT HISTORY -->
-  <div class="card" style="margin-bottom:16px">
-    <div class="ch">
-      <div>
-        <div class="ct">🔔 Alert History</div>
-        <div style="font-size:11px;color:var(--text3)">Ultimi alert ricevuti in questa sessione</div>
-      </div>
-      <span class="badge" id="ah-count">—</span>
-    </div>
-    <div id="ah-list" style="max-height:280px;overflow-y:auto">
-      <div class="empty-state"><div class="ei">🔔</div>Nessun alert ancora</div>
-    </div>
-  </div>
-
   <!-- PNL CHART -->
   <div class="card g1">
     <div class="chart-header">
@@ -3326,7 +3312,6 @@ function initPositionsPage(){
   fetchResults();
   fetchClosedPnl();
   fetchUnrealizedPnl();
-  loadAlertHistory();
 }
 
 // ── Exchange selector ────────────────────────────────────────────────────────
@@ -4895,7 +4880,7 @@ setTimeout(() => initExchangeSettings(), 800);
 // Renderizza le card con i dati salvati in localStorage
 setTimeout(() => renderAllExchangeCards(), 300);
 // Precarica dati Positions anche se non si naviga lì subito
-setTimeout(() => { fetchClosedPnl(); loadAlertHistory(); }, 1500);
+setTimeout(() => fetchClosedPnl(), 1500);
 </script>
 </body>
 </html>
