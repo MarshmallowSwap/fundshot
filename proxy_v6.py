@@ -442,7 +442,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
                 elif env not in ("mainnet", "demo"):
                     env = "mainnet"
                 passph   = body.get("passphrase", "")
-                if not exchange or not api_key or not api_sec:
+                if not exchange or not api_key or (not api_sec and exchange != "hyperliquid"):
                     self._json({"ok": False, "error": "exchange, api_key and api_secret are required"}, 400)
                     return
                 u = asyncio.run(get_user(user["chat_id"]))
