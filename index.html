@@ -2036,12 +2036,14 @@ nav {
         <strong style="color:#c4b5fd">Hey! I'm your FundShot AI Advisor.</strong><br><br>
         I know everything about the bot — settings, strategy, exchanges, Guardian, risk management. Ask me anything, like:<br><br>
         <div style="margin-top:8px">
-          <span class="ai-suggestion" onclick="aiAsk('What are the best settings for Binance with $500 capital?')">⚙️ Best settings for Binance</span>
-          <span class="ai-suggestion" onclick="aiAsk('How should I configure Guardian to protect my capital?')">🛡️ Configure Guardian</span>
-          <span class="ai-suggestion" onclick="aiAsk('What leverage and size do you recommend for a beginner?')">📊 Beginner setup</span>
-          <span class="ai-suggestion" onclick="aiAsk('Explain the TP1 + trailing stop strategy')">🎯 Explain TP1 strategy</span>
-          <span class="ai-suggestion" onclick="aiAsk('What is the difference between HARD and JACKPOT signals?')">💎 HARD vs JACKPOT</span>
-          <span class="ai-suggestion" onclick="aiAsk('How does the OI filter work and should I enable it?')">📈 OI filter explained</span>
+          <span class="ai-suggestion" onclick="aiAsk('I am a beginner, what settings should I use?')">📊 Beginner setup</span>
+          <span class="ai-suggestion" onclick="aiAsk('How should I configure Guardian?')">🛡️ Configure Guardian</span>
+          <span class="ai-suggestion" onclick="aiAsk('What leverage and size do you recommend?')">⚡ Leverage & size</span>
+          <span class="ai-suggestion" onclick="aiAsk('Explain the TP1 and trailing stop exit strategy')">🎯 TP1 strategy</span>
+          <span class="ai-suggestion" onclick="aiAsk('What is the difference between HARD and JACKPOT signals?')">💎 Signal levels</span>
+          <span class="ai-suggestion" onclick="aiAsk('How does the OI filter work?')">📈 OI filter</span>
+          <span class="ai-suggestion" onclick="aiAsk('How do I configure Binance?')">🟠 Binance setup</span>
+          <span class="ai-suggestion" onclick="aiAsk('Tell me about the 60-day test results')">📋 Test results</span>
         </div>
       </div>
     </div>
@@ -5169,6 +5171,238 @@ async function aiAsk(question) {
   await aiSend();
 }
 
+const AI_KB = [
+  { k:['beginner','start','new','primo','inizio','principiante'],
+    r:`**Recommended beginner setup:**
+
+**Exchange:** Bybit Demo first (practice without risk)
+**Size:** 50–100 USDT per trade
+**Leverage:** 5–7x (lower = safer)
+**SL:** 5–7% stop loss
+**Max positions:** 3 max
+**Min entry level:** HIGH+ (≥1%)
+**OI filter:** 1.5% (keeps quality high)
+**Persistence:** 2 cycles
+
+Enable **Guardian** (max drawdown 10%, daily loss $50).
+Run on Demo for 2 weeks before going live. Watch how the bot handles TP1 → trailing → close.` },
+
+  { k:['guardian','circuit','breaker','rischio','risk','protect'],
+    r:`**Guardian Risk Engine — recommended config:**
+
+| Rule | Threshold | Action |
+|------|-----------|--------|
+| Max drawdown | 10% of capital | Pause trading |
+| Consecutive losses | 3 in a row | 30 min cooldown |
+| Daily loss | $100 USDT | Pause until midnight |
+
+**Tips:**
+- Always keep Guardian ON — it's your safety net
+- For small accounts (<$500): set daily loss to $30–50
+- For larger accounts (>$2000): you can raise to $150–200
+- Guardian resets automatically at midnight UTC` },
+
+  { k:['leverage','leva','leve'],
+    r:`**Leverage recommendations:**
+
+- **Beginner:** 5–7x (small losses, learn the system)
+- **Intermediate:** 10x (standard, used in 60-day test)
+- **Experienced:** up to 15x on HARD/JACKPOT signals only
+- **Never use:** 20x+ on perpetuals with funding strategy
+
+**Why 10x is the sweet spot:**
+A 5% SL with 10x = 50% of position at risk per trade.
+With 100 USDT size → max loss per trade = $50.
+TP1 at +0.70% with 10x = +7% on capital → $7 per trade.` },
+
+  { k:['size','capital','usdt','quanto','how much','size'],
+    r:`**Position sizing guide (% of total capital):**
+
+| Capital | Recommended size | Leverage |
+|---------|-----------------|----------|
+| $500 | 25–50 USDT | 5x |
+| $1,000 | 50–100 USDT | 10x |
+| $2,500 | 100–150 USDT | 10x |
+| $5,000 | 200–250 USDT | 10x |
+| $10,000 | 500 USDT | 10x (tested) |
+
+**Rule:** never risk more than 5% of capital per trade.
+With 10x leverage, a 5% SL means 50% of position at risk = 2.5% of capital.` },
+
+  { k:['tp1','take profit','trailing','exit','uscita'],
+    r:`**Exit strategy explained:**
+
+**TP1 (30% close at +0.70%):**
+When price moves +0.70% in your favor, 30% of the position is closed automatically. SL moves to breakeven.
+
+**Trailing stop (0.70% buffer):**
+The remaining 70% follows the price with a 0.70% buffer. If price pulls back 0.70% from the peak, position closes.
+
+**Max cap (+3.0%):**
+If price reaches +3.0% total gain, entire position force-closes regardless.
+
+**Practical example (SHORT, entry $1.00):**
+- TP1 hit at $0.993 → 30% closed, SL moved to $1.00
+- Price drops to $0.970 → trailing follows
+- Price bounces to $0.975 → trailing triggers, 70% closes` },
+
+  { k:['oi','open interest','filter','filtro'],
+    r:`**OI filter explained:**
+
+The OI (Open Interest) filter requires the open interest to have changed by at least X% in the last 5 minutes before the bot opens a trade.
+
+**Why it matters:** High OI change means large players are entering/exiting — confirms the funding signal.
+
+**Recommended values:**
+- **0%** = disabled (more trades, lower quality)
+- **1.0–1.5%** = standard (good balance, used in 60-day test)
+- **2.0%+** = strict (fewer trades, higher quality signals)
+
+**Tip:** disable it for a week and compare results — if win rate drops, re-enable.` },
+
+  { k:['binance','binance futures'],
+    r:`**Binance configuration:**
+
+Binance Futures works with full auto-trading. A few things to know:
+
+- **Testnet:** native SL/TP orders don't work (error -4120). The bot uses its own monitor loop instead — positions are protected but SL/TP is software-based.
+- **Mainnet:** full native SL/TP support, works like Bybit.
+- **API keys:** create from binance.com → API Management → enable "Futures" permission. DO NOT enable withdrawals.
+- **Environment:** use "Demo (Testnet)" for practice, switch to "Live" when ready.
+
+Same settings as Bybit work well on Binance.` },
+
+  { k:['bybit'],
+    r:`**Bybit configuration:**
+
+Bybit is the primary exchange — most tested, full native TP/SL + trailing stop support.
+
+- **Demo mode:** fully functional, uses real market data with paper money. Perfect for testing.
+- **API keys:** create from bybit.com → Account → API → enable "Unified Trading" read+write. DO NOT enable withdrawals.
+- **Trailing stop:** Bybit natively supports trailing stops — the bot sets them automatically after entry.
+
+**Recommended starting config on Bybit Demo:**
+size=100, leva=10x, sl=5%, maxpos=3, persist=2, oi=1.5` },
+
+  { k:['hyperliquid'],
+    r:`**Hyperliquid:**
+
+Currently **alerts only** — no auto-trading yet.
+
+To monitor your Hyperliquid balance and positions:
+1. Go to Settings → Hyperliquid tab
+2. Enter your ETH wallet address (0x...)
+3. Save — no private key needed, read-only
+
+Auto-trading on Hyperliquid requires EIP-712 wallet signing — coming in a future update.` },
+
+  { k:['signal','jackpot','hard','extreme','high','soft','livello','level'],
+    r:`**Alert levels explained:**
+
+| Level | Threshold | Rarity | Strategy |
+|-------|-----------|--------|----------|
+| 📊 SOFT | ≥0.50% | Common | Entry level, lower win rate |
+| 🚨 HIGH | ≥1.00% | Regular | Good signal, standard entry |
+| 🔥 EXTREME | ≥1.50% | Uncommon | Strong reversal signal |
+| 🔴 HARD | ≥2.00% | Rare | High conviction, aggressive trailing |
+| 💎 JACKPOT | ≥2.50% | Very rare | Maximum opportunity |
+
+**HARD and JACKPOT** have the highest historical win rate because the funding imbalance is so extreme that mean reversion is almost certain.
+
+The public channel only receives HARD and JACKPOT alerts.` },
+
+  { k:['60 day','60-day','test','result','performance','backtest'],
+    r:`**60-Day Live Test Results:**
+
+Conducted on Bybit Demo — real market conditions, paper capital.
+
+**Config:** $10,000 capital, 500 USDT/trade, 10x leverage, Guardian ON, MM fixed, OI filter 1.5%, persistence 2 cycles.
+
+**Strategy:** TP1 +0.70% (30% close), trailing 0.70%, SL 5%, max cap 3.0%.
+
+**Live stats** are always visible on the Performance section of the landing page and in the Guide tab → updated daily at 03:00 UTC.
+
+The key insight: even with fees (0.15% round-trip), the strategy is profitable because it exploits market microstructure, not price prediction.` },
+
+  { k:['cooldown','wait','same','symbol'],
+    r:`**Cooldown setting:**
+
+The cooldown prevents re-entering the same symbol too quickly after a close.
+
+- **0** (default) = no cooldown, can re-enter immediately
+- **30** = wait 30 minutes before re-entering the same symbol
+- **60** = wait 1 hour
+
+**When to use cooldown:**
+- If you notice the bot repeatedly entering the same volatile symbol and losing, add 30–60 min cooldown
+- Generally leave at 0 for HARD/JACKPOT signals — they're rare enough to always re-enter` },
+
+  { k:['persist','persistence','cycle','confirm'],
+    r:`**Persistence filter:**
+
+The bot requires the funding rate to stay above threshold for X consecutive 60-second cycles before opening a trade.
+
+- **1** = enter immediately on first detection
+- **2** (default) = wait 2 minutes of confirmation
+- **3** = wait 3 minutes (more selective)
+
+**Higher persistence = fewer false signals, fewer total trades.**
+
+The 60-day test used persistence=2. Going to 3 would reduce trades by ~20% but improve quality.` },
+
+  { k:['maxpos','max pos','position','quante','how many'],
+    r:`**Max positions:**
+
+Controls how many trades can be open simultaneously.
+
+- **3** = conservative (low capital usage, lower risk)
+- **5** = standard (used in 60-day test)
+- **10+** = aggressive (more exposure, needs more capital)
+
+**Rule of thumb:** max positions × size USDT should not exceed 50% of your total capital.
+
+Example: 5 positions × 100 USDT × 10x = $5,000 notional. With $10,000 capital = 50% exposure. OK.` },
+
+  { k:['referral','affiliate','commission','guadagno passivo'],
+    r:`**Referral Program (Elite plan):**
+
+- Earn **10% commission** on every payment from users you refer
+- Applies to all plan types: Pro monthly, one-shot, Elite lifetime
+- **Lifetime commission** — as long as they keep paying, you keep earning
+- Payouts in USDT TRC20 via NOWPayments, monthly when balance ≥ $5
+
+Example: 10 users on Pro ($20/mo) = **$20/month passive income**
+With 50 users = $100/month
+
+Share your referral link from the Telegram bot: /referral` },
+];
+
+function aiMatch(text) {
+  const t = text.toLowerCase();
+  let best = null, bestScore = 0;
+  for (const item of AI_KB) {
+    const score = item.k.reduce((s, kw) => s + (t.includes(kw.toLowerCase()) ? kw.length : 0), 0);
+    if (score > bestScore) { bestScore = score; best = item; }
+  }
+  return bestScore > 0 ? best.r : null;
+}
+
+function aiDefaultReply(text) {
+  const t = text.toLowerCase();
+  if (t.includes('?') || t.length < 20) {
+    return `I can help with FundShot settings and strategy. Try asking about:
+
+**⚙️ Settings:** size, leverage, SL, max positions, persistence, OI filter, cooldown
+**🛡️ Protection:** Guardian, risk management
+**📊 Signals:** alert levels, HARD vs JACKPOT
+**🏦 Exchanges:** Bybit, Binance, Hyperliquid
+**🎯 Strategy:** TP1, trailing stop, exit strategy
+**📈 Performance:** 60-day test results
+**💰 Referral:** commission program`;
+  }
+  return `I couldn't find a specific answer for that. Try rephrasing or ask about: settings, Guardian, leverage, exchanges, alert levels, TP1 strategy, or the 60-day test results.`;
+}
+
 async function aiSend() {
   if (aiTyping) return;
   const input = document.getElementById('ai-input');
@@ -5177,36 +5411,21 @@ async function aiSend() {
 
   input.value = '';
   aiRender('user', text);
-  aiHistory.push({ role: 'user', content: text });
 
   aiTyping = true;
   const btn = document.getElementById('ai-send-btn');
   if (btn) btn.style.opacity = '0.5';
   aiShowTyping();
 
-  try {
-    const res = await fetch('https://api.fundshot.app/api/ai', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system: AI_SYSTEM,
-        messages: aiHistory.slice(-10)
-      })
-    });
-    const data = await res.json();
-    const reply = data.content?.[0]?.text || 'Sorry, I could not generate a response.';
-    aiHideTyping();
-    aiRender('assistant', reply);
-    aiHistory.push({ role: 'assistant', content: reply });
-  } catch(e) {
-    aiHideTyping();
-    aiRender('assistant', 'Network error — please retry.');
-  } finally {
-    aiTyping = false;
-    if (btn) btn.style.opacity = '1';
-  }
+  // Simulate slight delay for natural feel
+  await new Promise(r => setTimeout(r, 600 + Math.random() * 400));
+
+  aiHideTyping();
+  const reply = aiMatch(text) || aiDefaultReply(text);
+  aiRender('assistant', reply);
+
+  aiTyping = false;
+  if (btn) btn.style.opacity = '1';
 }
 
 function dashLogout() {
