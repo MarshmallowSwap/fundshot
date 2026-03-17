@@ -978,7 +978,8 @@ nav {
     <button class="np" onclick="goto('positions',this)">Posizioni</button>
     <button class="np" onclick="gotoGated('trading',this)" id="nav-trading">⚡ Trading</button>
     <button class="np" onclick="goto('settings',this)">Settings</button>
-    <button class="np" onclick="goto('docs',this)">📖 Docs</button>
+    <button class="np" onclick="goto('guide',this)">📖 Guide</button>
+    <button class="np" onclick="goto('docs',this)">🔗 Docs</button>
   </div>
   <div class="nav-right">
     <div id="user-badge" style="display:none;align-items:center;gap:8px;font-size:12px">
@@ -1993,6 +1994,622 @@ nav {
 <!-- ═══════════════════════════════════════════════════ -->
 <!-- PAGE: DOCS                                          -->
 <!-- ═══════════════════════════════════════════════════ -->
+<div class="page" id="page-guide">
+<div style="max-width:860px;margin:0 auto;padding-bottom:80px">
+
+  <!-- HEADER -->
+  <div style="text-align:center;margin-bottom:48px;padding-top:8px">
+    <div style="font-size:48px;margin-bottom:16px">⚡</div>
+    <div style="font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:var(--text);letter-spacing:-.02em;margin-bottom:8px">FundShot User Guide</div>
+    <div style="font-family:'DM Mono',monospace;font-size:.75rem;color:var(--text3);letter-spacing:.1em">Practical guide for FundShot users</div>
+  </div>
+
+  <!-- TOC -->
+  <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:24px 28px;margin-bottom:32px;position:relative;overflow:hidden">
+    <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--p1),transparent)"></div>
+    <div style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--p2);letter-spacing:.15em;text-transform:uppercase;margin-bottom:16px">// Table of Contents</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 32px">
+      <a href="#doc-how" style="color:var(--p2);font-size:.875rem;text-decoration:none;display:flex;align-items:center;gap:8px;padding:4px 0"><span style="color:var(--text3);font-family:monospace;font-size:.8rem">01</span> How FundShot Works</a>
+      <a href="#doc-test" style="color:var(--p2);font-size:.875rem;text-decoration:none;display:flex;align-items:center;gap:8px;padding:4px 0"><span style="color:var(--text3);font-family:monospace;font-size:.8rem">02b</span> 60-Day Live Test</a>
+      <a href="#doc-plans" style="color:var(--p2);font-size:.875rem;text-decoration:none;display:flex;align-items:center;gap:8px;padding:4px 0"><span style="color:var(--text3);font-family:monospace;font-size:.8rem">05</span> Plans & Pricing</a>
+      <a href="#doc-levels" style="color:var(--p2);font-size:.875rem;text-decoration:none;display:flex;align-items:center;gap:8px;padding:4px 0"><span style="color:var(--text3);font-family:monospace;font-size:.8rem">02</span> Alert Levels</a>
+      <a href="#doc-commands" style="color:var(--p2);font-size:.875rem;text-decoration:none;display:flex;align-items:center;gap:8px;padding:4px 0"><span style="color:var(--text3);font-family:monospace;font-size:.8rem">06</span> Telegram Commands</a>
+      <a href="#doc-trading" style="color:var(--p2);font-size:.875rem;text-decoration:none;display:flex;align-items:center;gap:8px;padding:4px 0"><span style="color:var(--text3);font-family:monospace;font-size:.8rem">03</span> Auto-Trading</a>
+      <a href="#doc-guardian" style="color:var(--p2);font-size:.875rem;text-decoration:none;display:flex;align-items:center;gap:8px;padding:4px 0"><span style="color:var(--text3);font-family:monospace;font-size:.8rem">03b</span> Guardian &amp; Dashboard Cards</a>
+      <a href="#doc-referral" style="color:var(--p2);font-size:.875rem;text-decoration:none;display:flex;align-items:center;gap:8px;padding:4px 0"><span style="color:var(--text3);font-family:monospace;font-size:.8rem">07</span> Referral Program</a>
+      <a href="#doc-exchanges" style="color:var(--p2);font-size:.875rem;text-decoration:none;display:flex;align-items:center;gap:8px;padding:4px 0"><span style="color:var(--text3);font-family:monospace;font-size:.8rem">04</span> Supported Exchanges</a>
+      <a href="#doc-oi" style="color:var(--p2);font-size:.875rem;text-decoration:none;display:flex;align-items:center;gap:8px;padding:4px 0"><span style="color:var(--text3);font-family:monospace;font-size:.8rem">08b</span> Open Interest</a>
+      <a href="#doc-alerts-explained" style="color:var(--p2);font-size:.875rem;text-decoration:none;display:flex;align-items:center;gap:8px;padding:4px 0"><span style="color:var(--text3);font-family:monospace;font-size:.8rem">08c</span> Reading Alerts</a>
+      <a href="#doc-glossary" style="color:var(--p2);font-size:.875rem;text-decoration:none;display:flex;align-items:center;gap:8px;padding:4px 0"><span style="color:var(--text3);font-family:monospace;font-size:.8rem">09</span> Glossary</a>
+    </div>
+  </div>
+
+  <!-- 01. HOW IT WORKS -->
+  <div id="doc-how" style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:20px;position:relative;overflow:hidden">
+    <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--p1),transparent)"></div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <span style="font-family:'DM Mono',monospace;font-size:.65rem;background:var(--p1);color:#fff;padding:3px 10px;border-radius:4px;font-weight:700">01</span>
+      <span style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;color:var(--text)">How FundShot Works</span>
+    </div>
+    <p style="color:var(--text2);font-size:.875rem;line-height:1.8;margin-bottom:18px">FundShot monitors the <strong style="color:var(--text)">funding rate</strong> of 500+ perpetual pairs across Bybit, Binance and OKX in real time. Every 60 seconds it fetches all tickers, classifies each pair by funding intensity, and sends Telegram alerts when thresholds are crossed.</p>
+    <div style="background:var(--bg3);border-radius:10px;padding:20px;margin-bottom:18px">
+      <div style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:14px">WORK CYCLE (every 60s)</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;align-items:flex-start;gap:12px;font-size:.875rem;color:var(--text2)"><span style="background:var(--p1);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;flex-shrink:0;margin-top:1px">1</span>Fetch 500+ tickers — funding rate, price, OI, next settlement time</div>
+        <div style="display:flex;align-items:flex-start;gap:12px;font-size:.875rem;color:var(--text2)"><span style="background:var(--p1);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;flex-shrink:0;margin-top:1px">2</span>Classify each pair: SOFT → HIGH → EXTREME → HARD → JACKPOT</div>
+        <div style="display:flex;align-items:flex-start;gap:12px;font-size:.875rem;color:var(--text2)"><span style="background:var(--p1);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;flex-shrink:0;margin-top:1px">3</span>Send Telegram alert with 15m candlestick chart for each new signal</div>
+        <div style="display:flex;align-items:flex-start;gap:12px;font-size:.875rem;color:var(--text2)"><span style="background:var(--p1);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;flex-shrink:0;margin-top:1px">4</span>Auto-trader evaluates position opening for each signal (Pro/Elite)</div>
+        <div style="display:flex;align-items:flex-start;gap:12px;font-size:.875rem;color:var(--text2)"><span style="background:var(--p1);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;flex-shrink:0;margin-top:1px">5</span>Monitor open positions — TP, SL, trailing stop, liquidation detection</div>
+      </div>
+    </div>
+    <div style="background:rgba(45,212,191,.05);border:1px solid rgba(45,212,191,.15);border-radius:10px;padding:14px 18px;font-size:.85rem;color:var(--text2)"><strong style="color:var(--teal2)">💡 Funding rate explained:</strong> A periodic payment (every 1h, 4h or 8h) between longs and shorts. If <strong style="color:var(--teal2)">positive</strong> → longs pay shorts. If <strong style="color:var(--red2)">negative</strong> → shorts pay longs. Extreme rates signal imbalance and often precede a reversal — that is the edge FundShot exploits.</div>
+  </div>
+
+  <!-- 02. ALERT LEVELS -->
+  <div id="doc-levels" style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:20px;position:relative;overflow:hidden">
+    <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--p1),transparent)"></div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <span style="font-family:'DM Mono',monospace;font-size:.65rem;background:var(--p1);color:#fff;padding:3px 10px;border-radius:4px;font-weight:700">02</span>
+      <span style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;color:var(--text)">Alert Levels</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px">
+      <div style="background:var(--bg3);border-left:3px solid rgba(200,200,200,.3);border-radius:8px;padding:14px 16px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-weight:700;color:var(--text)">📊 SOFT</span><span style="font-family:'DM Mono',monospace;font-size:.8rem;color:var(--text3)">≥ ±0.10%</span></div><div style="font-size:.85rem;color:var(--text2)">First threshold. Notable funding, bot starts monitoring. Conservative TP possible.</div></div>
+      <div style="background:var(--bg3);border-left:3px solid #60a5fa;border-radius:8px;padding:14px 16px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-weight:700;color:var(--text)">🚨 HIGH</span><span style="font-family:'DM Mono',monospace;font-size:.8rem;color:var(--text3)">≥ ±1.00%</span></div><div style="font-size:.85rem;color:var(--text2)">Elevated funding — strong opportunity. Alert with chart sent. Pre-settlement warning active.</div></div>
+      <div style="background:var(--bg3);border-left:3px solid #f97316;border-radius:8px;padding:14px 16px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-weight:700;color:var(--text)">🔥 EXTREME</span><span style="font-family:'DM Mono',monospace;font-size:.8rem;color:var(--text3)">≥ ±1.50%</span></div><div style="font-size:.85rem;color:var(--text2)">Very high funding — strong reversal signal. Auto-trader opens with full trailing stop.</div></div>
+      <div style="background:var(--bg3);border-left:3px solid var(--red2);border-radius:8px;padding:14px 16px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-weight:700;color:var(--text)">🔴 HARD</span><span style="font-family:'DM Mono',monospace;font-size:.8rem;color:var(--text3)">≥ ±2.00%</span></div><div style="font-size:.85rem;color:var(--text2)">Extreme funding — highly imbalanced market. Aggressive trailing stop, SL -6%.</div></div>
+      <div style="background:var(--bg3);border-left:3px solid var(--amber2);border-radius:8px;padding:14px 16px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-weight:700;color:var(--text)">🎰 JACKPOT</span><span style="font-family:'DM Mono',monospace;font-size:.8rem;color:var(--text3)">≥ ±3.00%</span></div><div style="font-size:.85rem;color:var(--text2)">Exceptional anomaly — rare and explosive. Maximum trailing buffer. Historically highest win rate.</div></div>
+    </div>
+    <div style="background:var(--bg3);border-radius:10px;padding:16px">
+      <div style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px">EXIT STRATEGY</div>
+      <table style="width:100%;font-size:.8rem;border-collapse:collapse">
+        <tr style="color:var(--text3);border-bottom:1px solid var(--border)"><th style="text-align:left;padding:5px 0">Level</th><th style="text-align:right;padding:5px">TP1</th><th style="text-align:right;padding:5px">Trailing</th><th style="text-align:right;padding:5px">SL</th></tr>
+        <tr style="color:var(--text2)"><td style="padding:6px 0">SOFT / HIGH</td><td style="text-align:right;padding:6px">30% @ 0.5%</td><td style="text-align:right;padding:6px">70% · 0.5%</td><td style="text-align:right;padding:6px">-6%</td></tr>
+        <tr style="color:var(--text2)"><td style="padding:6px 0">EXTREME</td><td style="text-align:right;padding:6px">—</td><td style="text-align:right;padding:6px">100% · 0.8%</td><td style="text-align:right;padding:6px">-6%</td></tr>
+        <tr style="color:var(--text2)"><td style="padding:6px 0">HARD</td><td style="text-align:right;padding:6px">—</td><td style="text-align:right;padding:6px">100% · 1.0%</td><td style="text-align:right;padding:6px">-6%</td></tr>
+        <tr style="color:var(--text2)"><td style="padding:6px 0">JACKPOT</td><td style="text-align:right;padding:6px">—</td><td style="text-align:right;padding:6px">100% · 1.2%</td><td style="text-align:right;padding:6px">-6%</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- 03. AUTO-TRADING -->
+  <div id="doc-trading" style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:20px;position:relative;overflow:hidden">
+    <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--p1),transparent)"></div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <span style="font-family:'DM Mono',monospace;font-size:.65rem;background:var(--p1);color:#fff;padding:3px 10px;border-radius:4px;font-weight:700">03</span>
+      <span style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;color:var(--text)">Auto-Trading <span style="font-size:.7rem;background:rgba(255,193,7,.1);color:var(--amber2);padding:2px 8px;border-radius:4px;font-family:'DM Mono',monospace;font-weight:400;margin-left:4px">⚡ Pro / Elite</span></span>
+    </div>
+    <p style="color:var(--text2);font-size:.875rem;line-height:1.8;margin-bottom:18px">When enabled, FundShot automatically opens positions on extreme funding signals. Enable with <code style="background:var(--bg3);padding:1px 6px;border-radius:4px">/autotrader on</code> or from the Trading page.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px">
+      <div style="background:var(--bg3);border-radius:10px;padding:16px">
+        <div style="font-size:.7rem;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:10px;letter-spacing:.05em;text-transform:uppercase">Bot opens trade when</div>
+        <div style="display:flex;flex-direction:column;gap:6px;font-size:.85rem;color:var(--text2)">
+          <div>✦ Funding exceeds level threshold</div>
+          <div>✦ Symbol in active watchlist</div>
+          <div>✦ No existing position on pair</div>
+          <div>✦ Max positions not reached</div>
+          <div>✦ Not in cooldown period</div>
+        </div>
+      </div>
+      <div style="background:var(--bg3);border-radius:10px;padding:16px">
+        <div style="font-size:.7rem;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:10px;letter-spacing:.05em;text-transform:uppercase">Daily limits</div>
+        <div style="display:flex;flex-direction:column;gap:6px;font-size:.85rem;color:var(--text2)">
+          <div>🆓 Free → auto-trading disabled</div>
+          <div>⚡ Pro → 5 positions / day</div>
+          <div>👑 Elite → unlimited</div>
+          <div style="margin-top:4px;color:var(--text3);font-size:.8rem">Reset at midnight UTC</div>
+        </div>
+      </div>
+    </div>
+    <div style="background:rgba(245,158,11,.05);border:1px solid rgba(245,158,11,.15);border-radius:10px;padding:14px 18px;font-size:.85rem;color:var(--text2)"><strong style="color:var(--amber2)">💡 Direction:</strong> Positive funding → bot opens <strong style="color:var(--red2)">SHORT</strong>. Negative funding → bot opens <strong style="color:var(--teal2)">LONG</strong>. Goal: capture mean reversion while earning funding payments.</div>
+  </div>
+
+  <!-- 03b. SETUP + GUARDIAN + MM + PNL -->
+  <!-- 60-DAY LIVE TEST -->
+  <div id="doc-test" style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:20px;position:relative;overflow:hidden">
+    <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--amber2),transparent)"></div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <span style="font-family:'DM Mono',monospace;font-size:.65rem;background:var(--amber2);color:#000;padding:3px 10px;border-radius:4px;font-weight:700">TEST</span>
+      <span style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;color:var(--text)">60-Day Live Test Results</span>
+    </div>
+    <div style="background:rgba(212,168,67,.06);border:1px solid rgba(212,168,67,.2);border-radius:10px;padding:14px 18px;margin-bottom:20px;font-size:.85rem;color:var(--text2)">
+      Live trading on <strong style="color:var(--text)">Bybit Demo</strong> — real market conditions, real order books, paper capital. Execution identical to live accounts.
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px">
+      <div style="background:var(--bg3);border-radius:10px;padding:16px">
+        <div style="font-size:.7rem;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:12px;letter-spacing:.05em;text-transform:uppercase">Test Configuration</div>
+        <div style="display:flex;flex-direction:column;gap:7px;font-size:.83rem">
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Exchange</span><span style="color:var(--text);font-weight:600">Bybit Demo</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Duration</span><span style="color:var(--text);font-weight:600">60 days</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Capital</span><span style="color:var(--text);font-weight:600">$10,000 USDT</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Size · Leverage</span><span style="color:var(--text);font-weight:600">500 USDT · 10x</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Symbols</span><span style="color:var(--text);font-weight:600">Top 200 Bybit perps</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Guardian</span><span style="color:var(--teal2);font-weight:600">✅ Active</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">MM</span><span style="color:var(--teal2);font-weight:600">✅ Active</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">OI filter</span><span style="color:var(--text);font-weight:600">≥1.5% Δ5m</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Fees (round-trip)</span><span style="color:var(--text);font-weight:600">~0.15%</span></div>
+        </div>
+      </div>
+      <div style="background:var(--bg3);border-radius:10px;padding:16px">
+        <div style="font-size:.7rem;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:12px;letter-spacing:.05em;text-transform:uppercase">Exit Strategy</div>
+        <div style="display:flex;flex-direction:column;gap:7px;font-size:.83rem">
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">TP1 (30% close)</span><span style="color:var(--text);font-weight:600">+0.70%</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">After TP1</span><span style="color:var(--teal2);font-weight:600">SL → breakeven</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Trailing buffer</span><span style="color:var(--text);font-weight:600">0.70%</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Stop loss</span><span style="color:var(--red2);font-weight:600">-5.0%</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Max cap</span><span style="color:var(--text);font-weight:600">+3.0% force close</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Funding exit</span><span style="color:var(--text);font-weight:600">Rate retreats</span></div>
+        </div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+      <div style="background:var(--bg3);border-radius:10px;padding:14px;text-align:center">
+        <div style="font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;color:var(--teal2);line-height:1;margin-bottom:4px" id="dt-wr">—</div>
+        <div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text3);letter-spacing:.08em;text-transform:uppercase">Win Rate</div>
+      </div>
+      <div style="background:var(--bg3);border-radius:10px;padding:14px;text-align:center">
+        <div style="font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;color:var(--text);line-height:1;margin-bottom:4px" id="dt-trades">—</div>
+        <div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text3);letter-spacing:.08em;text-transform:uppercase">Total Trades</div>
+      </div>
+      <div style="background:var(--bg3);border-radius:10px;padding:14px;text-align:center">
+        <div style="font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;color:var(--teal2);line-height:1;margin-bottom:4px" id="dt-return">—</div>
+        <div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text3);letter-spacing:.08em;text-transform:uppercase">Total Return</div>
+      </div>
+      <div style="background:var(--bg3);border-radius:10px;padding:14px;text-align:center">
+        <div style="font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;color:var(--text);line-height:1;margin-bottom:4px">$10,000</div>
+        <div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text3);letter-spacing:.08em;text-transform:uppercase">Starting Capital</div>
+      </div>
+      <div style="background:var(--bg3);border-radius:10px;padding:14px;text-align:center">
+        <div style="font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;color:var(--teal2);line-height:1;margin-bottom:4px" id="dt-final">—</div>
+        <div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text3);letter-spacing:.08em;text-transform:uppercase">Final Capital</div>
+      </div>
+      <div style="background:var(--bg3);border-radius:10px;padding:14px;text-align:center">
+        <div style="font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;color:var(--red2);line-height:1;margin-bottom:4px" id="dt-dd">—</div>
+        <div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text3);letter-spacing:.08em;text-transform:uppercase">Max Drawdown</div>
+      </div>
+    </div>
+  </div>
+
+    <div id="doc-guardian" style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:20px;position:relative;overflow:hidden">
+    <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--p1),transparent)"></div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+      <span style="font-family:'DM Mono',monospace;font-size:.65rem;background:var(--p1);color:#fff;padding:3px 10px;border-radius:4px;font-weight:700">03b</span>
+      <span style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;color:var(--text)">Setup, Guardian &amp; Dashboard Cards <span style="font-size:.7rem;background:rgba(255,193,7,.1);color:var(--amber2);padding:2px 8px;border-radius:4px;font-family:'DM Mono',monospace;font-weight:400;margin-left:4px">⚡ Pro / Elite</span></span>
+    </div>
+    <p style="color:var(--text3);font-size:.8rem;font-family:'DM Mono',monospace;letter-spacing:.05em;margin-bottom:20px">The Trading dashboard gives you full control over three interconnected systems: Money Management, Guardian and PnL tracking.</p>
+
+    <!-- MONEY MANAGEMENT -->
+    <div style="margin-bottom:24px">
+      <div style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--gold);letter-spacing:.15em;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:8px">
+        <span style="width:20px;height:1px;background:var(--gold);opacity:.5;display:inline-block"></span>
+        💰 Money Management — position sizing
+      </div>
+      <p style="color:var(--text2);font-size:.875rem;line-height:1.8;margin-bottom:14px">Before enabling auto-trading, configure how much capital the bot can risk per trade. These three parameters define position size:</p>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px">
+        <div style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:16px">
+          <div style="font-size:.7rem;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">Trade size</div>
+          <div style="font-family:'DM Mono',monospace;font-size:1.1rem;font-weight:700;color:var(--gold2);margin-bottom:4px">e.g. 50 USDT</div>
+          <div style="font-size:.8rem;color:var(--text2)">Notional size of each position. Multiplied by leverage to get the actual margin allocated.</div>
+        </div>
+        <div style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:16px">
+          <div style="font-size:.7rem;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">Leverage</div>
+          <div style="font-family:'DM Mono',monospace;font-size:1.1rem;font-weight:700;color:var(--gold2);margin-bottom:4px">e.g. 5×</div>
+          <div style="font-size:.8rem;color:var(--text2)">Multiplier applied to trade size. Higher leverage = larger exposure, higher risk. Stay ≤ 10× on volatile pairs.</div>
+        </div>
+        <div style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:16px">
+          <div style="font-size:.7rem;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">Max positions</div>
+          <div style="font-family:'DM Mono',monospace;font-size:1.1rem;font-weight:700;color:var(--gold2);margin-bottom:4px">e.g. 4</div>
+          <div style="font-size:.8rem;color:var(--text2)">Maximum concurrent open trades. Prevents over-exposure when many signals fire simultaneously.</div>
+        </div>
+      </div>
+      <div style="background:rgba(212,168,67,.06);border:1px solid rgba(212,168,67,.15);border-radius:10px;padding:14px 18px;font-size:.85rem;color:var(--text2)">
+        <strong style="color:var(--gold2)">📐 Example calculation:</strong><br>
+        Trade size <code style="background:rgba(0,0,0,.3);padding:1px 6px;border-radius:4px">50 USDT</code> × Leverage <code style="background:rgba(0,0,0,.3);padding:1px 6px;border-radius:4px">5×</code> = <strong style="color:var(--text)">250 USDT position size</strong>.
+        Max drawdown per trade with SL -6% = <strong style="color:var(--red2)">-15 USDT</strong> (6% of 250).
+        With 4 max positions, worst case simultaneous loss = <strong style="color:var(--red2)">-60 USDT</strong>.
+        Always set trade size so that total worst-case loss is ≤ 5% of your account balance.
+      </div>
+    </div>
+
+    <!-- GUARDIAN -->
+    <div style="margin-bottom:24px">
+      <div style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--teal2);letter-spacing:.15em;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:8px">
+        <span style="width:20px;height:1px;background:var(--teal2);opacity:.5;display:inline-block"></span>
+        🛡️ Guardian — the risk engine that protects your capital
+      </div>
+      <p style="color:var(--text2);font-size:.875rem;line-height:1.8;margin-bottom:14px">Guardian is FundShot's proprietary automated risk system — a feature no competitor offers. It monitors your bot's performance in real time and automatically <strong style="color:var(--text)">pauses trading</strong> when it detects danger, then resumes when conditions normalize. You don't need to watch the screen. Guardian watches for you.</p>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
+        <div style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:16px;display:grid;grid-template-columns:180px 1fr;gap:16px;align-items:start">
+          <div>
+            <div style="font-weight:700;color:var(--text);margin-bottom:4px">📉 Max Drawdown</div>
+            <div style="font-family:'DM Mono',monospace;font-size:.7rem;color:var(--teal2)">Default: 10%</div>
+          </div>
+          <div style="font-size:.85rem;color:var(--text2);line-height:1.6">Total capital loss since session start. If your unrealized + realized losses exceed this threshold, Guardian locks the bot and sends you a Telegram alert. You can reset it manually once you have reviewed the situation. Formula: <code style="background:rgba(0,0,0,.3);padding:1px 5px;border-radius:4px">(session_start_balance - current_balance) / session_start_balance</code></div>
+        </div>
+        <div style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:16px;display:grid;grid-template-columns:180px 1fr;gap:16px;align-items:start">
+          <div>
+            <div style="font-weight:700;color:var(--text);margin-bottom:4px">❌ Consecutive Losses</div>
+            <div style="font-family:'DM Mono',monospace;font-size:.7rem;color:var(--amber2)">Default: 3</div>
+          </div>
+          <div style="font-size:.85rem;color:var(--text2);line-height:1.6">If the bot closes N losing trades in a row, Guardian activates a <strong style="color:var(--text)">cooldown period</strong> and stops opening new positions. This prevents the bot from "tilt trading" — chasing losses in adverse market conditions. Counter resets on a profitable trade.</div>
+        </div>
+        <div style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:16px;display:grid;grid-template-columns:180px 1fr;gap:16px;align-items:start">
+          <div>
+            <div style="font-weight:700;color:var(--text);margin-bottom:4px">💸 Daily Loss Limit</div>
+            <div style="font-family:'DM Mono',monospace;font-size:.7rem;color:var(--red2)">Default: 100 USDT</div>
+          </div>
+          <div style="font-size:.85rem;color:var(--text2);line-height:1.6">Maximum USDT you can lose in a single calendar day (UTC midnight reset). Once reached, the bot stops for the rest of the day regardless of signal quality. Essential for prop-firm funded accounts and disciplined personal accounts alike.</div>
+        </div>
+        <div style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:16px;display:grid;grid-template-columns:180px 1fr;gap:16px;align-items:start">
+          <div>
+            <div style="font-weight:700;color:var(--text);margin-bottom:4px">⏸️ Cooldown</div>
+            <div style="font-family:'DM Mono',monospace;font-size:.7rem;color:var(--text3)">Auto / Manual</div>
+          </div>
+          <div style="font-size:.85rem;color:var(--text2);line-height:1.6">A waiting period triggered by consecutive losses. During cooldown, the bot monitors but does not open trades. Cooldown duration is configurable. Use the <strong style="color:var(--text)">↺ Reset</strong> button in the Guardian card to clear it manually if you've reviewed the market conditions and want to resume early.</div>
+        </div>
+      </div>
+      <div style="background:rgba(0,201,167,.05);border:1px solid rgba(0,201,167,.15);border-radius:10px;padding:14px 18px;font-size:.85rem;color:var(--text2)">
+        <strong style="color:var(--teal2)">🛡️ Guardian Status Bar:</strong> The colored banner at the top of the Trading page shows Guardian's current state in real time:
+        <span style="display:inline-flex;align-items:center;gap:5px;background:rgba(0,201,167,.1);border:1px solid rgba(0,201,167,.2);border-radius:5px;padding:2px 8px;margin:0 4px;font-family:monospace;font-size:.75rem;color:var(--teal2)">🟢 SAFE</span> all limits OK —
+        <span style="display:inline-flex;align-items:center;gap:5px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);border-radius:5px;padding:2px 8px;margin:0 4px;font-family:monospace;font-size:.75rem;color:var(--amber2)">🟡 WARN</span> approaching a limit —
+        <span style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,77,109,.1);border:1px solid rgba(255,77,109,.2);border-radius:5px;padding:2px 8px;margin:0 4px;font-family:monospace;font-size:.75rem;color:var(--red2)">🔴 LOCKED</span> bot paused, action required.
+      </div>
+    </div>
+
+    <!-- PNL -->
+    <div>
+      <div style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--p2);letter-spacing:.15em;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:8px">
+        <span style="width:20px;height:1px;background:var(--p2);opacity:.5;display:inline-block"></span>
+        📊 PnL Cards — reading your performance
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+        <div style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:16px">
+          <div style="font-weight:700;color:var(--text);margin-bottom:8px;font-size:.9rem">💰 Realized PnL</div>
+          <div style="font-size:.85rem;color:var(--text2);line-height:1.6">Profit and loss from <strong style="color:var(--text)">closed trades only</strong>. This is real money that has been settled on your exchange. Includes trading fees automatically. The bar chart below shows the last 20 sessions so you can spot trends.</div>
+        </div>
+        <div style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:16px">
+          <div style="font-weight:700;color:var(--text);margin-bottom:8px;font-size:.9rem">📈 Unrealized PnL</div>
+          <div style="font-size:.85rem;color:var(--text2);line-height:1.6">Current floating P&amp;L on <strong style="color:var(--text)">open positions</strong>. Changes every second with the market price. Not settled until the trade closes. Guardian includes unrealized losses in its drawdown calculation.</div>
+        </div>
+        <div style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:16px">
+          <div style="font-weight:700;color:var(--text);margin-bottom:8px;font-size:.9rem">🏆 Win Rate</div>
+          <div style="font-size:.85rem;color:var(--text2);line-height:1.6">Percentage of closed trades that were profitable. Formula: <code style="background:rgba(0,0,0,.3);padding:1px 5px;border-radius:4px">wins / (wins + losses)</code>. A win rate above 55% with good R:R is considered excellent for mean reversion strategies.</div>
+        </div>
+        <div style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:16px">
+          <div style="font-weight:700;color:var(--text);margin-bottom:8px;font-size:.9rem">⚡ R:R Ratio</div>
+          <div style="font-size:.85rem;color:var(--text2);line-height:1.6">Average risk-to-reward per trade. Formula: <code style="background:rgba(0,0,0,.3);padding:1px 5px;border-radius:4px">avg_win / avg_loss</code>. FundShot's trailing stop strategy targets R:R ≥ 1.5 — meaning you earn more on winners than you lose on losers.</div>
+        </div>
+      </div>
+      <div style="background:rgba(212,168,67,.06);border:1px solid rgba(212,168,67,.15);border-radius:10px;padding:14px 18px;font-size:.85rem;color:var(--text2)">
+        <strong style="color:var(--gold2)">💡 Recommended starting config:</strong>
+        Trade size <code style="background:rgba(0,0,0,.3);padding:1px 6px;border-radius:4px">50 USDT</code> · Leverage <code style="background:rgba(0,0,0,.3);padding:1px 6px;border-radius:4px">5×</code> · Max positions <code style="background:rgba(0,0,0,.3);padding:1px 6px;border-radius:4px">3</code> · Max drawdown <code style="background:rgba(0,0,0,.3);padding:1px 6px;border-radius:4px">8%</code> · Consecutive losses <code style="background:rgba(0,0,0,.3);padding:1px 6px;border-radius:4px">3</code> · Daily limit <code style="background:rgba(0,0,0,.3);padding:1px 6px;border-radius:4px">75 USDT</code>.
+        Run on Demo first for 7 days, validate win rate, then switch to Live.
+      </div>
+    </div>
+  </div>
+
+  <!-- 04. EXCHANGES -->
+  <div id="doc-exchanges" style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:20px;position:relative;overflow:hidden">
+    <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--p1),transparent)"></div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <span style="font-family:'DM Mono',monospace;font-size:.65rem;background:var(--p1);color:#fff;padding:3px 10px;border-radius:4px;font-weight:700">04</span>
+      <span style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;color:var(--text)">Supported Exchanges</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px">
+      <div style="background:var(--bg3);border-radius:12px;padding:20px;text-align:center"><div style="font-size:1.4rem;margin-bottom:8px">🟡</div><div style="font-weight:700;margin-bottom:4px">Bybit</div><div style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--teal2)">✅ LIVE</div><div style="font-size:.75rem;color:var(--text3);margin-top:6px">Demo + Live · 543 pairs</div></div>
+      <div style="background:var(--bg3);border-radius:12px;padding:20px;text-align:center"><div style="font-size:1.4rem;margin-bottom:8px">🟠</div><div style="font-weight:700;margin-bottom:4px">Binance</div><div style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--teal2)">✅ LIVE</div><div style="font-size:.75rem;color:var(--text3);margin-top:6px">FAPI futures · 400+ pairs</div></div>
+      <div style="background:var(--bg3);border-radius:12px;padding:20px;text-align:center"><div style="font-size:1.4rem;margin-bottom:8px">🔵</div><div style="font-weight:700;margin-bottom:4px">OKX</div><div style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--teal2)">✅ LIVE</div><div style="font-size:.75rem;color:var(--text3);margin-top:6px">Swap perpetual · Paper mode</div></div>
+    </div>
+    <div style="background:var(--bg3);border-radius:10px;padding:14px 18px;font-size:.85rem;color:var(--text2)"><strong style="color:var(--text)">Setup:</strong> Go to <code style="background:var(--bg2);padding:1px 6px;border-radius:4px">/start</code> → choose exchange → Demo or Live → enter API key → API secret (+ passphrase for OKX). Keys encrypted AES-256. Use <strong>trading permissions only</strong>, never withdrawal.</div>
+  </div>
+
+  <!-- 05. PLANS & PRICING -->
+  <div id="doc-plans" style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:20px;position:relative;overflow:hidden">
+    <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--p1),transparent)"></div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <span style="font-family:'DM Mono',monospace;font-size:.65rem;background:var(--p1);color:#fff;padding:3px 10px;border-radius:4px;font-weight:700">05</span>
+      <span style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;color:var(--text)">Plans &amp; Pricing</span>
+    </div>
+    <div style="overflow-x:auto;margin-bottom:18px">
+      <table style="width:100%;border-collapse:collapse;font-size:.85rem">
+        <thead><tr style="border-bottom:1px solid var(--border)">
+          <th style="text-align:left;padding:10px 12px;color:var(--text3);font-family:'DM Mono',monospace;font-size:.65rem;letter-spacing:.05em">FEATURE</th>
+          <th style="text-align:center;padding:10px 12px;color:var(--text3);font-family:'DM Mono',monospace;font-size:.65rem">FREE</th>
+          <th style="text-align:center;padding:10px 12px;color:var(--amber2);font-family:'DM Mono',monospace;font-size:.65rem">⚡ PRO</th>
+          <th style="text-align:center;padding:10px 12px;color:var(--p2);font-family:'DM Mono',monospace;font-size:.65rem">👑 ELITE</th>
+        </tr></thead>
+        <thead><tr style="border-bottom:1px solid var(--border)">
+          <th style="text-align:left;padding:10px 12px;color:var(--text3);font-family:'DM Mono',monospace;font-size:.65rem;letter-spacing:.05em">FEATURE</th>
+          <th style="text-align:center;padding:10px 12px;color:var(--text3);font-family:'DM Mono',monospace;font-size:.65rem">FREE</th>
+          <th style="text-align:center;padding:10px 12px;color:var(--amber2);font-family:'DM Mono',monospace;font-size:.65rem">⚡ PRO</th>
+          <th style="text-align:center;padding:10px 12px;color:var(--p2);font-family:'DM Mono',monospace;font-size:.65rem">👑 ELITE</th>
+          <th style="text-align:center;padding:10px 12px;color:var(--teal2);font-family:'DM Mono',monospace;font-size:.65rem">♾️ LIFETIME</th>
+        </tr></thead>
+        <tbody>
+          <tr style="border-bottom:1px solid var(--border)"><td style="padding:9px 12px;color:var(--text2)">Price (recurring / month)</td><td style="text-align:center;padding:9px 12px">$0</td><td style="text-align:center;padding:9px 12px;color:var(--amber2)">$20/mo</td><td style="text-align:center;padding:9px 12px;color:var(--p2)">$45/mo</td><td style="text-align:center;padding:9px 12px;color:var(--teal2)">—</td></tr>
+          <tr style="border-bottom:1px solid var(--border)"><td style="padding:9px 12px;color:var(--text2)">One-shot (30 days)</td><td style="text-align:center;padding:9px 12px">—</td><td style="text-align:center;padding:9px 12px;color:var(--amber2)">$25</td><td style="text-align:center;padding:9px 12px;color:var(--p2)">$55</td><td style="text-align:center;padding:9px 12px;color:var(--teal2)">—</td></tr>
+          <tr style="border-bottom:1px solid var(--border)"><td style="padding:9px 12px;color:var(--text2)">Lifetime (pay once)</td><td style="text-align:center;padding:9px 12px">—</td><td style="text-align:center;padding:9px 12px">—</td><td style="text-align:center;padding:9px 12px">—</td><td style="text-align:center;padding:9px 12px;color:var(--teal2);font-weight:700">$300</td></tr>
+          <tr style="border-bottom:1px solid var(--border)"><td style="padding:9px 12px;color:var(--text2)">Alerts per day</td><td style="text-align:center;padding:9px 12px">10</td><td style="text-align:center;padding:9px 12px;color:var(--teal2)">Unlimited</td><td style="text-align:center;padding:9px 12px;color:var(--teal2)">Unlimited</td><td style="text-align:center;padding:9px 12px;color:var(--teal2)">Unlimited</td></tr>
+          <tr style="border-bottom:1px solid var(--border)"><td style="padding:9px 12px;color:var(--text2)">Alert filter (/alertfilter)</td><td style="text-align:center;padding:9px 12px;color:var(--text3)">—</td><td style="text-align:center;padding:9px 12px;color:var(--teal2)">✓</td><td style="text-align:center;padding:9px 12px;color:var(--teal2)">✓</td><td style="text-align:center;padding:9px 12px;color:var(--teal2)">✓</td></tr>
+          <tr style="border-bottom:1px solid var(--border)"><td style="padding:9px 12px;color:var(--text2)">Pre-settlement alerts</td><td style="text-align:center;padding:9px 12px;color:var(--text3)">—</td><td style="text-align:center;padding:9px 12px;color:var(--teal2)">✓</td><td style="text-align:center;padding:9px 12px;color:var(--teal2)">✓</td><td style="text-align:center;padding:9px 12px;color:var(--teal2)">✓</td></tr>
+          <tr style="border-bottom:1px solid var(--border)"><td style="padding:9px 12px;color:var(--text2)">Auto-trading</td><td style="text-align:center;padding:9px 12px;color:var(--text3)">—</td><td style="text-align:center;padding:9px 12px;color:var(--teal2)">5 pos/day</td><td style="text-align:center;padding:9px 12px;color:var(--teal2)">Unlimited</td><td style="text-align:center;padding:9px 12px;color:var(--teal2)">Unlimited</td></tr>
+          <tr style="border-bottom:1px solid var(--border)"><td style="padding:9px 12px;color:var(--text2)">Exchanges</td><td style="text-align:center;padding:9px 12px">1 (alerts)</td><td style="text-align:center;padding:9px 12px;color:var(--teal2)">1</td><td style="text-align:center;padding:9px 12px;color:var(--teal2)">Bybit + Binance + OKX</td><td style="text-align:center;padding:9px 12px;color:var(--teal2)">Bybit + Binance + OKX</td></tr>
+          <tr style="border-bottom:1px solid var(--border)"><td style="padding:9px 12px;color:var(--text2)">Guardian risk engine</td><td style="text-align:center;padding:9px 12px;color:var(--text3)">—</td><td style="text-align:center;padding:9px 12px;color:var(--teal2)">✓</td><td style="text-align:center;padding:9px 12px;color:var(--teal2)">✓</td><td style="text-align:center;padding:9px 12px;color:var(--teal2)">✓</td></tr>
+          <tr style="border-bottom:1px solid var(--border)"><td style="padding:9px 12px;color:var(--text2)">Future updates</td><td style="text-align:center;padding:9px 12px;color:var(--text3)">—</td><td style="text-align:center;padding:9px 12px;color:var(--text3)">—</td><td style="text-align:center;padding:9px 12px;color:var(--text3)">—</td><td style="text-align:center;padding:9px 12px;color:var(--teal2);font-weight:700">Forever ✓</td></tr>
+          <tr><td style="padding:9px 12px;color:var(--text2)">Referral commission</td><td style="text-align:center;padding:9px 12px;color:var(--teal2)">10%</td><td style="text-align:center;padding:9px 12px;color:var(--teal2)">10%</td><td style="text-align:center;padding:9px 12px;color:var(--teal2)">10%</td><td style="text-align:center;padding:9px 12px;color:var(--teal2)">10%</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="background:var(--bg3);border-radius:10px;padding:14px 18px;font-size:.85rem;color:var(--text2)"><strong style="color:var(--amber2)">Payment:</strong> Crypto only — USDT (TRC20/SOL), BTC, ETH, SOL, BNB, TON. Use <code style="background:var(--bg2);padding:1px 6px;border-radius:4px">/upgrade</code> in the bot. Plans activate automatically after blockchain confirmation. Recurring: NOWPayments sends monthly invoice by email.</div>
+  </div>
+
+  <!-- 06. COMMANDS -->
+  <div id="doc-commands" style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:20px;position:relative;overflow:hidden">
+    <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--p1),transparent)"></div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <span style="font-family:'DM Mono',monospace;font-size:.65rem;background:var(--p1);color:#fff;padding:3px 10px;border-radius:4px;font-weight:700">06</span>
+      <span style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;color:var(--text)">Telegram Commands</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:5px">
+      <div style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;padding:8px 0 3px">FUNDING RATES</div>
+      <div style="display:flex;gap:12px;padding:8px 12px;background:var(--bg3);border-radius:8px;font-size:.85rem"><code style="color:var(--p2);min-width:130px;flex-shrink:0">/top10</code><span style="color:var(--text2)">Top 10 SHORT + LONG funding rates live</span></div>
+      <div style="display:flex;gap:12px;padding:8px 12px;background:var(--bg3);border-radius:8px;font-size:.85rem"><code style="color:var(--p2);min-width:130px;flex-shrink:0">/storico SYM</code><span style="color:var(--text2)">Last 8 funding cycles</span></div>
+      <div style="display:flex;gap:12px;padding:8px 12px;background:var(--bg3);border-radius:8px;font-size:.85rem"><code style="color:var(--p2);min-width:130px;flex-shrink:0">/storico SYM 7g</code><span style="color:var(--text2)">7-day history with statistics</span></div>
+      <div style="display:flex;gap:12px;padding:8px 12px;background:var(--bg3);border-radius:8px;font-size:.85rem"><code style="color:var(--p2);min-width:130px;flex-shrink:0">/backtest SYM</code><span style="color:var(--text2)">Simulate 30-day P&amp;L ⚡ Pro</span></div>
+      <div style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;padding:12px 0 3px">ACCOUNT</div>
+      <div style="display:flex;gap:12px;padding:8px 12px;background:var(--bg3);border-radius:8px;font-size:.85rem"><code style="color:var(--p2);min-width:130px;flex-shrink:0">/saldo</code><span style="color:var(--text2)">Wallet balance per exchange</span></div>
+      <div style="display:flex;gap:12px;padding:8px 12px;background:var(--bg3);border-radius:8px;font-size:.85rem"><code style="color:var(--p2);min-width:130px;flex-shrink:0">/posizioni</code><span style="color:var(--text2)">Open positions with PnL</span></div>
+      <div style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;padding:12px 0 3px">AUTO-TRADING ⚡ PRO</div>
+      <div style="display:flex;gap:12px;padding:8px 12px;background:var(--bg3);border-radius:8px;font-size:.85rem"><code style="color:var(--p2);min-width:130px;flex-shrink:0">/autotrader</code><span style="color:var(--text2)">Show status / on / off</span></div>
+      <div style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;padding:12px 0 3px">WATCHLIST</div>
+      <div style="display:flex;gap:12px;padding:8px 12px;background:var(--bg3);border-radius:8px;font-size:.85rem"><code style="color:var(--p2);min-width:130px;flex-shrink:0">/watchlist</code><span style="color:var(--text2)">Full watchlist status</span></div>
+      <div style="display:flex;gap:12px;padding:8px 12px;background:var(--bg3);border-radius:8px;font-size:.85rem"><code style="color:var(--p2);min-width:130px;flex-shrink:0">/watch BTC ETH</code><span style="color:var(--text2)">Add symbols</span></div>
+      <div style="display:flex;gap:12px;padding:8px 12px;background:var(--bg3);border-radius:8px;font-size:.85rem"><code style="color:var(--p2);min-width:130px;flex-shrink:0">/unwatch SYM</code><span style="color:var(--text2)">Remove (or /unwatch all)</span></div>
+      <div style="display:flex;gap:12px;padding:8px 12px;background:var(--bg3);border-radius:8px;font-size:.85rem"><code style="color:var(--p2);min-width:130px;flex-shrink:0">/mute /unmute</code><span style="color:var(--text2)">Silence or reactivate alerts</span></div>
+      <div style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;padding:12px 0 3px">SUBSCRIPTION</div>
+      <div style="display:flex;gap:12px;padding:8px 12px;background:var(--bg3);border-radius:8px;font-size:.85rem"><code style="color:var(--p2);min-width:130px;flex-shrink:0">/plan</code><span style="color:var(--text2)">Your plan, expiry, billing type</span></div>
+      <div style="display:flex;gap:12px;padding:8px 12px;background:var(--bg3);border-radius:8px;font-size:.85rem"><code style="color:var(--p2);min-width:130px;flex-shrink:0">/upgrade</code><span style="color:var(--text2)">Upgrade to Pro or Elite — pay with crypto</span></div>
+      <div style="display:flex;gap:12px;padding:8px 12px;background:var(--bg3);border-radius:8px;font-size:.85rem"><code style="color:var(--p2);min-width:130px;flex-shrink:0">/referral</code><span style="color:var(--text2)">Referral link, stats and earnings</span></div>
+      <div style="display:flex;gap:12px;padding:8px 12px;background:var(--bg3);border-radius:8px;font-size:.85rem"><code style="color:var(--p2);min-width:130px;flex-shrink:0">/setwallet</code><span style="color:var(--text2)">Set USDT TRC20 wallet for payouts</span></div>
+      <div style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;padding:12px 0 3px">ALERT CONTROL</div>
+      <div style="display:flex;gap:12px;padding:8px 12px;background:var(--bg3);border-radius:8px;font-size:.85rem"><code style="color:var(--p2);min-width:160px;flex-shrink:0">/alertfilter</code><span style="color:var(--text2)">Show current alert filter settings</span></div>
+      <div style="display:flex;gap:12px;padding:8px 12px;background:var(--bg3);border-radius:8px;font-size:.85rem"><code style="color:var(--p2);min-width:160px;flex-shrink:0">/alertfilter level 2</code><span style="color:var(--text2)">Only receive EXTREME and above (0=all, 1=HIGH+, 2=EXTREME+, 3=HARD+, 4=JACKPOT)</span></div>
+      <div style="display:flex;gap:12px;padding:8px 12px;background:var(--bg3);border-radius:8px;font-size:.85rem"><code style="color:var(--p2);min-width:160px;flex-shrink:0">/alertfilter cooldown 30</code><span style="color:var(--text2)">Min 30 min between alerts for the same symbol (reduces noise)</span></div>
+      <div style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;padding:12px 0 3px">SETTINGS</div>
+      <div style="display:flex;gap:12px;padding:8px 12px;background:var(--bg3);border-radius:8px;font-size:.85rem"><code style="color:var(--p2);min-width:160px;flex-shrink:0">/start</code><span style="color:var(--text2)">Configure exchange API keys</span></div>
+      <div style="display:flex;gap:12px;padding:8px 12px;background:var(--bg3);border-radius:8px;font-size:.85rem"><code style="color:var(--p2);min-width:160px;flex-shrink:0">/deletekeys</code><span style="color:var(--text2)">Remove all your API keys</span></div>
+      <div style="display:flex;gap:12px;padding:8px 12px;background:var(--bg3);border-radius:8px;font-size:.85rem"><code style="color:var(--p2);min-width:160px;flex-shrink:0">/help</code><span style="color:var(--text2)">Show all commands with your current plan</span></div>
+    </div>
+  </div>
+
+  <!-- 07. REFERRAL -->
+  <div id="doc-referral" style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:20px;position:relative;overflow:hidden">
+    <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--p1),transparent)"></div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <span style="font-family:'DM Mono',monospace;font-size:.65rem;background:var(--p1);color:#fff;padding:3px 10px;border-radius:4px;font-weight:700">07</span>
+      <span style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;color:var(--text)">Referral Program</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px">
+      <div style="background:var(--bg3);border-radius:12px;padding:20px"><div style="font-size:1.5rem;margin-bottom:8px">🔗</div><div style="font-weight:700;margin-bottom:6px">Standard Referral</div><div style="font-size:.85rem;color:var(--text2);line-height:1.6">Share your link. Every payment from your referrals earns you <strong style="color:var(--amber2)">10% commission</strong> — forever, including renewals.</div></div>
+      <div style="background:var(--bg3);border-radius:12px;padding:20px;border:1px solid rgba(245,158,11,.2)"><div style="font-size:1.5rem;margin-bottom:8px">👑</div><div style="font-weight:700;margin-bottom:6px">Influencer Link</div><div style="font-size:.85rem;color:var(--text2);line-height:1.6">Admin-assigned. Your link gives users a permanent <strong style="color:var(--amber2)">5% discount</strong>. You still earn 10% commission on all their payments.</div></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px;font-size:.875rem">
+      <div style="display:flex;gap:10px;padding:9px 14px;background:var(--bg3);border-radius:8px;color:var(--text2)"><span style="color:var(--p2)">①</span>Use <code style="background:var(--bg2);padding:1px 6px;border-radius:4px">/referral</code> to get your personal link</div>
+      <div style="display:flex;gap:10px;padding:9px 14px;background:var(--bg3);border-radius:8px;color:var(--text2)"><span style="color:var(--p2)">②</span>Share on Telegram, X, Discord, anywhere</div>
+      <div style="display:flex;gap:10px;padding:9px 14px;background:var(--bg3);border-radius:8px;color:var(--text2)"><span style="color:var(--p2)">③</span>Friend pays → you earn 10% automatically (forever)</div>
+      <div style="display:flex;gap:10px;padding:9px 14px;background:var(--bg3);border-radius:8px;color:var(--text2)"><span style="color:var(--p2)">④</span>Monthly payout every 1st of the month (min $5 USDT)</div>
+      <div style="display:flex;gap:10px;padding:9px 14px;background:var(--bg3);border-radius:8px;color:var(--text2)"><span style="color:var(--p2)">⑤</span>Set your wallet: <code style="background:var(--bg2);padding:1px 6px;border-radius:4px">/setwallet YOUR_USDT_TRC20</code></div>
+    </div>
+  </div>
+
+  <!-- 08b. OPEN INTEREST -->
+  <div id="doc-oi" style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:20px;position:relative;overflow:hidden">
+    <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--p1),transparent)"></div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <span style="font-family:'DM Mono',monospace;font-size:.65rem;background:var(--p1);color:#fff;padding:3px 10px;border-radius:4px;font-weight:700">08b</span>
+      <span style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;color:var(--text)">Open Interest — what it is and how FundShot uses it</span>
+    </div>
+    <p style="color:var(--text2);font-size:.875rem;line-height:1.8;margin-bottom:18px"><strong style="color:var(--text)">Open Interest (OI)</strong> is the total number of outstanding derivative contracts (perpetual futures) that have not been settled. It represents the total market exposure at any given moment — how much capital is currently committed to open positions on a given pair.</p>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px">
+      <div style="background:rgba(0,201,167,.06);border:1px solid rgba(0,201,167,.15);border-radius:12px;padding:16px">
+        <div style="font-weight:700;color:var(--teal2);margin-bottom:8px;font-size:.9rem">📈 OI Rising</div>
+        <div style="font-size:.85rem;color:var(--text2);line-height:1.6">New money entering the market. More participants opening positions. When combined with extreme funding, it confirms that the imbalance is getting <strong style="color:var(--text)">larger and more unstable</strong> — a stronger reversal signal.</div>
+      </div>
+      <div style="background:rgba(255,77,109,.06);border:1px solid rgba(255,77,109,.15);border-radius:12px;padding:16px">
+        <div style="font-weight:700;color:var(--red2);margin-bottom:8px;font-size:.9rem">📉 OI Falling</div>
+        <div style="font-size:.85rem;color:var(--text2);line-height:1.6">Positions being closed. Money leaving the market. When OI drops sharply while funding is still extreme, it may signal a <strong style="color:var(--text)">liquidation cascade</strong> already underway — the reversal has started.</div>
+      </div>
+    </div>
+
+    <div style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--gold);letter-spacing:.15em;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:8px">
+      <span style="width:20px;height:1px;background:var(--gold);opacity:.5;display:inline-block"></span>
+      How FundShot uses OI
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px">
+      <div style="display:flex;gap:12px;padding:10px 14px;background:rgba(255,255,255,.025);border-radius:10px;font-size:.875rem;color:var(--text2)">
+        <span style="color:var(--gold);font-weight:700;flex-shrink:0">01</span>
+        <span><strong style="color:var(--text)">Signal confirmation:</strong> An extreme funding rate alone is a signal. Extreme funding <em>plus</em> a spike in OI is a much stronger signal. FundShot cross-references both before sending HARD or JACKPOT alerts.</span>
+      </div>
+      <div style="display:flex;gap:12px;padding:10px 14px;background:rgba(255,255,255,.025);border-radius:10px;font-size:.875rem;color:var(--text2)">
+        <span style="color:var(--gold);font-weight:700;flex-shrink:0">02</span>
+        <span><strong style="color:var(--text)">OI spike monitor:</strong> Every 5 minutes, the bot scans for sudden OI increases (&gt;15% in 1 hour) on pairs with funding ≥ 0.3%. These are flagged as priority candidates and appear in the monitoring list.</span>
+      </div>
+      <div style="display:flex;gap:12px;padding:10px 14px;background:rgba(255,255,255,.025);border-radius:10px;font-size:.875rem;color:var(--text2)">
+        <span style="color:var(--gold);font-weight:700;flex-shrink:0">03</span>
+        <span><strong style="color:var(--text)">Pre-monitoring:</strong> Pairs with HIGH+ funding AND elevated OI enter the "monitoring" list before a trade is opened. The bot watches for the optimal entry window as the funding cycle approaches settlement.</span>
+      </div>
+      <div style="display:flex;gap:12px;padding:10px 14px;background:rgba(255,255,255,.025);border-radius:10px;font-size:.875rem;color:var(--text2)">
+        <span style="color:var(--gold);font-weight:700;flex-shrink:0">04</span>
+        <span><strong style="color:var(--text)">Alert enrichment:</strong> Every alert — funding rate, level change, pre-settlement, OI spike — includes the <code style="background:rgba(0,0,0,.3);padding:1px 5px;border-radius:4px">📈 OI 5m</code> line showing the percentage change in open interest over the last 5 minutes. A rising OI with extreme negative funding is the highest-conviction long setup.</span>
+      </div>
+    </div>
+
+    <div style="background:rgba(212,168,67,.06);border:1px solid rgba(212,168,67,.15);border-radius:10px;padding:14px 18px;font-size:.85rem;color:var(--text2)">
+      <strong style="color:var(--gold2)">📐 OI + Funding matrix:</strong><br>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;font-size:.8rem">
+        <div style="padding:8px 12px;background:rgba(0,201,167,.08);border-radius:8px;border:1px solid rgba(0,201,167,.2)"><strong style="color:var(--teal2)">OI ↑ + Funding extreme</strong><br><span style="color:var(--text2)">Strongest setup. Imbalance building. High probability reversal.</span></div>
+        <div style="padding:8px 12px;background:rgba(212,168,67,.08);border-radius:8px;border:1px solid rgba(212,168,67,.2)"><strong style="color:var(--gold2)">OI stable + Funding extreme</strong><br><span style="color:var(--text2)">Good setup. Funding is paying but market not overextended.</span></div>
+        <div style="padding:8px 12px;background:rgba(245,158,11,.08);border-radius:8px;border:1px solid rgba(245,158,11,.2)"><strong style="color:var(--amber2)">OI ↓ + Funding extreme</strong><br><span style="color:var(--text2)">Caution. Reversal may already be happening. Tighter SL.</span></div>
+        <div style="padding:8px 12px;background:rgba(90,82,120,.15);border-radius:8px;border:1px solid rgba(90,82,120,.3)"><strong style="color:var(--text2)">OI ↓ + Funding normal</strong><br><span style="color:var(--text2)">No signal. Market unwinding, no edge.</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 08c. READING ALERTS -->
+  <div id="doc-alerts-explained" style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:20px;position:relative;overflow:hidden">
+    <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--p1),transparent)"></div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <span style="font-family:'DM Mono',monospace;font-size:.65rem;background:var(--p1);color:#fff;padding:3px 10px;border-radius:4px;font-weight:700">08c</span>
+      <span style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;color:var(--text)">Reading Alerts — every field explained</span>
+    </div>
+    <p style="color:var(--text2);font-size:.875rem;line-height:1.8;margin-bottom:20px">Every FundShot alert sent to Telegram contains a precise set of data. Here is what each field means and how to interpret it.</p>
+
+    <!-- Alert example visual -->
+    <div style="background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:20px;margin-bottom:20px;font-family:'DM Mono',monospace;font-size:.8rem;line-height:2">
+      <div style="color:var(--amber2);font-size:.9rem;font-weight:700;margin-bottom:4px">🎰 JACKPOT</div>
+      <div style="color:var(--text);font-size:.75rem;margin-bottom:2px">━━━━━━━━━━━━━━━━━━</div>
+      <div style="color:var(--text2)">📌 <strong style="color:var(--text)">DOODUSDT</strong></div>
+      <div style="color:var(--text2)">📊 Rate: <span style="color:var(--red2)">-3.2800%</span> (ogni 8h)</div>
+      <div style="color:var(--text2)">💵 Price: <span style="color:var(--text)">$0.04821</span> &nbsp;|&nbsp; 24h: ▼ <span style="color:var(--red2)">-1.23%</span></div>
+      <div style="color:var(--text2)">📈 OI 5m: <span style="color:var(--teal2)">▲ +12.4%</span></div>
+      <div style="color:var(--text);font-size:.75rem">━━━━━━━━━━━━━━━━━━</div>
+      <div style="color:var(--text2)">🎯 Signal: <span style="color:var(--teal2)">LONG — shorts paying funding</span></div>
+      <div style="color:var(--teal2);font-size:.75rem;margin-top:4px">🟡 Bybit · 🔴 Live</div>
+    </div>
+
+    <!-- Field explanations -->
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:14px 16px;display:grid;grid-template-columns:160px 1fr;gap:16px">
+        <div>
+          <div style="font-family:'DM Mono',monospace;color:var(--amber2);font-weight:700;font-size:.85rem">🎰 Level + Direction</div>
+          <div style="font-size:.75rem;color:var(--text3);margin-top:2px">e.g. JACKPOT SHORT</div>
+        </div>
+        <div style="font-size:.85rem;color:var(--text2);line-height:1.6">Alert severity level (SOFT/HIGH/EXTREME/HARD/JACKPOT) and suggested trade direction. <strong style="color:var(--teal2)">LONG</strong> = funding is negative, shorts are overpaying. <strong style="color:var(--red2)">SHORT</strong> = funding is positive, longs are overpaying. The direction exploits the side that is paying the most.</div>
+      </div>
+      <div style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:14px 16px;display:grid;grid-template-columns:160px 1fr;gap:16px">
+        <div>
+          <div style="font-family:'DM Mono',monospace;color:var(--gold2);font-weight:700;font-size:.85rem">📊 Funding %</div>
+          <div style="font-size:.75rem;color:var(--text3);margin-top:2px">e.g. -3.2800%</div>
+        </div>
+        <div style="font-size:.85rem;color:var(--text2);line-height:1.6">The current annualized funding rate. Negative = shorts pay longs. Positive = longs pay shorts. The further from 0, the more extreme the market imbalance. Values beyond ±1% are rare — beyond ±3% they are exceptional.</div>
+      </div>
+      <div style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:14px 16px;display:grid;grid-template-columns:160px 1fr;gap:16px">
+        <div>
+          <div style="font-family:'DM Mono',monospace;color:var(--gold2);font-weight:700;font-size:.85rem">⏰ Settlement in</div>
+          <div style="font-size:.75rem;color:var(--text3);margin-top:2px">e.g. 14m 32s</div>
+        </div>
+        <div style="font-size:.85rem;color:var(--text2);line-height:1.6">Time until the next funding payment is settled. This is critical for timing. Entries <strong style="color:var(--text)">15–30 minutes before settlement</strong> capture the funding payment + the post-settlement reversal move. The pre-settlement alert fires automatically at this window.</div>
+      </div>
+      <div style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:14px 16px;display:grid;grid-template-columns:160px 1fr;gap:16px">
+        <div>
+          <div style="font-family:'DM Mono',monospace;color:var(--teal2);font-weight:700;font-size:.85rem">💧 OI + OI Δ</div>
+          <div style="font-size:.75rem;color:var(--text3);margin-top:2px">e.g. $18.4M +12.4%</div>
+        </div>
+        <div style="font-size:.85rem;color:var(--text2);line-height:1.6">Current total open interest in USD and its percentage change vs the previous scan (60 seconds ago). A positive Δ means new positions are being opened — more exposure building. Combined with extreme funding, this is the highest-conviction setup.</div>
+      </div>
+      <div style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:14px 16px;display:grid;grid-template-columns:160px 1fr;gap:16px">
+        <div>
+          <div style="font-family:'DM Mono',monospace;color:var(--text);font-weight:700;font-size:.85rem">💵 Price + Vol</div>
+          <div style="font-size:.75rem;color:var(--text3);margin-top:2px">e.g. $0.048 | $2.1M</div>
+        </div>
+        <div style="font-size:.85rem;color:var(--text2);line-height:1.6">Current mark price and 24h trading volume. Low volume pairs are more volatile and harder to exit cleanly. As a rule of thumb, prefer pairs with 24h volume &gt; $5M for auto-trading. Lower volume pairs can still be traded manually with smaller size.</div>
+      </div>
+      <div style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:14px 16px;display:grid;grid-template-columns:160px 1fr;gap:16px">
+        <div>
+          <div style="font-family:'DM Mono',monospace;color:var(--teal2);font-weight:700;font-size:.85rem">🎯 Suggested TP/SL</div>
+          <div style="font-size:.75rem;color:var(--text3);margin-top:2px">TP: +0.5% | SL: -6%</div>
+        </div>
+        <div style="font-size:.85rem;color:var(--text2);line-height:1.6">The bot's suggested take-profit and stop-loss based on the signal level. For manual trades these are starting points — adjust based on your risk tolerance. The auto-trader uses these values directly, modified by the trailing stop logic described in section 02.</div>
+      </div>
+      <div style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:14px 16px;display:grid;grid-template-columns:160px 1fr;gap:16px">
+        <div>
+          <div style="font-family:'DM Mono',monospace;color:var(--text3);font-weight:700;font-size:.85rem">📈 Chart</div>
+          <div style="font-size:.75rem;color:var(--text3);margin-top:2px">15m candlestick</div>
+        </div>
+        <div style="font-size:.85rem;color:var(--text2);line-height:1.6">Attached 15-minute candlestick chart of the pair with funding level marked. Use it to check recent price action before entering manually — a pair in a strong downtrend with negative funding is safer to go long than one that's already bounced 20%.</div>
+      </div>
+    </div>
+
+    <div style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:14px 16px;display:grid;grid-template-columns:160px 1fr;gap:16px;margin-bottom:10px">
+      <div>
+        <div style="font-family:'DM Mono',monospace;color:var(--teal2);font-weight:700;font-size:.85rem">🟡 Exchange · Mode</div>
+        <div style="font-size:.75rem;color:var(--text3);margin-top:2px">e.g. Bybit · 🔴 Live</div>
+      </div>
+      <div style="font-size:.85rem;color:var(--text2);line-height:1.6">Every alert ends with the exchange it came from and whether you are in <strong style="color:var(--red2)">Live</strong> (real money) or <strong style="color:var(--teal2)">Demo</strong> (testnet) mode. This is critical when you run multiple exchanges simultaneously — you always know exactly where the signal originated.</div>
+    </div>
+    <div style="margin-top:10px;background:rgba(0,201,167,.05);border:1px solid rgba(0,201,167,.15);border-radius:10px;padding:14px 18px;font-size:.85rem;color:var(--text2)">
+      <strong style="color:var(--teal2)">⚡ CLOSE alerts:</strong> When a monitored symbol drops below its threshold, you receive a <strong style="color:var(--text)">CLOSE [direction]</strong> alert. This means the funding opportunity has expired — if you have an open position, this is the signal to review your exit, especially if auto-trading is off.
+    </div>
+  </div>
+
+  <!-- 08. GLOSSARY -->
+  <div id="doc-glossary" style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:28px;position:relative;overflow:hidden">
+    <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--p1),transparent)"></div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <span style="font-family:'DM Mono',monospace;font-size:.65rem;background:var(--p1);color:#fff;padding:3px 10px;border-radius:4px;font-weight:700">08</span>
+      <span style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;color:var(--text)">Glossary</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:0">
+      <div style="display:grid;grid-template-columns:160px 1fr;gap:16px;padding:11px 0;border-bottom:1px solid var(--border);font-size:.875rem"><span style="font-family:'DM Mono',monospace;color:var(--p2);font-weight:500">Funding Rate</span><span style="color:var(--text2)">Periodic payment between longs and shorts on perpetual futures. Positive = longs pay. Negative = shorts pay.</span></div>
+      <div style="display:grid;grid-template-columns:160px 1fr;gap:16px;padding:11px 0;border-bottom:1px solid var(--border);font-size:.875rem"><span style="font-family:'DM Mono',monospace;color:var(--p2);font-weight:500">Settlement</span><span style="color:var(--text2)">Moment when funding is paid. Every 1h, 4h or 8h depending on exchange. Pre-settlement alert fires 15 min before.</span></div>
+      <div style="display:grid;grid-template-columns:160px 1fr;gap:16px;padding:11px 0;border-bottom:1px solid var(--border);font-size:.875rem"><span style="font-family:'DM Mono',monospace;color:var(--p2);font-weight:500">Perpetual</span><span style="color:var(--text2)">Futures contract with no expiry. Funding rate keeps the price anchored to spot via periodic payments.</span></div>
+      <div style="display:grid;grid-template-columns:160px 1fr;gap:16px;padding:11px 0;border-bottom:1px solid var(--border);font-size:.875rem"><span style="font-family:'DM Mono',monospace;color:var(--p2);font-weight:500">Open Interest</span><span style="color:var(--text2)">Total value of open contracts. OI spike + extreme funding = stronger signal confirmation.</span></div>
+      <div style="display:grid;grid-template-columns:160px 1fr;gap:16px;padding:11px 0;border-bottom:1px solid var(--border);font-size:.875rem"><span style="font-family:'DM Mono',monospace;color:var(--p2);font-weight:500">Trailing Stop</span><span style="color:var(--text2)">Dynamic SL that follows price at a fixed distance. Locks profits as the trade moves in your favor.</span></div>
+      <div style="display:grid;grid-template-columns:160px 1fr;gap:16px;padding:11px 0;border-bottom:1px solid var(--border);font-size:.875rem"><span style="font-family:'DM Mono',monospace;color:var(--p2);font-weight:500">Mean Reversion</span><span style="color:var(--text2)">The tendency of assets to return to average after extreme moves. The core strategy behind FundShot.</span></div>
+      <div style="display:grid;grid-template-columns:160px 1fr;gap:16px;padding:11px 0;font-size:.875rem"><span style="font-family:'DM Mono',monospace;color:var(--p2);font-weight:500">Watchlist</span><span style="color:var(--text2)">Your personal symbol list. If empty, FundShot scans all 500+ pairs automatically.</span></div>
+    </div>
+  </div>
+
+</div>
+</div></div>
+
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- ═══ BOT ACTION PREVIEW MODAL ═══ -->
+<div class="bot-preview-overlay hidden" id="bot-preview-modal">
+  <div class="bot-preview-modal">
+    <div class="bot-preview-header">
+      <div class="bot-preview-icon" id="bp-icon">🤖</div>
+      <div>
+        <div class="bot-preview-title" id="bp-title">Sending to bot</div>
+        <div class="bot-preview-subtitle" id="bp-subtitle">Review before confirming</div>
+      </div>
+    </div>
+    <div class="bot-preview-items" id="bp-items"></div>
+    <div class="bot-preview-actions">
+      <button class="bot-preview-confirm" id="bp-confirm" onclick="botPreviewConfirm()">⚡ Confirm &amp; Send</button>
+      <button class="bot-preview-cancel" onclick="botPreviewCancel()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ AUTOTRADER OFF CONFIRM MODAL ═══ -->
+<div class="confirm-modal-overlay hidden" id="autotrader-off-modal">
+  <div class="confirm-modal">
+    <div class="confirm-modal-icon">🔴</div>
+    <div class="confirm-modal-title">Disable Auto-Trader?</div>
+    <div class="confirm-modal-sub">
+      You have <strong id="modal-open-count" style="color:var(--red2)">open positions</strong>.
+      What do you want to do before disabling?
+    </div>
+    <div class="confirm-modal-actions">
+      <button class="confirm-btn confirm-btn-close-all" onclick="autotraderOffAction('close_all')">
+        ❌ Close all &amp; disable
+      </button>
+      <button class="confirm-btn confirm-btn-off-only" onclick="autotraderOffAction('off_only')">
+        ⏸ Disable only
+      </button>
+      <button class="confirm-btn confirm-btn-cancel" onclick="closeAutotraderModal()">
+        Cancel
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+
 <div class="page" id="page-docs">
 <div style="display:flex;flex-direction:column;height:calc(100vh - 73px);gap:0">
   <!-- Header bar -->
