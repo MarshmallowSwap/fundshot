@@ -3062,21 +3062,39 @@ function goto(id, btn) {
 async function loadPublic() {
   setStatus('loading');
   try {
-    const r = await fetch('https://api.bybit.com/v5/market/tickers?category=linear');
+    const r = await fetch('https://api.fundshot.app/api/tickers');
     const j = await r.json();
-    if (j.retCode!==0) throw new Error(j.retMsg);
-    S.data = (j.result.list||[])
-      .filter(t=>t.symbol.endsWith('USDT')&&t.fundingRate!=='')
-      .map(t=>({
+    if (!j.ok || !j.tickers) throw new Error('No data');
+    S.data = j.tickers
+      .map(t => ({
         symbol: t.symbol,
-        price:  parseFloat(t.lastPrice)||0,
-        rate:   parseFloat(t.fundingRate)||0,
-        vol:    parseFloat(t.volume24h)||0,
+        price:  parseFloat(t.markPrice) || 0,
+        rate:   parseFloat(t.fundingRate) || 0,
+        vol:    parseFloat(t.turnover24h) || 0,
       }))
-      .sort((a,b)=>Math.abs(b.rate)-Math.abs(a.rate));
+      .filter(t => t.rate !== 0)
+      .sort((a, b) => Math.abs(b.rate) - Math.abs(a.rate));
     setStatus('live');
     renderAll();
-  } catch(e) { setStatus('error'); }
+  } catch(e) {
+    // Fallback diretto a Bybit
+    try {
+      const r2 = await fetch('https://api.bybit.com/v5/market/tickers?category=linear');
+      const j2 = await r2.json();
+      if (j2.retCode !== 0) throw new Error(j2.retMsg);
+      S.data = (j2.result.list || [])
+        .filter(t => t.symbol.endsWith('USDT') && t.fundingRate !== '')
+        .map(t => ({
+          symbol: t.symbol,
+          price:  parseFloat(t.lastPrice) || 0,
+          rate:   parseFloat(t.fundingRate) || 0,
+          vol:    parseFloat(t.volume24h) || 0,
+        }))
+        .sort((a, b) => Math.abs(b.rate) - Math.abs(a.rate));
+      setStatus('live');
+      renderAll();
+    } catch(e2) { setStatus('error'); }
+  }
 }
 
 // ─── PRIVATE API via PROXY ───
