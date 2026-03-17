@@ -436,11 +436,14 @@ class ProxyHandler(BaseHTTPRequestHandler):
                 api_key  = body.get("api_key", "").strip()
                 api_sec  = body.get("api_secret", "").strip()
                 env      = body.get("environment", "mainnet")
-                # Normalizza: la tabella accetta solo 'mainnet' o 'demo'
-                if env in ("testnet", "test"):
+                # Normalizza: la tabella accetta solo 'demo' o 'live'
+                if env in ("testnet", "test", "demo"):
                     env = "demo"
-                elif env not in ("mainnet", "demo"):
-                    env = "mainnet"
+                else:
+                    env = "live"  # mainnet, live, o qualsiasi altro valore
+                # HL non ha demo/testnet — forza live
+                if exchange == "hyperliquid":
+                    env = "live"
                 passph   = body.get("passphrase", "")
                 if not exchange or not api_key or (not api_sec and exchange != "hyperliquid"):
                     self._json({"ok": False, "error": "exchange, api_key and api_secret are required"}, 400)
