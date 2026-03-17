@@ -3076,10 +3076,22 @@ function goto(id, btn) {
   }
 }
 
+function setStatus(s) {
+  const dot  = document.getElementById('pdot');
+  const txt  = document.getElementById('stext');
+  const map  = {
+    loading: { color:'#f0c96a', text:'Caricamento...' },
+    live:    { color:'#00c9a7', text:'Live' },
+    error:   { color:'#ff4d6d', text:'Errore connessione' },
+  };
+  const cfg = map[s] || map.loading;
+  if (dot) dot.style.background = cfg.color;
+  if (txt) txt.textContent = cfg.text;
+}
+
 async function loadPublic() {
   setStatus('loading');
 
-  // Helper: parse tickers from Bybit format
   function parseBybit(list) {
     return (list || [])
       .filter(t => t.symbol && t.symbol.endsWith('USDT') && t.fundingRate !== '')
@@ -3093,7 +3105,7 @@ async function loadPublic() {
       .sort((a, b) => Math.abs(b.rate) - Math.abs(a.rate));
   }
 
-  // Source 1: FundShot proxy (server-side, no CORS issues)
+  // Source 1: FundShot proxy
   try {
     const r = await fetch('https://api.fundshot.app/api/tickers', { signal: AbortSignal.timeout(5000) });
     const j = await r.json();
@@ -3111,13 +3123,13 @@ async function loadPublic() {
     }
   } catch(e1) { console.warn('Source 1 failed:', e1.message); }
 
-  // Source 2: Binance Futures public API (CORS enabled)
+  // Source 2: Binance Futures (CORS nativo)
   try {
     const r = await fetch('https://fapi.binance.com/fapi/v1/premiumIndex', { signal: AbortSignal.timeout(6000) });
     const list = await r.json();
     if (Array.isArray(list) && list.length > 0) {
       S.data = list
-        .filter(t => t.symbol && t.symbol.endsWith('USDT') && t.lastFundingRate !== undefined)
+        .filter(t => t.symbol && t.symbol.endsWith('USDT'))
         .map(t => ({
           symbol: t.symbol,
           price:  parseFloat(t.markPrice) || 0,
@@ -3130,7 +3142,7 @@ async function loadPublic() {
     }
   } catch(e2) { console.warn('Source 2 failed:', e2.message); }
 
-  // Source 3: allorigins.win → Bybit (CORS proxy)
+  // Source 3: allorigins → Bybit
   try {
     const bybitUrl = encodeURIComponent('https://api.bybit.com/v5/market/tickers?category=linear');
     const r = await fetch('https://api.allorigins.win/raw?url=' + bybitUrl, { signal: AbortSignal.timeout(8000) });
