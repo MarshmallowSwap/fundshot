@@ -373,6 +373,7 @@ async def _process_exchange_tickers(
             _save_alert_history(symbol, level, rate_pct, exchange, alert_text)
             # Channel pubblico: solo HARD/JACKPOT (>=2%) con CTA abbonamento
             if level in ("hard", "critico") and os.getenv("CHANNEL_ID", CHANNEL_ID):
+                logger.info("Invio channel: %s %s level=%s", exchange, symbol, level)
                 try:
                     _ex_em_ch = {"bybit": "🟡", "binance": "🟠", "hyperliquid": "🟣"}.get(exchange, "⚡")
                     _cta = (
@@ -385,7 +386,7 @@ async def _process_exchange_tickers(
                     _chart_ch = generate_chart(symbol, rate_pct, exchange=exchange)
                     await send_to_channel(context.bot, _cta, photo_buf=_chart_ch)
                 except Exception as _ce:
-                    logger.debug("channel send: %s", _ce)
+                    logger.warning("channel send FAILED: %s", _ce)
 
         # ── AUTO-TRADER: apri posizione se configurato per questo exchange ──
         if TRADING_ENABLED and exchange in _exchange_traders:
@@ -416,7 +417,7 @@ async def _process_exchange_tickers(
                         await send_to_channel(context.bot, _cta_t, photo_buf=_chart_t)
                         logger.info("Channel: trade HARD aperto %s %s", exchange, symbol)
                     except Exception as _tce:
-                        logger.debug("channel trade: %s", _tce)
+                        logger.warning("channel trade FAILED: %s", _tce)
 
         # 1b. Alert cambio livello
         if _bot_alert_enabled("level_change"):
@@ -784,7 +785,7 @@ async def oi_spike_job(context):
                     try:
                         await send_to_channel(context.bot, _oi_ch_msg)
                     except Exception as _oice:
-                        logger.debug("channel OI: %s", _oice)
+                        logger.warning("channel OI FAILED: %s", _oice)
 
         # Scrivi snapshot su file per il proxy
         try:
