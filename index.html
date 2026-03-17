@@ -462,6 +462,22 @@ nav {
 /* ── STATES ── */
 .loading { display: flex; align-items: center; justify-content: center; padding: 36px; gap: 10px; color: var(--text3); font-size: 13px; font-weight: 600; }
 .spin { width: 18px; height: 18px; border: 2px solid rgba(212,168,67,.2); border-top-color: var(--gold); border-radius: 50%; animation: spin .7s linear infinite; flex-shrink: 0; }
+@keyframes pulse-ai { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(1.4)} }
+.ai-msg { display:flex; gap:12px; margin-bottom:18px; animation: fadeInUp .3s ease; }
+.ai-msg.user { flex-direction:row-reverse; }
+.ai-bubble { max-width:80%; padding:12px 16px; border-radius:14px; font-size:.875rem; line-height:1.7; }
+.ai-bubble.bot { background:rgba(139,92,246,.1); border:1px solid rgba(139,92,246,.2); color:var(--text); border-radius:4px 14px 14px 14px; }
+.ai-bubble.user { background:rgba(212,168,67,.12); border:1px solid rgba(212,168,67,.2); color:var(--text); border-radius:14px 4px 14px 14px; }
+.ai-avatar { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
+.ai-avatar.bot { background:linear-gradient(135deg,rgba(139,92,246,.3),rgba(212,168,67,.2)); border:1px solid rgba(139,92,246,.3); }
+.ai-avatar.user { background:rgba(212,168,67,.15); border:1px solid rgba(212,168,67,.2); }
+.ai-typing span { display:inline-block; width:6px; height:6px; background:var(--p2); border-radius:50%; animation:typing .8s infinite; margin:0 2px; }
+.ai-typing span:nth-child(2){animation-delay:.15s}
+.ai-typing span:nth-child(3){animation-delay:.3s}
+@keyframes typing{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.ai-suggestion { display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:8px; font-size:.78rem; cursor:pointer; transition:all .2s; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1); color:var(--text2); margin:4px; }
+.ai-suggestion:hover { background:rgba(139,92,246,.15); border-color:rgba(139,92,246,.3); color:var(--text); }
 @keyframes spin { to{transform:rotate(360deg)} }
 .empty-state { text-align: center; padding: 48px 20px; color: var(--text3); font-size: 13px; font-weight: 600; }
 .empty-state .ei { font-size: 40px; opacity: .25; margin-bottom: 12px; filter: grayscale(1); }
@@ -979,6 +995,10 @@ nav {
     <button class="np" onclick="gotoGated('trading',this)" id="nav-trading">⚡ Trading</button>
     <button class="np" onclick="goto('settings',this)">Settings</button>
     <button class="np" onclick="goto('guide',this)">📖 Guide</button>
+    <button class="np" id="nav-ai-btn" onclick="goto('ai',this)" style="background:linear-gradient(135deg,rgba(139,92,246,.2),rgba(212,168,67,.1));border-color:rgba(139,92,246,.4);color:#c4b5fd;position:relative">
+      ✦ AI Advisor
+      <span style="position:absolute;top:-4px;right:-4px;width:8px;height:8px;background:#a855f7;border-radius:50%;animation:pulse-ai 2s infinite"></span>
+    </button>
   </div>
   <div class="nav-right">
     <div id="user-badge" style="display:none;align-items:center;gap:8px;font-size:12px">
@@ -1993,6 +2013,66 @@ nav {
 <!-- ═══════════════════════════════════════════════════ -->
 <!-- PAGE: DOCS                                          -->
 <!-- ═══════════════════════════════════════════════════ -->
+<div class="page" id="page-ai">
+<div style="max-width:780px;margin:0 auto;padding-bottom:80px;height:calc(100vh - 120px);display:flex;flex-direction:column">
+
+  <!-- Header -->
+  <div style="padding:16px 0 20px;flex-shrink:0">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
+      <div style="width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,rgba(139,92,246,.4),rgba(212,168,67,.2));border:1px solid rgba(139,92,246,.4);display:flex;align-items:center;justify-content:center;font-size:18px">✦</div>
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-size:1.15rem;font-weight:800;color:var(--text)">FundShot AI Advisor</div>
+        <div style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--text3);letter-spacing:.08em">Ask anything about settings, strategy, or exchanges</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Messages area -->
+  <div id="ai-messages" style="flex:1;overflow-y:auto;padding-right:4px;scroll-behavior:smooth;min-height:0">
+    <!-- Welcome message -->
+    <div class="ai-msg">
+      <div class="ai-avatar bot">✦</div>
+      <div class="ai-bubble bot">
+        <strong style="color:#c4b5fd">Hey! I'm your FundShot AI Advisor.</strong><br><br>
+        I know everything about the bot — settings, strategy, exchanges, Guardian, risk management. Ask me anything, like:<br><br>
+        <div style="margin-top:8px">
+          <span class="ai-suggestion" onclick="aiAsk('What are the best settings for Binance with $500 capital?')">⚙️ Best settings for Binance</span>
+          <span class="ai-suggestion" onclick="aiAsk('How should I configure Guardian to protect my capital?')">🛡️ Configure Guardian</span>
+          <span class="ai-suggestion" onclick="aiAsk('What leverage and size do you recommend for a beginner?')">📊 Beginner setup</span>
+          <span class="ai-suggestion" onclick="aiAsk('Explain the TP1 + trailing stop strategy')">🎯 Explain TP1 strategy</span>
+          <span class="ai-suggestion" onclick="aiAsk('What is the difference between HARD and JACKPOT signals?')">💎 HARD vs JACKPOT</span>
+          <span class="ai-suggestion" onclick="aiAsk('How does the OI filter work and should I enable it?')">📈 OI filter explained</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Input area -->
+  <div style="flex-shrink:0;padding-top:16px;border-top:1px solid var(--border)">
+    <div style="display:flex;gap:10px;align-items:flex-end">
+      <textarea
+        id="ai-input"
+        placeholder="Ask me about settings, strategy, exchanges..."
+        rows="2"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();aiSend()}"
+        style="flex:1;background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:12px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.875rem;resize:none;outline:none;line-height:1.5;transition:border-color .2s"
+        onfocus="this.style.borderColor='rgba(139,92,246,.5)'"
+        onblur="this.style.borderColor='var(--border2)'"
+      ></textarea>
+      <button onclick="aiSend()" id="ai-send-btn"
+        style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#7c3aed,#6d28d9);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;box-shadow:0 4px 16px rgba(124,58,237,.3)"
+        onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+    <div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text3);margin-top:8px;text-align:center">
+      Powered by Claude · Press Enter to send · Shift+Enter for new line
+    </div>
+  </div>
+
+</div>
+</div>
+
 <div class="page" id="page-guide">
 <div style="max-width:860px;margin:0 auto;padding-bottom:80px">
 
@@ -4977,6 +5057,135 @@ async function updateExchangeEnv(env) {
 }
 
 // ─── DASHBOARD LOGOUT ───
+// ─── AI ADVISOR ───────────────────────────────────────────────────────────────
+
+const AI_SYSTEM = `You are the FundShot AI Advisor — an expert assistant integrated into the FundShot dashboard.
+FundShot is an automated crypto trading bot that exploits extreme funding rates on perpetual contracts.
+
+KEY KNOWLEDGE:
+
+STRATEGY:
+- Monitors 500+ perpetual pairs on Bybit, Binance, Hyperliquid
+- Alert levels: SOFT (≥0.5%), HIGH (≥1%), EXTREME (≥1.5%), HARD (≥2%), JACKPOT (≥2.5%)
+- Direction: positive funding → SHORT, negative funding → LONG
+- Exit: TP1 at +0.70% closes 30%, SL moves to breakeven, then trailing stop 0.70%
+- Max cap: force close at +3.0%
+
+SETTINGS (per exchange):
+- size: USDT per trade (default 100, recommended 1-5% of capital)
+- leva: leverage 1-20x (default 10x, careful above 10x)
+- sl: stop loss % (default 5%, range 2-10%)
+- maxpos: max concurrent positions (default 5)
+- persist: cycles before entry (default 2, higher = more selective)
+- oi: OI change filter % (default 1.5%, 0 = disabled)
+- cooldown: minutes between trades on same symbol
+- tp1pct: TP1 target % (default 0.70%)
+- trailing: trailing buffer % (default 0.70%)
+- maxcap: max gain % before force close (default 3.0%)
+
+GUARDIAN:
+- max drawdown: 10% pauses trading
+- consecutive losses: 3 = 30min cooldown
+- daily loss: $100 pauses until midnight
+
+EXCHANGES:
+- Bybit: best for beginners, full auto-trader, demo available
+- Binance: good liquidity, testnet available, no native TP on testnet
+- Hyperliquid: alerts only (no trading), ETH wallet needed
+
+60-DAY TEST RESULTS (Bybit Demo):
+- $10,000 starting capital, 500 USDT/trade, 10x leverage
+- Guardian active, MM fixed size, OI filter 1.5%, persistence 2 cycles
+- TP1 0.70%, trailing 0.70%, SL 5%, max cap 3.0%
+- Fees: taker 0.055% + slippage 0.02% included
+
+ADVICE PRINCIPLES:
+- For beginners: small size (50-100 USDT), lower leverage (5-7x), higher SL (5-7%)
+- For experienced: larger size, 10x leverage, tighter SL (3-5%)
+- Demo mode recommended for first 2 weeks
+- Guardian always on
+- OI filter: enable for quality, disable for volume
+- Persistence 2-3 cycles for quality signals
+
+Be concise, practical, and specific. Give concrete numbers and recommendations.
+When suggesting settings, format them clearly. Use markdown formatting.
+Always consider the user's risk tolerance. If asked about Hyperliquid trading, clarify it's alerts-only for now.`;
+
+let aiHistory = [];
+let aiTyping = false;
+
+function aiRender(role, text) {
+  const msgs = document.getElementById('ai-messages');
+  const isBot = role === 'assistant';
+  const div = document.createElement('div');
+  div.className = 'ai-msg' + (isBot ? '' : ' user');
+  div.innerHTML = \`
+    <div class="ai-avatar \${isBot ? 'bot' : 'user'}">\${isBot ? '✦' : '👤'}</div>
+    <div class="ai-bubble \${isBot ? 'bot' : 'user'}">\${text.replace(/\n/g,'<br>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\`(.+?)\`/g,'<code style="background:rgba(255,255,255,.08);padding:1px 5px;border-radius:3px;font-family:DM Mono,monospace;font-size:.8em">$1</code>').replace(/^- (.+)/gm,'• $1')}</div>
+  \`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function aiShowTyping() {
+  const msgs = document.getElementById('ai-messages');
+  const div = document.createElement('div');
+  div.className = 'ai-msg'; div.id = 'ai-typing-indicator';
+  div.innerHTML = '<div class="ai-avatar bot">✦</div><div class="ai-bubble bot"><div class="ai-typing"><span></span><span></span><span></span></div></div>';
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function aiHideTyping() {
+  const el = document.getElementById('ai-typing-indicator');
+  if (el) el.remove();
+}
+
+async function aiAsk(question) {
+  document.getElementById('ai-input').value = question;
+  await aiSend();
+}
+
+async function aiSend() {
+  if (aiTyping) return;
+  const input = document.getElementById('ai-input');
+  const text = input.value.trim();
+  if (!text) return;
+
+  input.value = '';
+  aiRender('user', text);
+  aiHistory.push({ role: 'user', content: text });
+
+  aiTyping = true;
+  const btn = document.getElementById('ai-send-btn');
+  if (btn) btn.style.opacity = '0.5';
+  aiShowTyping();
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: AI_SYSTEM,
+        messages: aiHistory.slice(-10)
+      })
+    });
+    const data = await res.json();
+    const reply = data.content?.[0]?.text || 'Sorry, I could not generate a response.';
+    aiHideTyping();
+    aiRender('assistant', reply);
+    aiHistory.push({ role: 'assistant', content: reply });
+  } catch(e) {
+    aiHideTyping();
+    aiRender('assistant', 'Network error — please retry.');
+  } finally {
+    aiTyping = false;
+    if (btn) btn.style.opacity = '1';
+  }
+}
+
 function dashLogout() {
   ['fs_token','fs_user','admin_token','fk_k','fk_s','fk_e','fk_cfg','fk_pnl',
    'fk_partial','fk_sess','fk_guard_lock','fk_cooldown_end','fk_cons_loss',
