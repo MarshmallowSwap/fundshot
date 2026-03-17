@@ -52,6 +52,10 @@
     {
       "src": "gate-logo.svg",
       "use": "@vercel/static"
+    },
+    {
+      "src": "docs.html",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -106,6 +110,10 @@
     {
       "src": "/gate-logo.svg",
       "dest": "/gate-logo.svg"
+    },
+    {
+      "src": "/docs",
+      "dest": "/docs.html"
     },
     {
       "src": "/(.*)",
