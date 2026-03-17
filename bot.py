@@ -1913,5 +1913,42 @@ async def cmd_test_oi(update, context):
     await update.message.reply_text(msg, parse_mode="Markdown")
 
 
+async def cmd_support(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    msg = " ".join(context.args) if context.args else ""
+    user = update.effective_user
+    if not msg:
+        await update.message.reply_text(
+            "💬 *FundShot Support*\n\nSend your question:\n`/support your message here`\n\nFAQ: fundshot.app/faq",
+            parse_mode="Markdown"
+        )
+        return
+    owner_id = int(os.getenv("CHAT_ID", CHAT_ID or "0"))
+    notify = "SUPPORT from @" + (user.username or user.first_name or str(user.id)) + "\n" + msg[:400]
+    try:
+        await context.bot.send_message(chat_id=owner_id, text=notify)
+    except Exception as e:
+        logger.warning("Support notify failed: %s", e)
+    await update.message.reply_text(
+        "✅ *Message sent!*\n\nWe'll reply soon via Telegram.\n\nFAQ: fundshot.app/faq",
+        parse_mode="Markdown"
+    )
+
+
+async def cmd_reply_ticket(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != int(os.getenv("CHAT_ID", CHAT_ID or "0")):
+        return
+    if len(context.args) < 2:
+        await update.message.reply_text("Usage: /reply <chat_id> <message>")
+        return
+    try:
+        await context.bot.send_message(
+            chat_id=int(context.args[0]),
+            text=" ".join(context.args[1:])
+        )
+        await update.message.reply_text("✅ Sent!")
+    except Exception as e:
+        await update.message.reply_text("Failed: " + str(e))
+
+
 if __name__ == "__main__":
     main()
