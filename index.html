@@ -979,7 +979,6 @@ nav {
     <button class="np" onclick="gotoGated('trading',this)" id="nav-trading">⚡ Trading</button>
     <button class="np" onclick="goto('settings',this)">Settings</button>
     <button class="np" onclick="goto('guide',this)">📖 Guide</button>
-    <button class="np" onclick="goto('docs',this)">🔗 Docs</button>
   </div>
   <div class="nav-right">
     <div id="user-badge" style="display:none;align-items:center;gap:8px;font-size:12px">
@@ -2610,28 +2609,7 @@ nav {
 
 <!-- ═══════════════════════════════════════════════════ -->
 
-<div class="page" id="page-docs">
-<div style="display:flex;flex-direction:column;height:calc(100vh - 73px);gap:0">
-  <!-- Header bar -->
-  <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--bg2)">
-    <div style="display:flex;align-items:center;gap:10px">
-      <span style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--p2);letter-spacing:.12em;text-transform:uppercase">// Documentation</span>
-      <span style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text3)">v3.0 · March 2026</span>
-    </div>
-    <a href="https://fundshot.app/docs" target="_blank" style="display:flex;align-items:center;gap:6px;font-family:'DM Mono',monospace;font-size:.72rem;color:var(--p2);text-decoration:none;background:rgba(212,168,67,.08);border:1px solid rgba(212,168,67,.2);padding:5px 12px;border-radius:6px;transition:all .2s" onmouseover="this.style.background='rgba(212,168,67,.15)'" onmouseout="this.style.background='rgba(212,168,67,.08)'">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-      Open in new tab
-    </a>
-  </div>
-  <!-- Iframe docs -->
-  <iframe
-    src="/docs"
-    id="docs-iframe"
-    style="flex:1;width:100%;border:none;background:var(--bg)"
-    loading="lazy"
-    title="FundShot Documentation"
-  ></iframe>
-</div>
+
 <script>
 // ═══ DEFINIZIONI CRITICHE — devono essere le prime ═══════════════════════════
 var _tradingExchange = (function() {
@@ -2981,37 +2959,7 @@ function goto(id, btn) {
   if (id === 'settings')  { initSettings(); initExchangeSettings(); }
   if (id === 'funding')   { renderFundTable(); }
   if (id === 'trading')   { initTradingPage(); fetchResults(); fetchClosedPnl(); fetchUnrealizedPnl(); setTradingExchange(_tradingExchange); renderAllExchangeCards(); }
-  if (id === 'docs')     { /* static, no fetch needed */ }
-}
-
-// ─── TABS ───
-function switchTab(btn, ns, mode) {
-  btn.closest('.tabs').querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  if (ns==='dash') { S.dm=mode; renderDashTable(); }
-  if (ns==='fund') { S.fm=mode; renderFundTable(); }
-}
-
-// ─── STATUS ───
-function setStatus(st) {
-  const d=document.getElementById('pdot'), t=document.getElementById('stext');
-  const m={live:['var(--green2)','LIVE · Bybit'],loading:['var(--amber)','Aggiornamento...'],error:['var(--red2)','Errore API']};
-  const [c,l]=m[st]||m.error;
-  d.style.background=c; d.style.boxShadow=`0 0 8px ${c}`; t.textContent=l;
-}
-
-// ─── PUBLIC API ───
-async function loadAlertHistory() {
-  const list = document.getElementById('ah-list');
-  const cnt  = document.getElementById('ah-count');
-  if (!list) return;
-  try {
-    const d = await authFetch('/api/alert-history?t=' + Date.now());
-    if (!d.ok || !d.alerts || !d.alerts.length) {
-      list.innerHTML = '<div class="empty-state"><div class="ei">🔔</div>Nessun alert ancora</div>';
-      if (cnt) cnt.textContent = '0';
-      return;
-    }
+  
     const alerts = d.alerts;
     if (cnt) cnt.textContent = alerts.length;
     const LEVEL_CLS = {jackpot:'ah-jackpot',hard:'ah-hard',extreme:'ah-extreme',high:'ah-high',soft:'ah-soft',critico:'ah-jackpot'};

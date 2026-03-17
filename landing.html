@@ -1008,8 +1008,12 @@ footer {
     <a href="#how">How it works</a>
     <a href="#features">Features</a>
     <a href="#pricing">Pricing</a>
+    <a href="/docs">Docs</a>
   </div>
-  <a href="#login" class="nav-cta">Start free →</a>
+  <div style="display:flex;align-items:center;gap:10px">
+    <a href="#login" id="nav-login-btn" class="nav-cta" style="background:transparent;border:1px solid rgba(255,255,255,.2);color:var(--text);padding:8px 18px" onmouseover="this.style.borderColor='rgba(255,255,255,.5)'" onmouseout="this.style.borderColor='rgba(255,255,255,.2)'">Login</a>
+    <a href="#login" class="nav-cta">Start free →</a>
+  </div>
 </nav>
 
 <!-- ═══ HERO ═══ -->
@@ -1816,6 +1820,8 @@ function showUserPanel(data) {
   // Mostra panel, nascondi widget
   panel.classList.add('show');
   if (wrap) wrap.style.display = 'none';
+  const navLoginBtn = document.getElementById('nav-login-btn');
+  if (navLoginBtn) navLoginBtn.style.display = 'none';
 
   // Auto-redirect alla dashboard dopo 2s se già loggato (non al primo login)
   const isAutoLogin = !data._firstLogin;
@@ -1840,7 +1846,8 @@ function logout(e) {
   container.innerHTML = '';
   document.querySelectorAll('iframe[name^="telegram"]').forEach(el => el.remove());
   _widgetInjected = false;
-  toast('Signed out', '👋');
+  // Torna alla landing pulita
+  window.location.href = '/';
 }
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
