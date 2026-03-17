@@ -384,7 +384,7 @@ async def _process_exchange_tickers(
                         "per ricevere TUTTI gli alert in tempo reale"
                     )
                     _chart_ch = generate_chart(symbol, rate_pct, exchange=exchange)
-                    await send_to_channel(context.bot, _cta, photo_buf=_chart_ch)
+                    await send_to_channel(bot, _cta, photo_buf=_chart_ch)
                 except Exception as _ce:
                     logger.warning("channel send FAILED: %s", _ce)
 
@@ -414,7 +414,7 @@ async def _process_exchange_tickers(
                             f"per il tuo auto-trader"
                         )
                         _chart_t = generate_chart(symbol, rate_pct, exchange=exchange)
-                        await send_to_channel(context.bot, _cta_t, photo_buf=_chart_t)
+                        await send_to_channel(bot, _cta_t, photo_buf=_chart_t)
                         logger.info("Channel: trade HARD aperto %s %s", exchange, symbol)
                     except Exception as _tce:
                         logger.warning("channel trade FAILED: %s", _tce)
@@ -783,7 +783,7 @@ async def oi_spike_job(context):
                         f"👉 [Attiva FundShot](https://t.me/FundShot_bot?start=upgrade_pro)"
                     )
                     try:
-                        await send_to_channel(context.bot, _oi_ch_msg)
+                        await send_to_channel(bot, _oi_ch_msg)
                     except Exception as _oice:
                         logger.warning("channel OI FAILED: %s", _oice)
 
