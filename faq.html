@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FundShot — FAQ</title>
+<meta name="description" content="Frequently asked questions about FundShot — setup, trading, exchanges, payments and more.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --black:#05040a;--dark:#0a0812;--card:#0f0d18;--card2:#13111f;
+  --border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.12);
+  --gold:#d4a843;--gold2:#f0c96a;--teal:#00c9a7;--red:#ff4d6d;
+  --text:#f0ecff;--muted:#7a738f;--muted2:#4a4560;
+}
+html{scroll-behavior:smooth}
+body{background:var(--black);color:var(--text);font-family:'Syne',sans-serif;line-height:1.7;overflow-x:hidden}
+
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:16px 48px;background:rgba(5,4,10,.85);backdrop-filter:blur(24px);border-bottom:1px solid var(--border)}
+.nav-logo{display:flex;align-items:center;gap:10px;font-family:'Syne',sans-serif;font-weight:800;font-size:1.1rem;color:var(--gold2);text-decoration:none}
+.nav-links{display:flex;align-items:center;gap:24px}
+.nav-links a{color:var(--muted);text-decoration:none;font-size:.85rem;font-weight:600;transition:color .2s}
+.nav-links a:hover,.nav-links a.active{color:var(--text)}
+.nav-cta{background:var(--gold);color:#05040a;padding:8px 18px;border-radius:6px;font-weight:700;font-size:.82rem;text-decoration:none;transition:all .2s}
+.nav-cta:hover{background:var(--gold2)}
+
+.hero{padding:120px 48px 60px;max-width:900px;margin:0 auto;text-align:center}
+.hero-tag{font-family:'DM Mono',monospace;font-size:.7rem;color:var(--gold);letter-spacing:.15em;text-transform:uppercase;margin-bottom:16px;display:block}
+.hero h1{font-size:clamp(2rem,4vw,3rem);font-weight:800;letter-spacing:-.03em;margin-bottom:12px}
+.hero h1 em{font-style:italic;font-family:'Instrument Serif',serif;color:var(--gold2);font-weight:400}
+.hero p{color:var(--muted);font-size:1rem;max-width:560px;margin:0 auto 40px}
+
+/* Search */
+.search-wrap{max-width:560px;margin:0 auto 56px;position:relative}
+.search-input{width:100%;background:var(--card);border:1px solid var(--border2);border-radius:12px;padding:14px 48px 14px 20px;color:var(--text);font-family:'Syne',sans-serif;font-size:.95rem;outline:none;transition:border-color .2s}
+.search-input:focus{border-color:rgba(212,168,67,.5)}
+.search-input::placeholder{color:var(--muted)}
+.search-icon{position:absolute;right:16px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:16px;pointer-events:none}
+
+/* Category tabs */
+.cats{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:48px;max-width:900px;margin-left:auto;margin-right:auto;padding:0 48px}
+.cat-btn{padding:7px 16px;border-radius:8px;font-size:.8rem;font-weight:700;cursor:pointer;transition:all .2s;border:1px solid var(--border);color:var(--muted);background:transparent;font-family:'Syne',sans-serif;letter-spacing:.02em}
+.cat-btn:hover{border-color:rgba(212,168,67,.3);color:var(--text)}
+.cat-btn.active{background:rgba(212,168,67,.1);border-color:rgba(212,168,67,.35);color:var(--gold2)}
+
+/* FAQ items */
+.faq-wrap{max-width:860px;margin:0 auto;padding:0 48px 120px}
+.faq-category{margin-bottom:48px}
+.faq-cat-title{font-family:'DM Mono',monospace;font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:16px;display:flex;align-items:center;gap:12px}
+.faq-cat-title::after{content:'';flex:1;height:1px;background:var(--border)}
+
+.faq-item{background:var(--card);border:1px solid var(--border);border-radius:14px;margin-bottom:10px;overflow:hidden;transition:border-color .2s}
+.faq-item:hover{border-color:rgba(212,168,67,.2)}
+.faq-item.open{border-color:rgba(212,168,67,.3)}
+.faq-q{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;cursor:pointer;gap:16px;user-select:none}
+.faq-q-text{font-size:.93rem;font-weight:700;color:var(--text);line-height:1.4}
+.faq-chevron{width:20px;height:20px;border-radius:50%;border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--muted);font-size:10px;transition:all .3s}
+.faq-item.open .faq-chevron{background:rgba(212,168,67,.15);border-color:rgba(212,168,67,.3);color:var(--gold2);transform:rotate(180deg)}
+.faq-a{max-height:0;overflow:hidden;transition:max-height .35s ease,padding .35s ease}
+.faq-item.open .faq-a{max-height:600px}
+.faq-a-inner{padding:0 22px 18px;font-size:.875rem;color:rgba(240,236,255,.8);line-height:1.8;border-top:1px solid var(--border)}
+.faq-a-inner p{padding-top:14px}
+.faq-a-inner strong{color:var(--text)}
+.faq-a-inner code{font-family:'DM Mono',monospace;font-size:.82rem;background:rgba(255,255,255,.06);padding:1px 6px;border-radius:4px;color:var(--gold2)}
+.faq-a-inner a{color:var(--teal);text-decoration:none}
+.faq-a-inner a:hover{text-decoration:underline}
+.faq-a-inner ul{padding-left:18px;margin-top:8px}
+.faq-a-inner li{margin-bottom:4px}
+
+/* No results */
+.no-results{text-align:center;padding:60px 0;color:var(--muted);font-family:'DM Mono',monospace;font-size:.85rem;display:none}
+
+/* Support CTA */
+.support-cta{background:var(--card);border:1px solid var(--border2);border-radius:20px;padding:40px;text-align:center;max-width:600px;margin:0 auto 80px;position:relative;overflow:hidden}
+.support-cta::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+.support-cta h3{font-size:1.2rem;font-weight:800;margin-bottom:8px}
+.support-cta p{color:var(--muted);font-size:.9rem;margin-bottom:24px}
+.support-cta-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn-tg{display:inline-flex;align-items:center;gap:8px;background:#2AABEE;color:#fff;padding:11px 22px;border-radius:8px;font-weight:700;font-size:.85rem;text-decoration:none;transition:all .2s}
+.btn-tg:hover{background:#1a9bde;transform:translateY(-1px)}
+.btn-dash{display:inline-flex;align-items:center;gap:8px;background:rgba(212,168,67,.1);border:1px solid rgba(212,168,67,.3);color:var(--gold2);padding:11px 22px;border-radius:8px;font-weight:700;font-size:.85rem;text-decoration:none;transition:all .2s}
+.btn-dash:hover{background:rgba(212,168,67,.18);border-color:rgba(212,168,67,.5)}
+
+footer{border-top:1px solid var(--border);padding:28px 48px;text-align:center;font-size:.78rem;color:var(--muted2);font-family:'DM Mono',monospace}
+
+@media(max-width:768px){
+  nav{padding:14px 20px}
+  .nav-links{display:none}
+  .hero{padding:100px 24px 40px}
+  .faq-wrap,.cats{padding:0 20px 60px}
+  .support-cta{margin:0 20px 60px}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-logo">⚡ FundShot</a>
+  <div class="nav-links">
+    <a href="/">Home</a>
+    <a href="/docs">Docs</a>
+    <a href="/faq" class="active">FAQ</a>
+    <a href="/#pricing">Pricing</a>
+  </div>
+  <a href="https://t.me/FundShot_bot" class="nav-cta" target="_blank">Start free →</a>
+</nav>
+
+<div class="hero">
+  <span class="hero-tag">// Frequently Asked Questions</span>
+  <h1>Got a question? <em>We have answers.</em></h1>
+  <p>Everything you need to know about FundShot — setup, trading, exchanges, billing and more.</p>
+  <div class="search-wrap">
+    <input type="text" class="search-input" id="faq-search" placeholder="Search questions..." oninput="filterFAQ(this.value)">
+    <span class="search-icon">🔍</span>
+  </div>
+</div>
+
+<div class="cats">
+  <button class="cat-btn active" onclick="filterCat('all',this)">All</button>
+  <button class="cat-btn" onclick="filterCat('getting-started',this)">Getting Started</button>
+  <button class="cat-btn" onclick="filterCat('trading',this)">Trading & Settings</button>
+  <button class="cat-btn" onclick="filterCat('exchanges',this)">Exchanges</button>
+  <button class="cat-btn" onclick="filterCat('billing',this)">Plans & Billing</button>
+  <button class="cat-btn" onclick="filterCat('security',this)">Security</button>
+  <button class="cat-btn" onclick="filterCat('troubleshooting',this)">Troubleshooting</button>
+</div>
+
+<div class="faq-wrap">
+<div id="no-results" class="no-results">No questions match your search. <a href="https://t.me/FundShot_bot" style="color:var(--teal)">Ask us directly →</a></div>
+
+<!-- GETTING STARTED -->
+<div class="faq-category" data-cat="getting-started">
+  <div class="faq-cat-title">🚀 Getting Started</div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFAQ(this)">
+      <span class="faq-q-text">What is FundShot and how does it work?</span>
+      <span class="faq-chevron">▾</span>
+    </div>
+    <div class="faq-a"><div class="faq-a-inner"><p>FundShot monitors <strong>500+ perpetual pairs</strong> across Bybit, Binance and Hyperliquid 24/7. Every 60 seconds it scans all funding rates and sends Telegram alerts when they hit extreme levels.<br><br>The strategy is contrarian funding collection: when longs are paying extreme fees to shorts, you go short and collect. When shorts are paying longs, you go long. On Pro/Elite plans, the bot opens and manages these positions automatically.</p></div></div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFAQ(this)">
+      <span class="faq-q-text">How do I get started for free?</span>
+      <span class="faq-chevron">▾</span>
+    </div>
+    <div class="faq-a"><div class="faq-a-inner"><p>Just open <a href="https://t.me/FundShot_bot" target="_blank">@FundShot_bot</a> on Telegram and send <code>/start</code>. No credit card, no email, no registration form — just Telegram login.<br><br>The Free plan gives you 10 alerts/day, access to the top 10 funding rates, and the live dashboard at <a href="https://fundshot.app/dashboard">fundshot.app/dashboard</a>.</p></div></div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFAQ(this)">
+      <span class="faq-q-text">Do I need to know how to code?</span>
+      <span class="faq-chevron">▾</span>
+    </div>
+    <div class="faq-a"><div class="faq-a-inner"><p>No. Everything is configured through the dashboard or Telegram commands. You just need to connect your exchange API key (a 2-minute process) and the bot handles everything else. The <strong>✦ AI Advisor</strong> inside the dashboard will suggest the optimal settings for your situation.</p></div></div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFAQ(this)">
+      <span class="faq-q-text">What is the minimum capital required?</span>
+      <span class="faq-chevron">▾</span>
+    </div>
+    <div class="faq-a"><div class="faq-a-inner"><p>There's no strict minimum, but we recommend at least <strong>$200–500 USDT</strong> to trade meaningfully. With $500 you could set size=50 USDT, leverage=5x and run 3 max positions — a conservative but viable setup.<br><br>The 60-day test used $10,000 with 500 USDT/trade, but the strategy scales down well.</p></div></div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFAQ(this)">
+      <span class="faq-q-text">Should I start with Demo mode or Live?</span>
+      <span class="faq-chevron">▾</span>
+    </div>
+    <div class="faq-a"><div class="faq-a-inner"><p>Always start with <strong>Demo mode</strong> (Bybit Demo or Binance Testnet). It uses real market conditions and real funding rates, but with paper money. Run Demo for at least 1–2 weeks to understand how the bot behaves — entry timing, TP1 partial close, trailing stop, and Guardian circuit breakers — before switching to Live.</p></div></div>
+  </div>
+</div>
+
+<!-- TRADING & SETTINGS -->
+<div class="faq-category" data-cat="trading">
+  <div class="faq-cat-title">⚙️ Trading & Settings</div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFAQ(this)">
+      <span class="faq-q-text">What leverage should I use?</span>
+      <span class="faq-chevron">▾</span>
+    </div>
+    <div class="faq-a"><div class="faq-a-inner"><p><strong>10x</strong> is the standard used in the 60-day test and works well for most users. Beginners should start at <strong>5–7x</strong> to limit losses while learning.<br><br>Never use 20x+ — even a small adverse move can liquidate your position before the bot can react.</p></div></div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFAQ(this)">
+      <span class="faq-q-text">What is TP1 and how does the exit strategy work?</span>
+      <span class="faq-chevron">▾</span>
+    </div>
+    <div class="faq-a"><div class="faq-a-inner"><p>When price moves <strong>+0.70%</strong> in your favor, the bot closes <strong>30% of the position</strong> (TP1) and moves the stop loss to breakeven. The remaining 70% follows the price with a <strong>0.70% trailing buffer</strong>.<br><br>If the price pulls back 0.70% from the peak, the trailing stop triggers and the rest closes. A <strong>max cap of +3.0%</strong> force-closes the entire position regardless.</p></div></div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFAQ(this)">
+      <span class="faq-q-text">What does the OI filter do?</span>
+      <span class="faq-chevron">▾</span>
+    </div>
+    <div class="faq-a"><div class="faq-a-inner"><p>The Open Interest (OI) filter requires that OI has changed by at least X% in the last 5 minutes before the bot opens a trade. This confirms large players are active and the signal is genuine.<br><br>Setting: <code>oi=1.5</code> (default) is a good balance. Set to <code>0</code> to disable if you want more trades. Set to <code>2.0+</code> for stricter, higher-quality signals only.</p></div></div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFAQ(this)">
+      <span class="faq-q-text">What is Guardian and should I always keep it on?</span>
+      <span class="faq-chevron">▾</span>
+    </div>
+    <div class="faq-a"><div class="faq-a-inner"><p><strong>Yes — always keep Guardian on.</strong> It's a circuit breaker system that automatically pauses trading when risk limits are breached:<br><br>
+    <ul>
+      <li>Max session drawdown (default 10%) → pauses all trading</li>
+      <li>3 consecutive losses → 30-minute cooldown</li>
+      <li>Daily loss limit (default $100) → pauses until midnight UTC</li>
+    </ul><br>
+    It's especially important in volatile market conditions. Guardian has prevented significant losses in live testing.</p></div></div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFAQ(this)">
+      <span class="faq-q-text">What is the persistence filter?</span>
+      <span class="faq-chevron">▾</span>
+    </div>
+    <div class="faq-a"><div class="faq-a-inner"><p>Persistence requires the funding rate to stay above the threshold for X consecutive 60-second cycles before opening a trade. Default is <code>persist=2</code> (2 minutes confirmation).<br><br>Higher persistence = fewer false signals but fewer total trades. We recommend starting at 2 and experimenting with 3 if you're seeing too many short-lived signals.</p></div></div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFAQ(this)">
+      <span class="faq-q-text">How do the 60-day test results apply to my account?</span>
+      <span class="faq-chevron">▾</span>
+    </div>
+    <div class="faq-a"><div class="faq-a-inner"><p>The 60-day test was conducted on <strong>Bybit Demo</strong> with real market conditions ($10,000 capital, 500 USDT/trade, 10x leverage, Guardian on). It's the closest thing to a real backtest without actually risking money.<br><br>Your results will vary based on your settings, capital, and market conditions at the time you trade. Past performance doesn't guarantee future results — but the strategy exploits a structural market inefficiency that has persisted for years.</p></div></div>
+  </div>
+</div>
+
+<!-- EXCHANGES -->
+<div class="faq-category" data-cat="exchanges">
+  <div class="faq-cat-title">🏦 Exchanges</div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFAQ(this)">
+      <span class="faq-q-text">Which exchange should I use as a beginner?</span>
+      <span class="faq-chevron">▾</span>
+    </div>
+    <div class="faq-a"><div class="faq-a-inner"><p><strong>Bybit</strong> is our primary recommendation. It has the best Demo mode (full paper trading with real data), native trailing stops, and the most testing behind it. Create an account at bybit.com, generate an API key with Unified Trading read+write permissions, and connect it in Settings.</p></div></div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFAQ(this)">
+      <span class="faq-q-text">How do I create an API key safely?</span>
+      <span class="faq-chevron">▾</span>
+    </div>
+    <div class="faq-a"><div class="faq-a-inner"><p>On Bybit: Account → API Management → Create API key.<br>Enable: <strong>Unified Trading</strong> (read + write). <strong>Do NOT enable withdrawals</strong> — FundShot only needs to open/close trades.<br><br>On Binance: Profile → API Management → Create API → enable Futures trading. No withdrawals.<br><br>Your API keys are encrypted with AES-256-GCM before being stored. FundShot never logs or transmits them in plain text.</p></div></div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFAQ(this)">
+      <span class="faq-q-text">Does Hyperliquid support auto-trading?</span>
+      <span class="faq-chevron">▾</span>
+    </div>
+    <div class="faq-a"><div class="faq-a-inner"><p>Not yet. Hyperliquid is currently <strong>alerts only</strong>. You can connect your ETH wallet address (read-only, no private key needed) to monitor your balance and positions in the dashboard.<br><br>Auto-trading on Hyperliquid requires EIP-712 wallet signing — we're working on it for a future update.</p></div></div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFAQ(this)">
+      <span class="faq-q-text">Why is OKX not available?</span>
+      <span class="faq-chevron">▾</span>
+    </div>
+    <div class="faq-a"><div class="faq-a-inner"><p>Our server is based in Helsinki (EU), and OKX blocks API connections from EU IP addresses. We're working on a relay via a non-EU server. OKX will be available in a future update.</p></div></div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFAQ(this)">
+      <span class="faq-q-text">Can I run multiple exchanges simultaneously?</span>
+      <span class="faq-chevron">▾</span>
+    </div>
+    <div class="faq-a"><div class="faq-a-inner"><p>Yes — on the <strong>Elite plan</strong>. You can run Bybit, Binance and Hyperliquid simultaneously with independent settings per exchange. Each exchange has its own MM config, Guardian circuit breakers, and position limits.<br><br>On Pro, you get 1 exchange. On Free, no auto-trading.</p></div></div>
+  </div>
+</div>
+
+<!-- BILLING -->
+<div class="faq-category" data-cat="billing">
+  <div class="faq-cat-title">💳 Plans & Billing</div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFAQ(this)">
+      <span class="faq-q-text">How does billing work? Is it automatic?</span>
+      <span class="faq-chevron">▾</span>
+    </div>
+    <div class="faq-a"><div class="faq-a-inner"><p>FundShot uses <strong>crypto payments only</strong> (USDT, BTC, ETH, SOL, BNB, TON) via NOWPayments. There is no automatic renewal — you pay manually each cycle. When your subscription expires you'll receive a reminder on Telegram.<br><br>You can also choose the <strong>One-shot</strong> option (30 days, single payment) or the <strong>Elite Lifetime</strong> plan (pay once, access forever).</p></div></div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFAQ(this)">
+      <span class="faq-q-text">What's the difference between Pro and Elite?</span>
+      <span class="faq-chevron">▾</span>
+    </div>
+    <div class="faq-a"><div class="faq-a-inner"><p>
+    <strong>Pro ($20/mo):</strong> unlimited alerts, 1 exchange, auto-trading up to 5 positions/day, Guardian, backtesting, pre-settlement alerts.<br><br>
+    <strong>Elite ($45/mo or $300 lifetime):</strong> everything in Pro + multi-exchange (Bybit + Binance + Hyperliquid), unlimited positions, custom thresholds per symbol, 10% referral commission, dedicated support.
+    </p></div></div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFAQ(this)">
+      <span class="faq-q-text">Is there a free trial for Pro?</span>
+      <span class="faq-chevron">▾</span>
+    </div>
+    <div class="faq-a"><div class="faq-a-inner"><p>The Free plan is a permanent free tier — not a trial. It gives you real alerts (10/day) and dashboard access with no time limit.<br><br>There's no free trial of Pro specifically, but the Free plan is enough to verify the signal quality before upgrading.</p></div></div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFAQ(this)">
+      <span class="faq-q-text">How does the referral program work?</span>
+      <span class="faq-chevron">▾</span>
+    </div>
+    <div class="faq-a"><div class="faq-a-inner"><p>Elite users earn <strong>10% commission</strong> on every payment from users they refer — including renewals and lifetime purchases. Commissions are paid in USDT TRC20 via NOWPayments monthly when your balance reaches $5.<br><br>Get your referral link with <code>/referral</code> on the Telegram bot.</p></div></div>
+  </div>
+</div>
+
+<!-- SECURITY -->
+<div class="faq-category" data-cat="security">
+  <div class="faq-cat-title">🔐 Security</div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFAQ(this)">
+      <span class="faq-q-text">How are my API keys protected?</span>
+      <span class="faq-chevron">▾</span>
+    </div>
+    <div class="faq-a"><div class="faq-a-inner"><p>Your API keys are encrypted with <strong>AES-256-GCM</strong> before being stored in the database. Each user has a unique encryption context. The bot never logs API keys in plain text and never transmits them over insecure channels.<br><br>We strongly recommend <strong>never enabling withdrawal permissions</strong> on API keys connected to FundShot. The bot only needs order placement permissions.</p></div></div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFAQ(this)">
+      <span class="faq-q-text">Can FundShot withdraw my funds?</span>
+      <span class="faq-chevron">▾</span>
+    </div>
+    <div class="faq-a"><div class="faq-a-inner"><p><strong>No.</strong> FundShot only uses the API permissions you grant. When creating your API key, only enable trading permissions — do NOT enable withdrawal permissions. Even if you did enable them by mistake, our system is designed to only place and close trades, never withdraw.</p></div></div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFAQ(this)">
+      <span class="faq-q-text">Is my Telegram data stored?</span>
+      <span class="faq-chevron">▾</span>
+    </div>
+    <div class="faq-a"><div class="faq-a-inner"><p>We store your Telegram user ID, username, and first name for authentication purposes. We don't store message history, private messages, or any data beyond what's needed to run the service. Login uses Telegram's official OAuth widget — your password never touches our servers.</p></div></div>
+  </div>
+</div>
+
+<!-- TROUBLESHOOTING -->
+<div class="faq-category" data-cat="troubleshooting">
+  <div class="faq-cat-title">🔧 Troubleshooting</div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFAQ(this)">
+      <span class="faq-q-text">The bot is not opening trades — what's wrong?</span>
+      <span class="faq-chevron">▾</span>
+    </div>
+    <div class="faq-a"><div class="faq-a-inner"><p>Common causes:<br><br>
+    <ul>
+      <li><strong>Auto-trader disabled</strong> — check the Trading page, toggle Auto-Trader ON</li>
+      <li><strong>Guardian triggered</strong> — check if a circuit breaker is active (drawdown, losses, daily limit)</li>
+      <li><strong>Config not sent</strong> — in the Trading page, click "Send to bot" after changing settings</li>
+      <li><strong>Min level too high</strong> — if markets are calm there may be no signals at your threshold</li>
+      <li><strong>OI filter too strict</strong> — try lowering <code>oi</code> to 0 temporarily to test</li>
+      <li><strong>API key issue</strong> — go to Settings and test the connection</li>
+    </ul></p></div></div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFAQ(this)">
+      <span class="faq-q-text">I'm getting alerts but positions aren't closing properly</span>
+      <span class="faq-chevron">▾</span>
+    </div>
+    <div class="faq-a"><div class="faq-a-inner"><p>On <strong>Binance Testnet</strong>, native SL/TP orders don't work (error -4120). The bot uses its own monitor loop instead — positions are protected but it relies on the bot being online. On Binance mainnet this works normally.<br><br>On Bybit, make sure your API key has <strong>Unified Trading write</strong> permissions. If a position seems stuck, you can always close it manually on the exchange — the bot will detect the closure automatically.</p></div></div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFAQ(this)">
+      <span class="faq-q-text">The dashboard shows "Loading..." indefinitely</span>
+      <span class="faq-chevron">▾</span>
+    </div>
+    <div class="faq-a"><div class="faq-a-inner"><p>Try a hard refresh (<code>Ctrl+Shift+R</code> or <code>Cmd+Shift+R</code>). If it persists, the issue is usually a network request being blocked. Check:<br><br>
+    <ul>
+      <li>You're logged in (sign out and sign in again if the session expired)</li>
+      <li>No VPN or firewall blocking <code>api.fundshot.app</code></li>
+      <li>Browser console (F12) for any specific error messages</li>
+    </ul>
+    If the problem continues, contact support via Telegram.</p></div></div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFAQ(this)">
+      <span class="faq-q-text">I lost money on a trade — is this normal?</span>
+      <span class="faq-chevron">▾</span>
+    </div>
+    <div class="faq-a"><div class="faq-a-inner"><p>Yes, losing trades are normal and expected. No strategy has a 100% win rate. The funding collection strategy is profitable <em>on average</em> across many trades — individual losses are part of the system.<br><br>The stop loss (default 5%) limits how much any single trade can lose. Guardian prevents a bad streak from causing excessive drawdown. Over time, the edge comes from the structural imbalance in funding rates — not from winning every trade.</p></div></div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFAQ(this)">
+      <span class="faq-q-text">How do I contact support?</span>
+      <span class="faq-chevron">▾</span>
+    </div>
+    <div class="faq-a"><div class="faq-a-inner"><p>You can reach us via:<br><br>
+    <ul>
+      <li><strong>Telegram bot:</strong> send <code>/support your message</code> to <a href="https://t.me/FundShot_bot">@FundShot_bot</a></li>
+      <li><strong>Dashboard:</strong> click the 💬 support button (bottom right)</li>
+      <li><strong>Email:</strong> <a href="mailto:support@fundshot.app">support@fundshot.app</a></li>
+    </ul>
+    We typically respond within a few hours.</p></div></div>
+  </div>
+</div>
+
+<!-- Support CTA -->
+<div class="support-cta">
+  <div style="font-size:36px;margin-bottom:12px">💬</div>
+  <h3>Still have questions?</h3>
+  <p>Can't find what you're looking for? Our support team is a message away.</p>
+  <div class="support-cta-btns">
+    <a href="https://t.me/FundShot_bot" target="_blank" class="btn-tg">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.024 9.531c-.148.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.024 14.06l-2.966-.924c-.645-.204-.657-.645.136-.953l11.57-4.461c.537-.194 1.008.131.798.526z"/></svg>
+      Ask on Telegram
+    </a>
+    <a href="/dashboard" class="btn-dash">✦ AI Advisor</a>
+    <a href="mailto:support@fundshot.app" class="btn-dash" style="color:var(--teal);border-color:rgba(0,201,167,.3);background:rgba(0,201,167,.06)">📧 Email us</a>
+  </div>
+</div>
+
+</div><!-- /faq-wrap -->
+
+<footer>FundShot © 2026 — <a href="mailto:support@fundshot.app" style="color:var(--muted)">support@fundshot.app</a></footer>
+
+<script>
+function toggleFAQ(q) {
+  const item = q.closest('.faq-item');
+  const isOpen = item.classList.contains('open');
+  document.querySelectorAll('.faq-item.open').forEach(i => i.classList.remove('open'));
+  if (!isOpen) item.classList.add('open');
+}
+
+function filterCat(cat, btn) {
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.faq-category').forEach(c => {
+    c.style.display = (cat === 'all' || c.dataset.cat === cat) ? 'block' : 'none';
+  });
+  document.getElementById('faq-search').value = '';
+  document.getElementById('no-results').style.display = 'none';
+}
+
+function filterFAQ(q) {
+  const query = q.toLowerCase().trim();
+  // Reset cat filter
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('.cat-btn').classList.add('active');
+  document.querySelectorAll('.faq-category').forEach(c => c.style.display = 'block');
+
+  let visible = 0;
+  document.querySelectorAll('.faq-item').forEach(item => {
+    const text = item.textContent.toLowerCase();
+    const match = !query || text.includes(query);
+    item.style.display = match ? 'block' : 'none';
+    if (match) visible++;
+  });
+
+  // Show/hide categories with no visible items
+  document.querySelectorAll('.faq-category').forEach(cat => {
+    const hasVisible = [...cat.querySelectorAll('.faq-item')].some(i => i.style.display !== 'none');
+    cat.style.display = hasVisible ? 'block' : 'none';
+  });
+
+  document.getElementById('no-results').style.display = (visible === 0 && query) ? 'block' : 'none';
+}
+
+// Auto-open from URL hash
+window.addEventListener('DOMContentLoaded', () => {
+  if (window.location.hash) {
+    const id = window.location.hash.slice(1);
+    const item = document.getElementById(id);
+    if (item) { item.classList.add('open'); item.scrollIntoView({behavior:'smooth', block:'center'}); }
+  }
+});
+</script>
+</body>
+</html>

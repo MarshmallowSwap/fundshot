@@ -56,6 +56,10 @@
     {
       "src": "docs.html",
       "use": "@vercel/static"
+    },
+    {
+      "src": "faq.html",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -116,11 +120,24 @@
       "dest": "/docs.html"
     },
     {
+      "src": "/faq",
+      "dest": "/faq.html"
+    },
+    {
       "src": "/(.*)",
       "dest": "/landing.html"
     }
   ],
   "headers": [
+    {
+      "source": "/faq",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, no-cache, must-revalidate"
+        }
+      ]
+    },
     {
       "source": "/(.*).html",
       "headers": [

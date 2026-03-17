@@ -578,6 +578,43 @@ class ProxyHandler(BaseHTTPRequestHandler):
             return
 
 
+        if p == "/api/support":
+            try:
+                body_bytes = self.rfile.read(int(self.headers.get("Content-Length", 0)))
+                body = json.loads(body_bytes)
+                msg     = body.get("message", "")[:500]
+                user    = body.get("user", "unknown")
+                chat_id = body.get("chat_id")
+                plan    = body.get("plan", "free")
+                if not msg:
+                    self._json({"ok": False, "error": "empty"}, 400)
+                    return
+                import urllib.request as _ur3
+                owner_id = os.getenv("CHAT_ID", "")
+                token    = os.getenv("TELEGRAM_TOKEN", "")
+                if owner_id and token:
+                    plan_emoji = {"elite": "crown", "pro": "bolt", "free": "free"}.get(plan, "free")
+                    reply_line = ("Reply to: " + str(chat_id)) if chat_id else ""
+                    lines = [
+                        "SUPPORT REQUEST",
+                        "@" + user + " [" + plan.upper() + "]",
+                        msg,
+                    ]
+                    if reply_line:
+                        lines.append(reply_line)
+                    notify = "\n".join(lines)
+                    tg_url = "https://api.telegram.org/bot" + token + "/sendMessage"
+                    tg_req = _ur3.Request(tg_url,
+                        data=json.dumps({"chat_id": owner_id, "text": notify}).encode(),
+                        headers={"Content-Type": "application/json"}, method="POST")
+                    _ur3.urlopen(tg_req, timeout=5)
+                log.info("Support ticket from %s: %s", user, msg[:80])
+                self._json({"ok": True})
+            except Exception as e:
+                log.error("/api/support: %s", e)
+                self._json({"ok": True})
+            return
+
         if p == "/api/ai":
             try:
                 body_bytes = self.rfile.read(int(self.headers.get("Content-Length", 0)))
