@@ -391,14 +391,17 @@ async def _process_exchange_tickers(
             if level in ("high", "extreme", "hard", "critico", "jackpot") and os.getenv("CHANNEL_ID", CHANNEL_ID):
                 logger.info("Invio channel: %s %s level=%s", exchange, symbol, level)
                 try:
-                    _ex_em_ch = {"bybit": "🟡", "binance": "🟠", "hyperliquid": "🟣"}.get(exchange, "⚡")
-                    _ex_name_f = {"bybit": "Bybit", "binance": "Binance", "hyperliquid": "Hyperliquid"}.get(exchange, exchange.capitalize())
+                    _ex_em_ch   = {"bybit": "🟡", "binance": "🟠", "hyperliquid": "🟣"}.get(exchange, "⚡")
+                    _ex_name_ch = {"bybit": "Bybit", "binance": "Binance", "hyperliquid": "Hyperliquid"}.get(exchange, exchange.capitalize())
+                    _lvl_ch     = {"critico": "💎 JACKPOT", "jackpot": "💎 JACKPOT", "hard": "🔴 HARD", "extreme": "🔥 EXTREME", "high": "🚨 HIGH"}.get(level, level.upper())
+                    _dir_ch     = "SHORT" if rate_pct > 0 else "LONG"
                     _cta = (
-                        alert_text + "\n\n"
-                        "━━━━━━━━━━━━━━━━━━\n"
-                        f"🤖 *Auto-trader activated* on {_ex_em_ch} {_ex_name_f} for Pro/Elite subscribers\n"
-                        "👉 [Activate FundShot](https://t.me/FundShot_bot?start=upgrade_pro) "
-                        "to receive ALL alerts in real time"
+                        f"*{_lvl_ch} FUNDING ALERT — {_dir_ch}*\n\n"
+                        f"📌 `{symbol}`  ·  {_ex_em_ch} {_ex_name_ch}\n"
+                        f"📊 `{rate_pct:+.4f}%` funding rate\n"
+                        f"━━━━━━━━━━━━━━━━━━\n"
+                        f"👉 [Activate FundShot](https://t.me/FundShot_bot?start=upgrade_pro) "
+                        f"to never miss a signal"
                     )
                     _chart_ch = generate_chart(symbol, rate_pct, exchange=exchange)
                     await send_to_channel(bot, _cta, photo_buf=_chart_ch)
