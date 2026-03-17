@@ -3068,11 +3068,11 @@ async function loadPublic() {
     S.data = j.tickers
       .map(t => ({
         symbol: t.symbol,
-        price:  parseFloat(t.markPrice) || 0,
+        price:  parseFloat(t.markPrice || t.lastPrice) || 0,
         rate:   parseFloat(t.fundingRate) || 0,
         vol:    parseFloat(t.turnover24h) || 0,
       }))
-      .filter(t => t.rate !== 0)
+      .filter(t => t.symbol && t.rate !== 0)
       .sort((a, b) => Math.abs(b.rate) - Math.abs(a.rate));
     setStatus('live');
     renderAll();
@@ -5185,7 +5185,7 @@ async function aiSend() {
   aiShowTyping();
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('https://api.fundshot.app/api/ai', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

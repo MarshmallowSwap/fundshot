@@ -484,6 +484,33 @@ class ProxyHandler(BaseHTTPRequestHandler):
                 self._json({"ok": False, "error": str(e)}, 500)
             return
 
+        if p == "/api/ai":
+            try:
+                body_bytes = self.rfile.read(int(self.headers.get("Content-Length", 0)))
+                req_data = json.loads(body_bytes)
+                anthropic_key = os.getenv("ANTHROPIC_API_KEY", "")
+                if not anthropic_key:
+                    self._json({"error": "AI not configured"}, 503)
+                    return
+                import urllib.request as _ur2
+                ai_req = _ur2.Request(
+                    "https://api.anthropic.com/v1/messages",
+                    data=json.dumps(req_data).encode(),
+                    headers={
+                        "Content-Type": "application/json",
+                        "x-api-key": anthropic_key,
+                        "anthropic-version": "2023-06-01",
+                    },
+                    method="POST"
+                )
+                with _ur2.urlopen(ai_req, timeout=30) as resp:
+                    result = json.loads(resp.read())
+                self._json(result)
+            except Exception as e:
+                log.error("/api/ai error: %s", e)
+                self._json({"error": str(e)[:200]}, 500)
+            return
+
         self._json({"ok": False, "error": "Not Found"}, 404)
 
     # ── GET ───────────────────────────────────────────────────────────────────
