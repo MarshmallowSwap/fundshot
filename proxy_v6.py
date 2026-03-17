@@ -454,6 +454,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
                     return
                 try:
                     ok = asyncio.run(save_credentials(u.id, exchange, api_key, api_sec, env, passph))
+                    log.info("save_credentials result: ok=%s exchange=%s user=%s", ok, exchange, u.id)
                 except Exception as e_save:
                     log.error("save_credentials error: %s", e_save)
                     self._json({"ok": False, "error": f"DB error: {str(e_save)[:200]}"}, 500)
