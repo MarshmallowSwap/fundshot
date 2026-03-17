@@ -424,7 +424,7 @@ async def _process_exchange_tickers(
                             f"🤖 *Trade aperto — {_dir_t}*\n"
                             f"━━━━━━━━━━━━━━━━━━\n"
                             f"📌 `{symbol}` · {_ex_em_t}\n"
-                            f"📊 Funding: `{rate_pct:+.4f}%` ({_trade_level.upper()})\n"
+                            f"📊 Funding: `{rate_pct:+.4f}%` ({"JACKPOT" if _trade_level=="critico" else _trade_level.upper()})\n"
                             f"━━━━━━━━━━━━━━━━━━\n"
                             f"🤖 Our bot just opened this position automatically\n"
                             f"👉 [Attiva FundShot](https://t.me/FundShot_bot?start=upgrade_pro) "
