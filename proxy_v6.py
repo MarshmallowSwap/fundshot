@@ -735,10 +735,9 @@ class ProxyHandler(BaseHTTPRequestHandler):
                 cache_set(cache_key, result)
                 self._json(result)
             except Exception as e:
-                self._json({"ok": False, "error": str(e)}, 500)
+                log.error("positions %s: %s", exchange if 'exchange' in dir() else '?', e)
+                self._json({"ok": True, "positions": [], "error": str(e)}, 200)
             return
-
-        if p == "/api/user/wallet":
             user = self._auth()
             if not user:
                 return

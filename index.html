@@ -4546,8 +4546,20 @@ async function initExchangeSettings() {
       });
     }
     renderExchStatusBar();
-    // Aggiorna badge su tutti i tab
-    Object.keys(EXCH_INFO).forEach(ex => updateExchTabBadge(ex, !!_exchConfigs[ex]));
+    // Aggiorna dot verde sui tab configurati (OKX già gestito come disabled)
+    Object.keys(EXCH_INFO).forEach(ex => {
+      if (ex === 'okx') return; // OKX gestito separatamente come EU restricted
+      const btn = document.getElementById('tab-' + ex);
+      if (!btn) return;
+      btn.querySelectorAll('.exch-config-dot').forEach(e => e.remove());
+      if (_exchConfigs[ex]) {
+        const dot = document.createElement('span');
+        dot.className = 'exch-config-dot';
+        dot.style.cssText = 'position:absolute;bottom:4px;right:4px;width:8px;height:8px;border-radius:50%;background:var(--teal2);box-shadow:0 0 6px var(--teal2);';
+        btn.style.position = 'relative';
+        btn.appendChild(dot);
+      }
+    });
     // Aggiorna il tab attivo per mostrare stato corretto
     const activeBtn = document.getElementById('tab-' + _activeExchTab);
     selectExchangeTab(_activeExchTab, activeBtn);
