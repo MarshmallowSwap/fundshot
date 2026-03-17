@@ -1035,8 +1035,13 @@ class FundingTrader:
                 pos.tp1_hit   = True
                 pos.best_price = mark_price
 
-                # Bybit ha già chiuso il 30% con il TP impostato
-                # Aggiorniamo il trailing stop per il residuo 70%
+                # Chiudi esplicitamente il 30% — su Bybit il TP nativo potrebbe averlo già fatto
+                # ma su Binance il TP nativo non funziona, quindi lo facciamo sempre in-house
+                tp1_closed = self.exchange.close_position(symbol, pos.side, pos.tp1_qty)
+                if not tp1_closed:
+                    logger.warning("TP1 close_position fallito per %s — rimane aperta", symbol)
+
+                # Sposta trailing stop per il residuo 70%
                 buf = pos.trailing_buffer / 100
                 if is_short:
                     pos.trailing_stop = mark_price * (1 + buf)
@@ -1170,6 +1175,7 @@ class FundingTrader:
 
         # Scrivi su file per il dashboard
         RESULTS_FILE = "/tmp/fk_results.json"
+        now_iso = datetime.now(timezone.utc).isoformat()
         try:
             try:
                 with open(RESULTS_FILE) as f:
@@ -1184,14 +1190,44 @@ class FundingTrader:
                 "duration_min": round(result.duration_min, 1),
                 "close_reason": result.close_reason,
                 "level":        result.level,
-                "ts":           datetime.now(timezone.utc).isoformat(),
+                "exchange":     self.exchange_name,
+                "ts":           now_iso,
             })
-            # Tieni solo ultimi 200 risultati
             data = data[-200:]
             with open(RESULTS_FILE, "w") as f:
                 _json.dump(data, f)
         except Exception as e:
             logger.warning(f"_record_result: errore scrittura file: {e}")
+
+        # Salva anche su Supabase per PnL reale nella dashboard
+        try:
+            import asyncio as _ar
+            from db.supabase_client import record_trade as _rt, get_user as _gu
+            import os as _os
+            _owner_cid = int(_os.getenv("CHAT_ID", "0"))
+            if _owner_cid and self.chat_id:
+                async def _do_save():
+                    _u = await _gu(_owner_cid)
+                    if _u:
+                        await _ar.get_event_loop().run_in_executor(None, lambda: _rt(
+                            user_id     = _u.id,
+                            exchange    = self.exchange_name,
+                            symbol      = pos.symbol,
+                            side        = pos.side,
+                            entry_price = pos.entry_price,
+                            exit_price  = pos.entry_price * (1 + result.pnl_pct / 100 / (CONFIG["leverage"] or 1)),
+                            pnl_usdt    = round(result.pnl_usdt, 4),
+                            level       = pos.level,
+                            opened_at   = pos.opened_at.isoformat(),
+                            closed_at   = now_iso,
+                            close_reason= reason,
+                        ))
+                try:
+                    _ar.get_event_loop().create_task(_do_save())
+                except RuntimeError:
+                    pass
+        except Exception as _se:
+            logger.debug("_record_result Supabase: %s", _se)
 
     # ── FUNDING EXIT ──
 
