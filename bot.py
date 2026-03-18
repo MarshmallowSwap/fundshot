@@ -1811,6 +1811,23 @@ def main():
         )
         logger.info("📊 Job OI spike schedulato ogni 5 min")
 
+    # ── Twitter/X forwarder (ogni 10 minuti) ─────────────────────────────────
+    if os.getenv("TWITTER_HANDLE") or os.getenv("CHANNEL_ID"):
+        from twitter_forwarder import check_and_forward as _tw_forward
+        async def twitter_job(context):
+            try:
+                n = await _tw_forward(context.bot)
+                if n: logger.info("🐦 Twitter: %d nuovi tweet inoltrati al canale", n)
+            except Exception as e:
+                logger.warning("Twitter job: %s", e)
+        app.job_queue.run_repeating(
+            twitter_job,
+            interval=600,   # ogni 10 minuti
+            first=60,       # parte 60s dopo l'avvio
+            name="twitter_forwarder",
+        )
+        logger.info("🐦 Twitter forwarder schedulato ogni 10 min (@%s)", os.getenv("TWITTER_HANDLE","FundShot_app"))
+
     # Registra wizard onboarding SaaS — DEVE essere prima di commands.register()
     app.add_handler(onboarding.build_onboarding_handler())
 
