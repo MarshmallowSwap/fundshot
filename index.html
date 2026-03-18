@@ -750,7 +750,7 @@ nav {
 .ah-bybit    { background: rgba(212,168,67,.1); color: var(--gold2); }
 .ah-binance  { background: rgba(251,146,60,.1); color: #fb923c; }
 
-/* Posizioni — PnL live fix */
+/* Positions — PnL live fix */
 .pos-pnl-val { font-size: .9rem; font-weight: 700; font-family: "DM Mono", monospace; }
 .pos-pnl-pct { font-size: .7rem; }
 
@@ -1035,7 +1035,7 @@ nav {
   <div class="nav-center">
     <button class="np active" onclick="goto('dashboard',this)">Dashboard</button>
     <button class="np" onclick="goto('funding',this)">Funding</button>
-    <button class="np" onclick="goto('positions',this)">Posizioni</button>
+    <button class="np" onclick="goto('positions',this)">Positions</button>
     <button class="np" onclick="gotoGated('trading',this)" id="nav-trading">⚡ Trading</button>
     <button class="np" onclick="goto('settings',this)">Settings</button>
     <button class="np" onclick="goto('referral',this)">🔗 Referral</button>
@@ -1055,7 +1055,7 @@ nav {
     <span class="countdown" id="countdown">60s</span>
     <div class="nav-status">
       <div class="pulse-dot" id="pdot"></div>
-      <span id="stext">Connessione...</span>
+      <span id="stext">Connecting...</span>
     </div>
   </div>
 </nav>
@@ -1063,7 +1063,7 @@ nav {
 <!-- ═══ TICKER ═══ -->
 <div class="ticker">
   <div class="ticker-track" id="ticker">
-    <span style="color:var(--text3);font-size:12px;padding:0 20px">Caricamento...</span>
+    <span style="color:var(--text3);font-size:12px;padding:0 20px">Loading...</span>
   </div>
 </div>
 
@@ -1086,16 +1086,16 @@ nav {
   </div>
 
   <div class="stats-grid">
-    <div class="sc a"><div class="sc-label">Funding Estremi</div><div class="sc-val" id="s0">—</div><div class="sc-sub">|rate| ≥ 1.00%</div><div class="sc-glyph">🔥</div></div>
+    <div class="sc a"><div class="sc-label">Extreme Funding</div><div class="sc-val" id="s0">—</div><div class="sc-sub">|rate| ≥ 1.00%</div><div class="sc-glyph">🔥</div></div>
     <div class="sc b"><div class="sc-label">Top Rate</div><div class="sc-val" id="s1">—</div><div class="sc-sub" id="s1s">—</div><div class="sc-glyph">📈</div></div>
-    <div class="sc c"><div class="sc-label">Segnali SHORT</div><div class="sc-val" id="s2">—</div><div class="sc-sub">funding positivo</div><div class="sc-glyph">🔻</div></div>
-    <div class="sc d"><div class="sc-label">Segnali LONG</div><div class="sc-val" id="s3">—</div><div class="sc-sub">funding negativo</div><div class="sc-glyph">🔺</div></div>
+    <div class="sc c"><div class="sc-label">SHORT Signals</div><div class="sc-val" id="s2">—</div><div class="sc-sub">positive funding</div><div class="sc-glyph">🔻</div></div>
+    <div class="sc d"><div class="sc-label">LONG Signals</div><div class="sc-val" id="s3">—</div><div class="sc-sub">negative funding</div><div class="sc-glyph">🔺</div></div>
   </div>
 
   <div class="g2">
     <div class="card">
       <div class="ch">
-        <div class="ct">🔥 Funding Estremi</div>
+        <div class="ct">🔥 Extreme Funding</div>
         <div style="display:flex;align-items:center;gap:8px">
           <div class="tabs">
             <button class="tab active" onclick="switchTab(this,'dash','top')">SHORT 🔻</button>
@@ -1104,7 +1104,7 @@ nav {
           <span class="badge live">LIVE</span>
         </div>
       </div>
-      <div id="dash-tbl"><div class="loading"><div class="spin"></div>Connessione Bybit...</div></div>
+      <div id="dash-tbl"><div class="loading"><div class="spin"></div>Connecting...</div></div>
     </div>
 
     <div class="card">
@@ -1127,7 +1127,7 @@ nav {
     </div>
     <div id="oi-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;padding:14px 0 4px">
       <div style="color:var(--text-muted);font-size:13px;grid-column:1/-1;text-align:center;padding:8px">
-        Caricamento...
+        Loading...
       </div>
     </div>
   </div>
@@ -1150,19 +1150,19 @@ nav {
   </div>
 
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:12px">
-    <div class="slabel" style="margin-bottom:0">Tutti i Funding Rates · Bybit Perpetual USDT</div>
+    <div class="slabel" style="margin-bottom:0">All i Funding Rates · Bybit Perpetual USDT</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <div class="tabs">
-        <button class="tab active" onclick="switchTab(this,'fund','all')">Tutti</button>
-        <button class="tab" onclick="switchTab(this,'fund','ext')">Estremi</button>
+        <button class="tab active" onclick="switchTab(this,'fund','all')">All</button>
+        <button class="tab" onclick="switchTab(this,'fund','ext')">Extreme</button>
         <button class="tab" onclick="switchTab(this,'fund','sht')">SHORT</button>
         <button class="tab" onclick="switchTab(this,'fund','lng')">LONG</button>
       </div>
-      <button class="btn btn-ghost btn-sm" onclick="loadPublic()">↺ Aggiorna</button>
+      <button class="btn btn-ghost btn-sm" onclick="loadPublic()">↺ Refresh</button>
     </div>
   </div>
   <div class="card">
-    <div id="fund-tbl"><div class="loading"><div class="spin"></div>Caricamento...</div></div>
+    <div id="fund-tbl"><div class="loading"><div class="spin"></div>Loading...</div></div>
   </div>
 
 </div>
@@ -1260,7 +1260,7 @@ nav {
 <div class="page" id="page-settings">
 
   <!-- ── ROW 1: API + Alert Thresholds ── -->
-  <div class="slabel">Connessione</div>
+  <div class="slabel">Connection</div>
   <div class="g2eq" style="margin-bottom:20px">
 
     <!-- API KEYS -->
@@ -1333,10 +1333,10 @@ nav {
 
     <!-- ALERT THRESHOLDS -->
     <div class="card">
-      <div class="ch"><div class="ct">⚙️ Soglie Alert</div><span class="badge">Editabili</span></div>
+      <div class="ch"><div class="ct">⚙️ Alert Thresholds</div><span class="badge">Editable</span></div>
 
       <div class="tr">
-        <div><div class="tr-label">🤑 JACKPOT</div><div class="tr-sub">Massima opportunità</div></div>
+        <div><div class="tr-label">🤑 JACKPOT</div><div class="tr-sub">Maximum opportunity</div></div>
         <div style="display:flex;align-items:center;gap:10px">
           <div style="display:flex;align-items:center;gap:5px">
             <span style="font-size:11px;color:var(--text3)">≥</span>
@@ -1562,8 +1562,8 @@ nav {
     <div class="gb-left">
       <div class="gb-icon" id="gb-icon">🛡️</div>
       <div>
-        <div class="gb-title" id="gb-title">Guardian Attivo — Sistema Protetto</div>
-        <div class="gb-sub" id="gb-sub">Tutti i parametri nei limiti · Nessun circuit breaker attivato</div>
+        <div class="gb-title" id="gb-title">Guardian Active — System Protected</div>
+        <div class="gb-sub" id="gb-sub">All i parametri nei limiti · Nessun circuit breaker attivato</div>
       </div>
     </div>
     <div class="gb-right">
@@ -1705,7 +1705,7 @@ nav {
         </div>
       </div>
       <div class="mm-row">
-        <div><div class="mm-label">⚡ Leva</div><div class="mm-sub">Moltiplicatore posizione</div></div>
+        <div><div class="mm-label">⚡ Leverage</div><div class="mm-sub">Position multiplione</div></div>
         <div class="mm-ctrl">
           <input class="mm-inp" id="mm-leva" type="number" min="1" max="20" step="1" value="2" oninput="mmRecalc()">
           <span class="mm-unit">x</span>
@@ -1820,14 +1820,14 @@ nav {
         </div>
       </div>
       <div class="mm-row">
-        <div><div class="mm-label">📅 Max perdite giornaliere</div><div class="mm-sub">Circuit breaker su N losses</div></div>
+        <div><div class="mm-label">📅 Max daily losses</div><div class="mm-sub">Pause after N consecutive losses</div></div>
         <div class="mm-ctrl">
           <input class="mm-inp" id="g-maxloss" type="number" min="1" max="20" step="1" value="3" oninput="guardianUpdate()">
           <span class="mm-unit">n°</span>
         </div>
       </div>
       <div class="mm-row">
-        <div><div class="mm-label">💸 Perdita max giornaliera</div><div class="mm-sub">Stop trading se supera</div></div>
+        <div><div class="mm-label">💸 Max daily loss</div><div class="mm-sub">Stop trading if exceeded</div></div>
         <div class="mm-ctrl">
           <input class="mm-inp" id="g-maxdaily" type="number" min="1" step="1" value="100" oninput="guardianUpdate()">
           <span class="mm-unit">USDT</span>
@@ -1845,7 +1845,7 @@ nav {
         <button class="tgl on" id="tog-g-tg" onclick="this.classList.toggle('on')"></button>
       </div>
       <div class="mm-row" style="border-bottom:none">
-        <div><div class="mm-label">🆘 Chiudi tutto in emergenza</div><div class="mm-sub">Forza chiusura posizioni aperte</div></div>
+        <div><div class="mm-label">🆘 Emergency close all</div><div class="mm-sub">Force close all open positions</div></div>
         <button class="tgl" id="tog-g-closeall" onclick="this.classList.toggle('on')"></button>
       </div>
 
@@ -1903,7 +1903,7 @@ nav {
     <div class="card">
       <div class="ch">
         <div class="ct">⚙️ Filtri On/Off</div>
-        <span class="badge">Attivazione rapida</span>
+        <span class="badge">Quick setup</span>
       </div>
       <div class="tr">
         <div><div class="tr-label">📊 Filtro OI</div><div class="tr-sub">Conferma con Open Interest</div></div>
@@ -1914,11 +1914,11 @@ nav {
         <button class="tgl on" id="ef-tog-persist" onclick="this.classList.toggle('on')"></button>
       </div>
       <div class="tr">
-        <div><div class="tr-label">⏰ Filtro Reset</div><div class="tr-sub">Blocca se prossimo reset &lt; min impostati</div></div>
+        <div><div class="tr-label">⏰ Reset Filter</div><div class="tr-sub">Block if prossimo reset &lt; min impostati</div></div>
         <button class="tgl on" id="ef-tog-reset" onclick="this.classList.toggle('on')"></button>
       </div>
       <div class="tr" style="border-bottom:none">
-        <div><div class="tr-label">🚫 Cooldown attivo</div><div class="tr-sub">Pausa obbligatoria dopo chiusura</div></div>
+        <div><div class="tr-label">🚫 Active cooldown</div><div class="tr-sub">Mandatory pause after close</div></div>
         <button class="tgl on" id="ef-tog-cooldown" onclick="this.classList.toggle('on')"></button>
       </div>
 
@@ -1948,10 +1948,10 @@ nav {
       <div style="overflow-x:auto">
         <table class="th-table">
           <thead><tr>
-            <th>Ora</th><th>Simbolo</th><th>Lato</th><th>Size</th><th>Entry</th><th>Exit</th><th>PnL</th><th>Funding</th><th>R:R</th>
+            <th>Time</th><th>Symbol</th><th>Side</th><th>Size</th><th>Entry</th><th>Exit</th><th>PnL</th><th>Funding</th><th>R:R</th>
           </tr></thead>
           <tbody id="th-body">
-            <tr><td colspan="9" style="text-align:center;padding:28px;color:var(--text3)">Nessun trade registrato in questa sessione</td></tr>
+            <tr><td colspan="9" style="text-align:center;padding:28px;color:var(--text3)">No trades registrato in questa sessione</td></tr>
           </tbody>
         </table>
       </div>
@@ -2033,7 +2033,7 @@ nav {
           <div class="guard-ico" style="background:rgba(45,212,191,.1)">⏱️</div>
           <div class="guard-body">
             <div class="guard-name">Cooldown</div>
-            <div class="guard-detail" id="gr-cd-detail">Nessun cooldown attivo</div>
+            <div class="guard-detail" id="gr-cd-detail">No active cooldown</div>
           </div>
           <span class="guard-status gs-ok" id="gr-cd-status">OK</span>
         </div>
@@ -2045,7 +2045,7 @@ nav {
         <div class="log-feed" id="guardian-log">
           <div class="log-item">
             <div class="log-dot" style="background:var(--green2)"></div>
-            <div class="log-msg" style="color:var(--text3)">Guardian inizializzato · Tutti i parametri OK</div>
+            <div class="log-msg" style="color:var(--text3)">Guardian inizializzato · All i parametri OK</div>
             <div class="log-time" id="guardian-init-time">—</div>
           </div>
         </div>
@@ -2099,20 +2099,32 @@ nav {
   </div>
 
   <!-- Wallet card -->
-  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:22px;margin-bottom:20px">
-    <div style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px">Payout wallet (USDT TRC20)</div>
-    <div style="display:flex;gap:8px;align-items:center">
-      <input id="ref-wallet-input" type="text" placeholder="T..." style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-family:'DM Mono',monospace;font-size:.78rem;color:var(--text);outline:none;transition:border-color .2s" onfocus="this.style.borderColor='var(--p1)'" onblur="this.style.borderColor='var(--border)'">
-      <button onclick="saveRefWallet()" style="background:rgba(0,201,167,.15);border:1px solid rgba(0,201,167,.3);color:var(--teal2);border-radius:8px;padding:10px 16px;font-weight:700;font-size:.82rem;cursor:pointer;font-family:'Syne',sans-serif;transition:all .2s;white-space:nowrap">Save wallet</button>
+  <div style="background:var(--bg2);border:1.5px solid rgba(0,201,167,.3);border-radius:14px;padding:24px;margin-bottom:20px;position:relative;overflow:hidden">
+    <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(0,201,167,.6),transparent)"></div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+      <span style="font-size:18px">💸</span>
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem;color:var(--text)">Payout Wallet</div>
+        <div style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--teal2);letter-spacing:.06em">USDT · TRON network (TRC20)</div>
+      </div>
     </div>
-    <div id="ref-wallet-msg" style="font-size:.75rem;color:var(--text3);margin-top:6px">Minimum payout: $5 · Paid monthly automatically</div>
+    <div style="position:relative;margin-bottom:10px">
+      <input id="ref-wallet-input" type="text" placeholder="Enter your USDT TRC20 address (starts with T...)"
+        oninput="validateTRC20(this)"
+        style="width:100%;background:var(--bg3);border:1.5px solid var(--border2);border-radius:10px;padding:12px 44px 12px 14px;font-family:'DM Mono',monospace;font-size:.8rem;color:var(--text);outline:none;transition:border-color .2s;box-sizing:border-box"
+        onfocus="this.style.borderColor='rgba(0,201,167,.5)'" onblur="validateTRC20(this)">
+      <span id="ref-wallet-icon" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:16px;pointer-events:none"></span>
+    </div>
+    <div id="ref-wallet-badge" style="display:none;margin-bottom:10px"></div>
+    <button onclick="saveRefWallet()" style="width:100%;background:linear-gradient(135deg,rgba(0,201,167,.2),rgba(0,201,167,.1));border:1px solid rgba(0,201,167,.4);color:var(--teal2);border-radius:10px;padding:11px;font-weight:700;font-size:.88rem;cursor:pointer;font-family:'Syne',sans-serif;transition:all .2s" onmouseover="this.style.background='rgba(0,201,167,.25)'" onmouseout="this.style.background='linear-gradient(135deg,rgba(0,201,167,.2),rgba(0,201,167,.1))'">Save wallet address</button>
+    <div id="ref-wallet-msg" style="font-size:.75rem;color:var(--text3);margin-top:8px;text-align:center">Minimum payout: $5 · Paid automatically on the 1st of each month</div>
   </div>
 
   <!-- Info card -->
   <div style="background:rgba(212,168,67,.05);border:1px solid rgba(212,168,67,.15);border-radius:14px;padding:20px;margin-bottom:20px">
     <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem;color:var(--text);margin-bottom:10px">How it works</div>
     <div style="display:flex;flex-direction:column;gap:8px;font-size:.85rem;color:var(--text2)">
-      <div style="display:flex;gap:10px"><span style="color:var(--p2);font-family:'DM Mono',monospace;font-size:.75rem;flex-shrink:0;width:20px">01</span>Share your referral link — anyone who signs up through it is tagged as your referral</div>
+      <div style="display:flex;gap:10px"><span style="color:var(--p2);font-family:'DM Mono',monospace;font-size:.75rem;flex-shrink:0;width:20px">01</span>Share your referral link — anyone who signs up through it becomes your referral</div>
       <div style="display:flex;gap:10px"><span style="color:var(--p2);font-family:'DM Mono',monospace;font-size:.75rem;flex-shrink:0;width:20px">02</span>When they pay for any plan, you earn your commission percentage</div>
       <div style="display:flex;gap:10px"><span style="color:var(--p2);font-family:'DM Mono',monospace;font-size:.75rem;flex-shrink:0;width:20px">03</span>Commission accumulates in your balance — visible above</div>
       <div style="display:flex;gap:10px"><span style="color:var(--p2);font-family:'DM Mono',monospace;font-size:.75rem;flex-shrink:0;width:20px">04</span>On the 1st of each month, if balance ≥ $5, we send USDT TRC20 to your wallet automatically</div>
@@ -3203,7 +3215,7 @@ function setStatus(s) {
   const dot  = document.getElementById('pdot');
   const txt  = document.getElementById('stext');
   const map  = {
-    loading: { color:'#f0c96a', text:'Caricamento...' },
+    loading: { color:'#f0c96a', text:'Loading...' },
     live:    { color:'#00c9a7', text:'Live' },
     error:   { color:'#ff4d6d', text:'Errore connessione' },
   };
@@ -3338,7 +3350,7 @@ function sparks(r){
   return Array(6).fill(0).map((_,i)=>`<div class="sb" style="height:${4+Math.random()*14}px;background:${col};opacity:${.3+i*.12}"></div>`).join('');
 }
 function buildTable(rows,full=false){
-  if(!rows.length) return '<div class="empty-state">Nessun dato per questo filtro</div>';
+  if(!rows.length) return '<div class="empty-state">No data for this filter</div>';
   const hd=`<tr><th>#</th><th>Coppia</th><th>Rate</th>${full?'<th>Prezzo</th><th>Vol 24h</th>':''}<th>Livello</th><th>Trend</th></tr>`;
   const bd=rows.map((d,i)=>{
     const [cl,lb]=getLevel(d.rate);
@@ -3368,7 +3380,7 @@ function renderDashTable(){
 // ─── FUND TABLE ───
 function renderFundTable(){
   const el=qs('fund-tbl'); if(!el) return;
-  if(!S.data.length){el.innerHTML='<div class="loading"><div class="spin"></div>Caricamento...</div>';return;}
+  if(!S.data.length){el.innerHTML='<div class="loading"><div class="spin"></div>Loading...</div>';return;}
   let rows=[...S.data];
   if(S.fm==='ext') rows=rows.filter(d=>Math.abs(d.rate)>=THR.high);
   else if(S.fm==='sht') rows=rows.filter(d=>d.rate>0);
@@ -3610,7 +3622,7 @@ async function loadPositions(){
     const list=(r.positions || r.list||[]).filter(p=>parseFloat(p.size)>0);
     cnt.textContent=list.length+' attive';
 
-    if(!list.length){el.innerHTML='<div class="empty-state"><div class="ei">📭</div>Nessuna posizione aperta</div>';updateChart(0,[]);return;}
+    if(!list.length){el.innerHTML='<div class="empty-state"><div class="ei">📭</div>No open positions</div>';updateChart(0,[]);return;}
 
     let totalOpenPnl=0;
     // Aggiorna PnL non realizzato nel box KPI
@@ -3649,7 +3661,7 @@ async function loadPositions(){
     updateChart(totalOpenPnl, list);
   }catch(e){
     el.innerHTML=e.message==='NO_KEYS'
-      ?'<div class="empty-state"><div class="ei">🔑</div>Configura API Key nelle Settings</div>'
+      ?'<div class="empty-state"><div class="ei">🔑</div>Configure API Key in Settings</div>'
       :`<div class="empty-state" style="color:var(--red2)">❌ ${e.message}</div>`;
   }
 }
@@ -3930,7 +3942,7 @@ async function sendToBot(source='settings') {
   const statusEl = document.getElementById(source==='settings' ? 'key-msg' : 'trading-send-msg');
 
   const setMsg = (html) => { if(statusEl) statusEl.innerHTML = html; };
-  setMsg('<span style="color:var(--text3)">⏳ Invio al bot...</span>');
+  setMsg('<span style="color:var(--text3)">⏳ Sending to bot...</span>');
 
   try {
     const r = await fetch(url, {
@@ -3940,7 +3952,7 @@ async function sendToBot(source='settings') {
     });
     if(r.ok){
       const d = await r.json().catch(()=>({}));
-      setMsg('<span style="color:var(--teal2)">✅ Bot aggiornato — config live!</span>');
+      setMsg('<span style="color:var(--teal2)">✅ Bot updated — config live!</span>');
       // Salva timestamp invio per le summary card
       // Salva snapshot completo per persistenza across reloads
       const _snap = {
@@ -3956,7 +3968,7 @@ async function sendToBot(source='settings') {
       if (_snap.g  && Object.keys(_snap.g).length)  localStorage.setItem('fk_guardian_' + _tradingExchange, JSON.stringify(_snap.g));
       renderExchangeSummaryCard(_tradingExchange);
     } else {
-      setMsg('<span style="color:var(--amber2)">⚠️ Bot non raggiungibile (proxy offline?)</span>');
+      setMsg('<span style="color:var(--amber2)">⚠️ Bot unreachable (proxy offline?)</span>');
     }
   } catch(err) {
     setMsg('<span style="color:var(--red2)">❌ Errore: ' + err.message + '</span>');
@@ -4280,7 +4292,7 @@ function mmSave() {
     sl:     parseFloat(document.getElementById('mm-sl').value)||1.2,
   };
   localStorage.setItem(_mmKey(), JSON.stringify(m));
-  toast('✅ MM salvato per ' + _tradingExchange);
+  toast('✅ MM saved for ' + _tradingExchange);
 }
 
 // ─── PNL MINI CHART ───
@@ -4429,7 +4441,7 @@ function renderTradeHistory() {
   if (!tbody) return;
   if (cnt) cnt.textContent = TS.trades.length + ' trade';
   if (!TS.trades.length) {
-    tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:28px;color:var(--text3)">Nessun trade registrato</td></tr>';
+    tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:28px;color:var(--text3)">No trades registrato</td></tr>';
     return;
   }
   tbody.innerHTML = TS.trades.slice(0,20).map(t => {
@@ -4453,7 +4465,7 @@ function renderTradeHistory() {
 
 // ─── EXPORT CSV ───
 function exportTrades() {
-  if (!TS.trades.length) { toast('⚠️ Nessun trade da esportare', 'var(--amber2)'); return; }
+  if (!TS.trades.length) { toast('⚠️ No trades to export', 'var(--amber2)'); return; }
   const hdr = 'Ora,Simbolo,Lato,Size,Entry,Exit,PnL,Funding,RR\n';
   const rows = TS.trades.map(t=>`${t.time},${t.symbol},${t.side},${t.size},${t.entry||''},${t.exit||''},${t.pnl.toFixed(2)},${t.funding.toFixed(2)},${t.rr}`).join('\n');
   const blob = new Blob([hdr+rows],{type:'text/csv'});
@@ -4465,7 +4477,7 @@ function exportTrades() {
 }
 
 function pnlReset() {
-  if (!confirm('Reset tutti i dati PnL e trade history?')) return;
+  if (!confirm('Reset all PnL data and trade history?')) return;
   TS.trades = []; TS.realized = 0; TS.fundingTotal = 0;
   localStorage.removeItem('fk_trades');
   localStorage.removeItem('fk_realized');
@@ -4536,7 +4548,7 @@ function guardianSave() {
   };
   localStorage.setItem(_gKey(), JSON.stringify(g));
   guardianUpdate();
-  toast('🛡️ Guardian salvato per ' + _tradingExchange);
+  toast('🛡️ Guardian saved for ' + _tradingExchange);
 }
 
 function guardianCheck() {
@@ -4600,7 +4612,7 @@ function guardianUpdate() {
       banner.className = 'guardian-banner lock';
       if(gbIcon)  gbIcon.textContent  = '🔒';
       if(gbTitle) gbTitle.textContent = 'GUARDIAN BLOCCATO — Trading sospeso';
-      if(gbSub)   gbSub.textContent   = inCooldown ? `Cooldown attivo · ${remaining} min rimanenti` : 'Reset manuale richiesto';
+      if(gbSub)   gbSub.textContent   = inCooldown ? `Cooldown active · ${remaining} min remaining` : 'Manual reset required';
     } else if (dd > g.maxdd*0.7 || TS.consLoss >= g.maxloss-1) {
       banner.className = 'guardian-banner warn';
       if(gbIcon)  gbIcon.textContent  = '⚠️';
@@ -4609,8 +4621,8 @@ function guardianUpdate() {
     } else {
       banner.className = 'guardian-banner safe';
       if(gbIcon)  gbIcon.textContent  = '🛡️';
-      if(gbTitle) gbTitle.textContent = 'Guardian Attivo — Sistema Protetto';
-      if(gbSub)   gbSub.textContent   = 'Tutti i parametri nei limiti · Operatività normale';
+      if(gbTitle) gbTitle.textContent = 'Guardian Active — System Protected';
+      if(gbSub)   gbSub.textContent   = 'All parameters within limits · Normal operation';
     }
   }
 
@@ -4660,7 +4672,7 @@ function guardianUpdate() {
   const nowMs = Date.now();
   const inCd  = TS.cooldownEnd > nowMs;
   if (cdEl)  cdEl.className  = inCd ? 'guard-rule triggered' : 'guard-rule ok';
-  if (cdDet) cdDet.textContent = inCd ? `${Math.ceil((TS.cooldownEnd-nowMs)/60000)} min rimanenti` : 'Nessun cooldown attivo';
+  if (cdDet) cdDet.textContent = inCd ? `${Math.ceil((TS.cooldownEnd-nowMs)/60000)} min remaining` : 'No active cooldown';
   if (cdSts) { cdSts.className = inCd ? 'guard-status gs-warn' : 'guard-status gs-ok'; cdSts.textContent = inCd ? 'WAIT' : 'OK'; }
 }
 
@@ -4701,7 +4713,7 @@ function guardianLog(msg, color='var(--text2)') {
 function renderGuardianLog() {
   const el = document.getElementById('guardian-log');
   if (!el) return;
-  const all = TS.guardianLog.length ? TS.guardianLog : [{msg:'Guardian inizializzato · Tutti i parametri OK',color:'var(--text3)',time:'—'}];
+  const all = TS.guardianLog.length ? TS.guardianLog : [{msg:'Guardian inizializzato · All i parametri OK',color:'var(--text3)',time:'—'}];
   el.innerHTML = all.slice(0,8).map(l=>`
     <div class="log-item">
       <div class="log-dot" style="background:${l.color}"></div>
@@ -5671,6 +5683,76 @@ async function loadReferralDash() {
     }
 
   } catch(e) { console.warn('loadReferralDash:', e); }
+}
+
+function validateTRC20(input) {
+  const val = input.value.trim();
+  const icon = document.getElementById('ref-wallet-icon');
+  const badge = document.getElementById('ref-wallet-badge');
+  
+  if (!val) {
+    input.style.borderColor = 'var(--border2)';
+    if (icon) icon.textContent = '';
+    if (badge) badge.style.display = 'none';
+    return;
+  }
+  
+  // TRC20: starts with T, 34 chars, base58
+  const isTRC20 = /^T[1-9A-HJ-NP-Za-km-z]{33}$/.test(val);
+  // ERC20/BEP20: starts with 0x, 42 chars
+  const isEVM = /^0x[0-9a-fA-F]{40}$/.test(val);
+  
+  if (isTRC20) {
+    input.style.borderColor = 'rgba(0,201,167,.6)';
+    if (icon) icon.textContent = '✅';
+    if (badge) {
+      badge.style.display = 'inline-flex';
+      badge.style.alignItems = 'center';
+      badge.style.gap = '6px';
+      badge.style.background = 'rgba(0,201,167,.1)';
+      badge.style.border = '1px solid rgba(0,201,167,.3)';
+      badge.style.borderRadius = '6px';
+      badge.style.padding = '4px 10px';
+      badge.style.fontSize = '.72rem';
+      badge.style.fontFamily = "'DM Mono',monospace";
+      badge.style.color = 'var(--teal2)';
+      badge.innerHTML = '✅ Valid TRON (TRC20) address — correct network for payouts';
+    }
+  } else if (isEVM) {
+    input.style.borderColor = 'rgba(255,140,0,.5)';
+    if (icon) icon.textContent = '⚠️';
+    if (badge) {
+      badge.style.display = 'inline-flex';
+      badge.style.alignItems = 'center';
+      badge.style.gap = '6px';
+      badge.style.background = 'rgba(255,140,0,.1)';
+      badge.style.border = '1px solid rgba(255,140,0,.3)';
+      badge.style.borderRadius = '6px';
+      badge.style.padding = '4px 10px';
+      badge.style.fontSize = '.72rem';
+      badge.style.fontFamily = "'DM Mono',monospace";
+      badge.style.color = '#ff8c00';
+      badge.innerHTML = '⚠️ This looks like an ETH/BNB address — payouts use TRON TRC20 only';
+    }
+  } else if (val.length > 5) {
+    input.style.borderColor = 'rgba(255,77,109,.4)';
+    if (icon) icon.textContent = '❌';
+    if (badge) {
+      badge.style.display = 'inline-flex';
+      badge.style.background = 'rgba(255,77,109,.08)';
+      badge.style.border = '1px solid rgba(255,77,109,.2)';
+      badge.style.borderRadius = '6px';
+      badge.style.padding = '4px 10px';
+      badge.style.fontSize = '.72rem';
+      badge.style.fontFamily = "'DM Mono',monospace";
+      badge.style.color = 'var(--red2)';
+      badge.innerHTML = '❌ Invalid address — USDT TRC20 starts with T and is 34 characters';
+    }
+  } else {
+    input.style.borderColor = 'var(--border2)';
+    if (icon) icon.textContent = '';
+    if (badge) badge.style.display = 'none';
+  }
 }
 
 function copyRefLink() {
