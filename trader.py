@@ -192,6 +192,7 @@ class TradePosition:
     trailing_stop:   float = 0.0    # livello trailing corrente
     opened_at:       datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     bybit_order_id:  str = ""
+    native_sl_tp:    bool = True   # False = in-house monitor manages SL/TP (e.g. Binance testnet)
 
 
 @dataclass
@@ -1024,6 +1025,7 @@ class FundingTrader:
             best_price       = mark_price,
             trailing_stop    = trailing_stop,
             bybit_order_id   = order_id,
+            native_sl_tp     = not (hasattr(self.exchange, "testnet") and self.exchange.testnet),
         )
 
         self.positions[symbol] = pos
@@ -1078,7 +1080,7 @@ class FundingTrader:
             msg = (
                 f"🔔 *POSITION CLOSED — {pos.direction} {symbol}*\n"
                 f"━━━━━━━━━━━━━━━━━━\n"
-                f"📌 Reason:    `Closed by {self.exchange_name.capitalize()} (native TP/SL)`\n"
+                f"📌 Reason:    `Closed externally ({'native TP/SL' if pos.native_sl_tp else 'in-house monitor'})`\n"
                 f"💰 Price:     `${mark_price:.8g}`\n"
                 f"📈 Est. PnL:  `{pnl_usdt:+.2f} USDT` ({pnl_pct:+.2f}%)\n"
                 f"━━━━━━━━━━━━━━━━━━\n"
