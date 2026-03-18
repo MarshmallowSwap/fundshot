@@ -1,78 +1,101 @@
 """
 twitter_forwarder.py — Forwards @FundShot_app tweets to Telegram public channel.
-Uses Nitter RSS (no API key needed, completely free).
-Runs as a job every 10 minutes inside the bot scheduler.
+Uses multiple RSS sources (RSSHub + Nitter fallbacks). No API key needed.
 
-Tweet tagged with #alert → also sent to ALL users via bot DM.
-All other tweets → public channel only.
+All tweets → public channel
+Tweets with #alert or #update → also DM to all users
 """
 
 import os, logging, hashlib
 import xml.etree.ElementTree as ET
-from datetime import datetime, timezone
 
 log = logging.getLogger(__name__)
 
-TWITTER_HANDLE  = os.getenv("TWITTER_HANDLE", "FundShot_app")
-NITTER_INSTANCES = [
-    "https://nitter.privacydev.net",
-    "https://nitter.poast.org",
-    "https://nitter.cz",
-    "https://nitter.1d4.us",
+TWITTER_HANDLE = os.getenv("TWITTER_HANDLE", "FundShot_app")
+LAST_TWEET_KEY = "twitter_last_id"
+
+# RSS sources — tried in order until one works
+RSS_SOURCES = [
+    # RSSHub public instances (most reliable)
+    f"https://rsshub.app/twitter/user/{TWITTER_HANDLE}",
+    f"https://rsshub.rssforever.com/twitter/user/{TWITTER_HANDLE}",
+    f"https://hub.slarker.me/twitter/user/{TWITTER_HANDLE}",
+    # Nitter fallbacks
+    f"https://nitter.poast.org/{TWITTER_HANDLE}/rss",
+    f"https://nitter.cz/{TWITTER_HANDLE}/rss",
+    f"https://nitter.privacydev.net/{TWITTER_HANDLE}/rss",
 ]
-LAST_TWEET_KEY  = "twitter_last_id"
-
-
-def _get_rss_url() -> str:
-    return f"{NITTER_INSTANCES[0]}/{TWITTER_HANDLE}/rss"
 
 
 async def _fetch_rss() -> list[dict]:
-    """Fetch and parse RSS feed. Returns list of {id, text, url, is_retweet}."""
-    import aiohttp
-    tweets = []
-    for base in NITTER_INSTANCES:
-        url = f"{base}/{TWITTER_HANDLE}/rss"
+    """Fetch and parse RSS from first working source."""
+    import aiohttp, ssl
+    ssl_ctx = ssl.create_default_context()
+    ssl_ctx.check_hostname = False
+    ssl_ctx.verify_mode = ssl.CERT_NONE
+
+    for url in RSS_SOURCES:
         try:
             async with aiohttp.ClientSession() as s:
-                async with s.get(url, timeout=aiohttp.ClientTimeout(total=8),
-                                 headers={"User-Agent": "FundShot/1.0"}) as r:
+                async with s.get(
+                    url,
+                    timeout=aiohttp.ClientTimeout(total=10),
+                    headers={"User-Agent": "Mozilla/5.0 FundShotBot/1.0"},
+                    ssl=ssl_ctx,
+                ) as r:
                     if r.status != 200:
                         continue
                     xml_text = await r.text()
+                    if "<item>" not in xml_text:
+                        continue
+
                     root = ET.fromstring(xml_text)
                     channel = root.find("channel")
                     if channel is None:
                         continue
+
+                    tweets = []
                     for item in channel.findall("item"):
-                        title = item.findtext("title", "")
-                        link  = item.findtext("link", "")
-                        desc  = item.findtext("description", "")
-                        guid  = item.findtext("guid", link)
-                        # Prendi il testo pulito dal title (Nitter format)
-                        text = title.replace("R to @", "").strip()
-                        is_rt = title.startswith("RT ")
+                        title = (item.findtext("title") or "").strip()
+                        link  = (item.findtext("link") or "").strip()
+                        guid  = (item.findtext("guid") or link).strip()
+                        desc  = (item.findtext("description") or "").strip()
+
+                        # Pulizia testo
+                        text = title if title else desc
+                        # Rimuovi tag HTML basilari
+                        import re
+                        text = re.sub(r'<[^>]+>', '', text).strip()
+                        if not text:
+                            continue
+
+                        is_rt = text.startswith("RT @")
+
                         tweets.append({
-                            "id":        hashlib.md5(guid.encode()).hexdigest(),
-                            "text":      text,
-                            "url":       link,
+                            "id":         hashlib.md5(guid.encode()).hexdigest(),
+                            "text":       text,
+                            "url":        link.replace("nitter.poast.org", "x.com")
+                                            .replace("nitter.cz", "x.com")
+                                            .replace("nitter.privacydev.net", "x.com"),
                             "is_retweet": is_rt,
-                            "raw_guid":  guid,
                         })
-                    log.info("Twitter RSS: fetched %d tweets from %s", len(tweets), base)
-                    return tweets
+
+                    if tweets:
+                        log.info("Twitter RSS: %d tweets da %s", len(tweets), url)
+                        return tweets
+
         except Exception as e:
-            log.warning("Nitter %s failed: %s", base, e)
+            log.warning("RSS source %s: %s", url, e)
             continue
+
+    log.warning("Twitter RSS: nessuna fonte disponibile")
     return []
 
 
 async def _get_last_id() -> str | None:
-    """Reads last forwarded tweet ID from Supabase."""
     try:
         from db.supabase_client import get_client
-        db = get_client()
-        res = db.table("bot_state").select("value").eq("key", LAST_TWEET_KEY).execute()
+        res = get_client().table("bot_state").select("value").eq("key", LAST_TWEET_KEY).execute()
         if res.data:
             return res.data[0]["value"]
     except Exception as e:
@@ -81,37 +104,28 @@ async def _get_last_id() -> str | None:
 
 
 async def _save_last_id(tweet_id: str):
-    """Saves last forwarded tweet ID to Supabase."""
     try:
         from db.supabase_client import get_client
-        db = get_client()
-        db.table("bot_state").upsert({"key": LAST_TWEET_KEY, "value": tweet_id}).execute()
+        get_client().table("bot_state").upsert({"key": LAST_TWEET_KEY, "value": tweet_id}).execute()
     except Exception as e:
         log.warning("_save_last_id: %s", e)
 
 
 def _format_tweet(tweet: dict) -> str:
-    """Formats tweet for Telegram."""
-    text = tweet["text"]
+    text = tweet["text"].replace("*", "\\*").replace("_", "\\_").replace("`", "\\`")
     url  = tweet["url"]
-    # Pulisci URL Nitter → Twitter
-    tg_url = url.replace("nitter.privacydev.net", "x.com")\
-                .replace("nitter.poast.org", "x.com")\
-                .replace("nitter.cz", "x.com")\
-                .replace("nitter.1d4.us", "x.com")
-    msg = (
+    # Normalizza URL verso x.com
+    if "nitter" in url:
+        import re
+        url = re.sub(r'https?://[^/]+/', 'https://x.com/', url)
+    return (
         f"🐦 *@FundShot\\_app*\n\n"
         f"{text}\n\n"
-        f"[View on X]({tg_url})"
+        f"[View on X ↗]({url})"
     )
-    return msg
 
 
 async def check_and_forward(bot) -> int:
-    """
-    Main job — checks for new tweets and forwards to Telegram.
-    Returns number of tweets forwarded.
-    """
     channel_id = os.getenv("CHANNEL_ID", "")
     if not channel_id:
         log.warning("CHANNEL_ID not set — Twitter forwarder skipped")
@@ -124,16 +138,20 @@ async def check_and_forward(bot) -> int:
     last_id = await _get_last_id()
     forwarded = 0
 
-    # Process from oldest to newest
     for tweet in reversed(tweets):
         if tweet["id"] == last_id:
             break
+        if last_id is None and forwarded == 0:
+            # First run — save current latest without forwarding (avoid flood)
+            await _save_last_id(tweets[0]["id"])
+            log.info("Twitter: first run — saved latest ID, forwarding starts next cycle")
+            return 0
         if tweet["is_retweet"]:
-            continue  # Skip retweets
+            continue
 
         msg = _format_tweet(tweet)
 
-        # → Public channel (always)
+        # → Canale pubblico
         try:
             await bot.send_message(
                 chat_id=channel_id,
@@ -141,20 +159,22 @@ async def check_and_forward(bot) -> int:
                 parse_mode="Markdown",
                 disable_web_page_preview=False,
             )
-            log.info("Twitter → channel: %s", tweet["text"][:60])
+            log.info("🐦 Tweet → channel: %s", tweet["text"][:60])
+            forwarded += 1
         except Exception as e:
-            log.error("Failed to forward tweet to channel: %s", e)
+            log.error("Tweet → channel failed: %s", e)
             continue
 
-        # → All users DM (only if #alert in text)
-        if "#alert" in tweet["text"].lower() or "#update" in tweet["text"].lower():
+        await _save_last_id(tweet["id"])
+
+        # → DM a tutti gli utenti se #alert o #update
+        text_lower = tweet["text"].lower()
+        if "#alert" in text_lower or "#update" in text_lower:
             try:
                 from db.supabase_client import get_client
-                db = get_client()
-                res = db.table("users").select("chat_id").neq("chat_id", None).execute()
-                users = res.data or []
+                res = get_client().table("users").select("chat_id").neq("chat_id", None).execute()
                 count = 0
-                for u in users:
+                for u in (res.data or []):
                     try:
                         await bot.send_message(
                             chat_id=u["chat_id"],
@@ -165,11 +185,8 @@ async def check_and_forward(bot) -> int:
                         count += 1
                     except Exception:
                         pass
-                log.info("Twitter #alert → %d users", count)
+                log.info("🐦 Tweet #alert → %d users", count)
             except Exception as e:
-                log.error("Failed to DM users: %s", e)
-
-        forwarded += 1
-        await _save_last_id(tweet["id"])
+                log.error("Tweet DM users failed: %s", e)
 
     return forwarded
