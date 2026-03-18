@@ -1854,7 +1854,7 @@ nav {
     </div>
   </div>
 
-  <!-- FILTRI ENTRATA ROW -->
+  <!-- ENTRY FILTERS ROW -->
   <div class="g2eq" style="margin-bottom:18px">
 
     <!-- ENTRY FILTERS -->
@@ -2145,8 +2145,8 @@ nav {
 </div>
 </div>
 
-<div class="page" id="page-ai">
-<div style="max-width:780px;margin:0 auto;padding-bottom:80px;height:calc(100vh - 120px);display:flex;flex-direction:column">
+<div class="page" id="page-ai" style="padding-bottom:0">
+<div style="max-width:900px;margin:0 auto;height:calc(100vh - 80px);display:flex;flex-direction:column">
 
   <!-- Header -->
   <div style="padding:16px 0 20px;flex-shrink:0">
@@ -3217,7 +3217,7 @@ function setStatus(s) {
   const map  = {
     loading: { color:'#f0c96a', text:'Loading...' },
     live:    { color:'#00c9a7', text:'Live' },
-    error:   { color:'#ff4d6d', text:'Errore connessione' },
+    error:   { color:'#ff4d6d', text:'Connection error' },
   };
   const cfg = map[s] || map.loading;
   if (dot) dot.style.background = cfg.color;
@@ -3856,7 +3856,7 @@ function updateNotionale() {
   const size = gv('cfg-size') || 50;
   const leva = gv('cfg-leva') || 2;
   const el = qs('notionale-preview');
-  if (el) el.textContent = `Notionale: ${(size * leva).toFixed(0)} USDT`;
+  if (el) el.textContent = `Notional: ${(size * leva).toFixed(0)} USDT`;
 }
 
 function saveAll() {
@@ -4691,12 +4691,12 @@ function guardianReset() {
 }
 
 function guardianEmergency() {
-  if (!confirm('⚠️ EMERGENCY STOP: confermi la chiusura di tutte le posizioni e il blocco del trading?')) return;
+  if (!confirm('⚠️ EMERGENCY STOP: confirm closing all open positions and halting trading?')) return;
   TS.guardianLocked = true;
   TS.cooldownEnd    = Date.now() + 24*60*60*1000; // 24h
   localStorage.setItem('fk_guard_lock','1');
   localStorage.setItem('fk_cooldown_end', TS.cooldownEnd.toString());
-  guardianLog('🆘 EMERGENCY STOP attivato — trading bloccato 24h', 'var(--red2)');
+  guardianLog('🆘 EMERGENCY STOP activated — trading halted 24h', 'var(--red2)');
   guardianUpdate();
   toast('🆘 Emergency Stop attivato!', 'var(--red2)');
 }
