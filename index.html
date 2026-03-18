@@ -1038,6 +1038,7 @@ nav {
     <button class="np" onclick="goto('positions',this)">Posizioni</button>
     <button class="np" onclick="gotoGated('trading',this)" id="nav-trading">⚡ Trading</button>
     <button class="np" onclick="goto('settings',this)">Settings</button>
+    <button class="np" onclick="goto('referral',this)">🔗 Referral</button>
     <button class="np" onclick="goto('guide',this)">📖 Guide</button>
     <button class="np" id="nav-ai-btn" onclick="goto('ai',this)" style="background:linear-gradient(135deg,rgba(139,92,246,.2),rgba(212,168,67,.1));border-color:rgba(139,92,246,.4);color:#c4b5fd;position:relative">
       ✦ AI Advisor
@@ -2057,6 +2058,81 @@ nav {
 <!-- ═══════════════════════════════════════════════════ -->
 <!-- PAGE: DOCS                                          -->
 <!-- ═══════════════════════════════════════════════════ -->
+<div class="page" id="page-referral">
+<div style="max-width:760px;margin:0 auto;padding-bottom:80px">
+
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:32px;flex-wrap:wrap;gap:12px">
+    <div>
+      <div style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--p2);letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px">// Referral Program</div>
+      <div style="font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:var(--text)">Your Referral Dashboard</div>
+    </div>
+    <div id="ref-plan-badge" style="display:none;padding:6px 14px;border-radius:8px;font-family:'DM Mono',monospace;font-size:.7rem;font-weight:700"></div>
+  </div>
+
+  <!-- Stats row -->
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px">
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center;position:relative;overflow:hidden">
+      <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--p1),transparent)"></div>
+      <div id="ref-balance" style="font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:800;color:var(--teal2);line-height:1;margin-bottom:6px">—</div>
+      <div style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--text3);letter-spacing:.08em;text-transform:uppercase">Balance USDT</div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center;position:relative;overflow:hidden">
+      <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--p1),transparent)"></div>
+      <div id="ref-count" style="font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:800;color:var(--text);line-height:1;margin-bottom:6px">—</div>
+      <div style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--text3);letter-spacing:.08em;text-transform:uppercase">Referrals</div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center;position:relative;overflow:hidden">
+      <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--amber2),transparent)"></div>
+      <div id="ref-commission" style="font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:800;color:var(--amber2);line-height:1;margin-bottom:6px">—</div>
+      <div style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--text3);letter-spacing:.08em;text-transform:uppercase">Commission %</div>
+    </div>
+  </div>
+
+  <!-- Referral link card -->
+  <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:22px;margin-bottom:20px;position:relative;overflow:hidden">
+    <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--p1),transparent)"></div>
+    <div style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px">Your referral link</div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <div id="ref-link-box" style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-family:'DM Mono',monospace;font-size:.78rem;color:var(--p2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Loading...</div>
+      <button onclick="copyRefLink()" style="background:var(--p1);color:#fff;border:none;border-radius:8px;padding:10px 16px;font-weight:700;font-size:.82rem;cursor:pointer;font-family:'Syne',sans-serif;transition:all .2s;white-space:nowrap" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">📋 Copy</button>
+    </div>
+  </div>
+
+  <!-- Wallet card -->
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:22px;margin-bottom:20px">
+    <div style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px">Payout wallet (USDT TRC20)</div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <input id="ref-wallet-input" type="text" placeholder="T..." style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-family:'DM Mono',monospace;font-size:.78rem;color:var(--text);outline:none;transition:border-color .2s" onfocus="this.style.borderColor='var(--p1)'" onblur="this.style.borderColor='var(--border)'">
+      <button onclick="saveRefWallet()" style="background:rgba(0,201,167,.15);border:1px solid rgba(0,201,167,.3);color:var(--teal2);border-radius:8px;padding:10px 16px;font-weight:700;font-size:.82rem;cursor:pointer;font-family:'Syne',sans-serif;transition:all .2s;white-space:nowrap">Save wallet</button>
+    </div>
+    <div id="ref-wallet-msg" style="font-size:.75rem;color:var(--text3);margin-top:6px">Minimum payout: $5 · Paid monthly automatically</div>
+  </div>
+
+  <!-- Info card -->
+  <div style="background:rgba(212,168,67,.05);border:1px solid rgba(212,168,67,.15);border-radius:14px;padding:20px;margin-bottom:20px">
+    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem;color:var(--text);margin-bottom:10px">How it works</div>
+    <div style="display:flex;flex-direction:column;gap:8px;font-size:.85rem;color:var(--text2)">
+      <div style="display:flex;gap:10px"><span style="color:var(--p2);font-family:'DM Mono',monospace;font-size:.75rem;flex-shrink:0;width:20px">01</span>Share your referral link — anyone who signs up through it is tagged as your referral</div>
+      <div style="display:flex;gap:10px"><span style="color:var(--p2);font-family:'DM Mono',monospace;font-size:.75rem;flex-shrink:0;width:20px">02</span>When they pay for any plan, you earn your commission percentage</div>
+      <div style="display:flex;gap:10px"><span style="color:var(--p2);font-family:'DM Mono',monospace;font-size:.75rem;flex-shrink:0;width:20px">03</span>Commission accumulates in your balance — visible above</div>
+      <div style="display:flex;gap:10px"><span style="color:var(--p2);font-family:'DM Mono',monospace;font-size:.75rem;flex-shrink:0;width:20px">04</span>On the 1st of each month, if balance ≥ $5, we send USDT TRC20 to your wallet automatically</div>
+    </div>
+  </div>
+
+  <!-- Influencer badge (visibile solo se is_influencer) -->
+  <div id="ref-influencer-card" style="display:none;background:linear-gradient(135deg,rgba(139,92,246,.1),rgba(212,168,67,.06));border:1px solid rgba(139,92,246,.3);border-radius:14px;padding:20px">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="font-size:24px">⭐</div>
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:.95rem;color:#c4b5fd">Influencer Partner</div>
+        <div style="font-size:.82rem;color:var(--text3);margin-top:2px">You have a custom commission rate negotiated with the FundShot team.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
 <div class="page" id="page-ai">
 <div style="max-width:780px;margin:0 auto;padding-bottom:80px;height:calc(100vh - 120px);display:flex;flex-direction:column">
 
@@ -3100,6 +3176,9 @@ function goto(id, btn) {
   if (id === 'settings')  { initSettings(); initExchangeSettings(); }
   if (id === 'funding')   { renderFundTable(); }
   if (id === 'trading')   { initTradingPage(); fetchResults(); fetchClosedPnl(); fetchUnrealizedPnl(); setTradingExchange(_tradingExchange); renderAllExchangeCards(); }
+  if (id === 'referral') {
+    loadReferralDash();
+  }
   if (id === 'ai') {
     setTimeout(() => { const inp = document.getElementById('ai-input'); if(inp) inp.focus(); }, 100);
   }
@@ -5538,6 +5617,85 @@ async function aiSend() {
 
   aiTyping = false;
   if (btn) btn.style.opacity = '1';
+}
+
+// ─── REFERRAL DASHBOARD ──────────────────────────────────────────────────────
+async function loadReferralDash() {
+  try {
+    const d = await authFetch('/api/me');
+    if (!d || !d.chat_id) return;
+
+    // Balance
+    const bal = parseFloat(d.referral_balance_usd || 0);
+    const balEl = document.getElementById('ref-balance');
+    if (balEl) { balEl.textContent = '$' + bal.toFixed(2); balEl.style.color = bal >= 5 ? 'var(--teal2)' : 'var(--text)'; }
+
+    // Referral count
+    const cnt = document.getElementById('ref-count');
+    if (cnt) cnt.textContent = d.referral_count || '0';
+
+    // Commission
+    const comm = document.getElementById('ref-commission');
+    const pct = d.is_influencer ? (d.influencer_commission_pct || '?') : '10';
+    if (comm) { comm.textContent = pct + '%'; }
+
+    // Plan badge
+    const badge = document.getElementById('ref-plan-badge');
+    if (badge) {
+      const plan = d.plan || 'free';
+      const planMap = { free: ['🆓 FREE','rgba(90,82,120,.2)','#a09ab8'], pro: ['⚡ PRO','rgba(212,168,67,.12)','var(--p2)'], elite: ['👑 ELITE','rgba(0,201,167,.1)','var(--teal2)'] };
+      const [label, bg, color] = planMap[plan] || planMap.free;
+      badge.textContent = label; badge.style.background = bg; badge.style.color = color;
+      badge.style.border = '1px solid ' + color.replace(')', ',.3)').replace('var(--', 'rgba(0,201,167,');
+      badge.style.display = 'inline-block';
+    }
+
+    // Referral link
+    const linkBox = document.getElementById('ref-link-box');
+    if (linkBox && d.referral_code) {
+      const link = 'https://fundshot.app/?ref=' + d.referral_code;
+      linkBox.textContent = link;
+      linkBox.dataset.link = link;
+    } else if (linkBox) {
+      linkBox.textContent = 'Available on Elite plan — upgrade to get your link';
+    }
+
+    // Wallet
+    const walletInput = document.getElementById('ref-wallet-input');
+    if (walletInput && d.referral_wallet_usdt) walletInput.value = d.referral_wallet_usdt;
+
+    // Influencer card
+    if (d.is_influencer) {
+      const card = document.getElementById('ref-influencer-card');
+      if (card) card.style.display = 'block';
+    }
+
+  } catch(e) { console.warn('loadReferralDash:', e); }
+}
+
+function copyRefLink() {
+  const box = document.getElementById('ref-link-box');
+  const link = box?.dataset?.link || box?.textContent;
+  if (!link || link.includes('upgrade')) return;
+  navigator.clipboard.writeText(link).then(() => {
+    const btn = document.querySelector('[onclick="copyRefLink()"]');
+    if (btn) { const t = btn.textContent; btn.textContent = '✅ Copied!'; setTimeout(() => btn.textContent = t, 2000); }
+  });
+}
+
+async function saveRefWallet() {
+  const wallet = document.getElementById('ref-wallet-input')?.value?.trim();
+  const msg = document.getElementById('ref-wallet-msg');
+  if (!wallet || !wallet.startsWith('T') || wallet.length < 20) {
+    if (msg) { msg.style.color = 'var(--red2)'; msg.textContent = 'Enter a valid USDT TRC20 address (starts with T)'; }
+    return;
+  }
+  try {
+    const d = await authFetch('/api/user/wallet-address', 'POST', { wallet });
+    if (msg) { msg.style.color = 'var(--teal2)'; msg.textContent = '✅ Wallet saved — you will receive payouts here monthly'; }
+  } catch(e) {
+    if (msg) { msg.style.color = 'var(--red2)'; msg.textContent = 'Error saving wallet'; }
+  }
 }
 
 // ─── SUPPORT ────────────────────────────────────────────────────────────────

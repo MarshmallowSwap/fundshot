@@ -525,6 +525,29 @@ class ProxyHandler(BaseHTTPRequestHandler):
                 self._json({"ok": True})
             return
 
+        if p == "/api/user/wallet-address":
+            user = self._auth()
+            if not user: return
+            try:
+                body_bytes = self.rfile.read(int(self.headers.get("Content-Length", 0)))
+                body = json.loads(body_bytes)
+                wallet = body.get("wallet", "").strip()
+                if not wallet or not wallet.startswith("T") or len(wallet) < 20:
+                    self._json({"ok": False, "error": "Invalid USDT TRC20 address"}, 400)
+                    return
+                import asyncio as _aw
+                from db.supabase_client import get_user as _gu3, get_client as _gc3
+                u = _aw.run(_gu3(user["chat_id"]))
+                if not u:
+                    self._json({"ok": False, "error": "User not found"}, 404)
+                    return
+                _gc3().table("users").update({"referral_wallet_usdt": wallet}).eq("id", u.id).execute()
+                self._json({"ok": True})
+            except Exception as e:
+                log.error("/api/user/wallet-address: %s", e)
+                self._json({"ok": False, "error": str(e)[:200]}, 500)
+            return
+
         if p == "/api/ai":
             try:
                 body_bytes = self.rfile.read(int(self.headers.get("Content-Length", 0)))
