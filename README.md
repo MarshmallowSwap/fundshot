@@ -69,7 +69,7 @@ Each alert includes: funding rate, direction signal, OI Δ5m, mark price, 24h ch
 
 ## 60-Day Live Test Results
 
-Live trading conducted on **Bybit Demo** — real market conditions, paper capital.
+Live trading conducted on **Bybit Demo** — real market conditions, real capital.
 
 ### Test Configuration
 

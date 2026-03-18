@@ -357,6 +357,18 @@ section { position: relative; z-index: 1; padding: 120px 48px; }
   transition: transform .3s;
 }
 .plan:hover { transform: translateY(-4px); }
+.plan { display: flex; flex-direction: column; }
+.plan-features { flex: 1; }
+.plan.featured {
+  border-color: rgba(212,168,67,.5) !important;
+  background: linear-gradient(145deg, rgba(212,168,67,.09), var(--card)) !important;
+  box-shadow: 0 0 0 1px rgba(212,168,67,.3), 0 0 32px rgba(212,168,67,.15), 0 0 64px rgba(212,168,67,.06) !important;
+}
+.plan.featured::before {
+  content: "";
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold2), transparent) !important;
+}
 .plan.featured {
   border-color: rgba(212,168,67,.35);
   background: linear-gradient(145deg, rgba(212,168,67,.07), var(--card));
@@ -1616,11 +1628,23 @@ footer {
       <p>Your API keys are encrypted before storage. Each user has fully isolated credentials. The bot never sees them in plain text.</p>
       <span class="feat-tag">All plans</span>
     </div>
-    <div class="feat fade-up" style="transition-delay:.4s" style="border-color:rgba(139,92,246,.25);background:linear-gradient(145deg,rgba(139,92,246,.05),var(--card))">
+    <div class="feat fade-up" style="transition-delay:.4s;border-color:rgba(139,92,246,.25);background:linear-gradient(145deg,rgba(139,92,246,.05),var(--card))">
       <div class="feat-icon">✦</div>
       <h3>AI Settings Advisor</h3>
       <p>Not sure how to configure the bot? The built-in AI Advisor suggests the <strong>optimal settings</strong> based on your exchange, capital, and experience. Available directly in the dashboard.</p>
       <span class="feat-tag" style="color:#a78bfa;border-color:rgba(139,92,246,.3)">All plans</span>
+    </div>
+    <div class="feat fade-up" style="transition-delay:.5s">
+      <div class="feat-icon">💬</div>
+      <h3>24/7 Support</h3>
+      <p>Real human support via Telegram and email. Get help with setup, settings, or any issue — directly from the team that built FundShot.</p>
+      <span class="feat-tag">All plans</span>
+    </div>
+    <div class="feat fade-up" style="transition-delay:.6s;border-color:rgba(251,146,60,.15);background:linear-gradient(145deg,rgba(251,146,60,.04),var(--card))">
+      <div class="feat-icon">🌐</div>
+      <h3>More Exchanges Coming</h3>
+      <p>OKX, dYdX, Bitget, Gate.io — all in the pipeline. Elite Lifetime members get access to every new exchange <strong>automatically</strong>, at no extra cost.</p>
+      <span class="feat-tag" style="color:#fb923c;border-color:rgba(251,146,60,.3)">Soon</span>
     </div>
   </div>
 </div>
