@@ -597,12 +597,15 @@ class ProxyHandler(BaseHTTPRequestHandler):
                     dest = os.getenv("SUPPORT_CHAT_ID") or owner_id
                     plan_emoji = {"elite": "crown", "pro": "bolt", "free": "free"}.get(plan, "free")
                     reply_cmd = ("/reply " + str(chat_id)) if chat_id else ""
+                    email = body.get("email", "")
+                    source = body.get("source", "dashboard")
+                    from_str = ("Email: " + email) if email else ("@" + user + " [" + plan.upper() + "]")
+                    reply_str = ("Reply: " + reply_cmd) if reply_cmd else ("Reply via email: " + email if email else "")
                     notify = (
-                        "NEW SUPPORT REQUEST (web)\n"
-                        "User: @" + user + " [" + plan.upper() + "]\n"
-                        "Chat ID: " + (str(chat_id) if chat_id else "unknown") + "\n"
+                        "NEW SUPPORT REQUEST (" + source + ")\n"
+                        + from_str + "\n"
                         "---\n" + msg + "\n"
-                        + ("---\nReply: " + reply_cmd if reply_cmd else "")
+                        + ("---\n" + reply_str if reply_str else "")
                     )
                     tg_url = "https://api.telegram.org/bot" + token + "/sendMessage"
                     tg_req = _ur3.Request(tg_url,

@@ -1791,10 +1791,17 @@ footer {
     <button class="cw-quick-btn" onclick="cwAsk('Which exchange should I use?')">🏦 Exchanges</button>
   </div>
 
+  <!-- Email form — mostra quando utente vuole supporto umano -->
+  <div class="cw-email-form" id="cw-email-form">
+    <div style="font-size:.75rem;color:#a78bfa;font-family:'DM Mono',monospace;margin-bottom:6px;letter-spacing:.05em">Leave your email and we'll reply within a few hours</div>
+    <input id="cw-email-input" class="cw-email-input" type="email" placeholder="your@email.com">
+    <button class="cw-email-send" onclick="cwSendEmail()">Send message →</button>
+  </div>
+
   <div class="cw-input-row">
     <input id="cw-input" class="cw-input" type="text" placeholder="Ask anything..." onkeydown="if(event.key==='Enter')cwSend()">
-    <button class="cw-send" onclick="cwSend()">
-      <svg viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+        <button class="cw-send" onclick="cwSend()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
     </button>
   </div>
 </div>
@@ -2201,9 +2208,53 @@ async function cwSend() {
   cwShowTyping();
   await new Promise(r => setTimeout(r, 500 + Math.random() * 600));
   cwHideTyping();
-  const reply = cwMatch(text) || "Not sure about that. Check fundshot.app/faq or send /support on Telegram.";
-  cwAddMsg('bot', reply);
+  const match = cwMatch(text);
+  if (match) {
+    cwAddMsg('bot', match);
+  } else {
+    cwAddMsg('bot', "I don't have a specific answer for that. Leave your email and our team will reply within a few hours — no registration needed.");
+    setTimeout(() => {
+      document.getElementById('cw-email-form').classList.add('visible');
+      document.getElementById('cw-email-input').focus();
+    }, 400);
+  }
   _chatTyping = false;
+}
+
+async function cwSendEmail() {
+  const email = document.getElementById('cw-email-input')?.value?.trim();
+  const msgs = document.getElementById('cw-msgs');
+  // Recupera l'ultima domanda dell'utente
+  const userMsgs = msgs ? [...msgs.querySelectorAll('.cm.user .cm-bubble')] : [];
+  const lastQuestion = userMsgs.length ? userMsgs[userMsgs.length-1].textContent : '';
+
+  if (!email || !email.includes('@')) {
+    document.getElementById('cw-email-input').style.borderColor = 'rgba(255,77,109,.5)';
+    setTimeout(() => document.getElementById('cw-email-input').style.borderColor = '', 2000);
+    return;
+  }
+
+  const btn = document.querySelector('.cw-email-send');
+  if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
+
+  try {
+    await fetch('https://api.fundshot.app/api/support', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        message: lastQuestion || '(no question recorded)',
+        user: email,
+        chat_id: null,
+        plan: 'visitor',
+        email: email,
+        source: 'landing_chat'
+      })
+    });
+  } catch(e) {}
+
+  document.getElementById('cw-email-form').classList.remove('visible');
+  cwAddMsg('bot', "Got it! We will reply to " + email + " within a few hours. Check fundshot.app/faq for instant answers in the meantime.");
+  if (btn) { btn.disabled = false; btn.textContent = 'Send message →'; }
 }
 
 function toggleChat() {
