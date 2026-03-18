@@ -102,9 +102,9 @@ footer{border-top:1px solid var(--border);padding:32px 48px;text-align:center;fo
 <body>
 
 <nav>
-  <a href="/" class="nav-logo">⚡ FundShot</a>
+  <a href="/" class="nav-logo" onclick="event.preventDefault();window.location.href='/?v='+Date.now()">⚡ FundShot</a>
   <div class="nav-links">
-    <a href="/">Home</a>
+    <a href="/" onclick="event.preventDefault();window.location.href='/?v='+Date.now()">Home</a>
     <a href="/docs" class="active">Docs</a>
     <a href="/#pricing">Pricing</a>
   </div>
