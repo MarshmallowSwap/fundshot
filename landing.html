@@ -1021,6 +1021,59 @@ footer {
 .cw-send:hover { transform: scale(1.1); }
 .cw-send svg { width: 14px; height: 14px; fill: white; }
 
+/* ── Support Modal ── */
+#support-modal-overlay {
+  position:fixed; inset:0; z-index:2000;
+  background:rgba(0,0,0,.7); backdrop-filter:blur(8px);
+  display:flex; align-items:center; justify-content:center;
+  opacity:0; pointer-events:none; transition:opacity .25s;
+}
+#support-modal-overlay.open { opacity:1; pointer-events:auto; }
+#support-modal {
+  background:#0f0d18; border:1px solid rgba(212,168,67,.2);
+  border-radius:20px; padding:36px; width:100%; max-width:460px;
+  position:relative; overflow:hidden;
+  transform:scale(.95) translateY(10px);
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1);
+}
+#support-modal-overlay.open #support-modal { transform:scale(1) translateY(0); }
+#support-modal::before { content:''; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,var(--gold),transparent); }
+.sm-title { font-family:'Syne',sans-serif; font-size:1.2rem; font-weight:800; color:var(--text); margin-bottom:6px; }
+.sm-sub { font-size:.85rem; color:var(--muted); margin-bottom:24px; }
+.sm-label { font-family:'DM Mono',monospace; font-size:.65rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; display:block; }
+.sm-input { width:100%; background:rgba(255,255,255,.04); border:1px solid var(--border2); border-radius:10px; padding:11px 14px; color:var(--text); font-family:'DM Sans',sans-serif; font-size:.88rem; outline:none; margin-bottom:16px; transition:border-color .2s; }
+.sm-input:focus { border-color:rgba(212,168,67,.5); }
+.sm-input::placeholder { color:var(--muted2); }
+.sm-textarea { min-height:100px; resize:vertical; }
+.sm-actions { display:flex; gap:10px; margin-top:8px; }
+.sm-send { flex:1; background:var(--gold); color:#05040a; border:none; border-radius:10px; padding:12px; font-weight:700; font-size:.9rem; cursor:pointer; font-family:'Syne',sans-serif; transition:all .2s; }
+.sm-send:hover { background:var(--gold2); }
+.sm-tg { display:flex; align-items:center; justify-content:center; gap:8px; padding:12px 18px; border-radius:10px; background:rgba(42,171,238,.1); border:1px solid rgba(42,171,238,.3); color:#2AABEE; font-weight:700; font-size:.88rem; text-decoration:none; font-family:'Syne',sans-serif; transition:all .2s; white-space:nowrap; }
+.sm-tg:hover { background:rgba(42,171,238,.2); }
+.sm-close { position:absolute; top:16px; right:16px; background:none; border:none; color:var(--muted); cursor:pointer; font-size:18px; padding:4px 8px; border-radius:4px; transition:color .2s; }
+.sm-close:hover { color:var(--text); }
+.sm-success { text-align:center; padding:24px 0; display:none; }
+.sm-success-icon { font-size:48px; margin-bottom:12px; }
+.sm-success-title { font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:800; color:var(--teal); margin-bottom:8px; }
+.sm-success-sub { font-size:.875rem; color:var(--muted); }
+
+/* ── Contact Section ── */
+.contact-section { padding:100px 48px; position:relative; z-index:1; }
+.contact-grid { display:grid; grid-template-columns:1fr 1fr; gap:64px; align-items:start; max-width:1100px; margin:0 auto; }
+.contact-form-card { background:var(--card); border:1px solid var(--border2); border-radius:20px; padding:36px; position:relative; overflow:hidden; }
+.contact-form-card::before { content:''; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,var(--gold),transparent); }
+.contact-channels { display:flex; flex-direction:column; gap:16px; margin-top:32px; }
+.contact-channel { display:flex; align-items:center; gap:16px; background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; text-decoration:none; color:var(--text); transition:all .25s; }
+.contact-channel:hover { transform:translateY(-3px); box-shadow:0 8px 32px rgba(0,0,0,.3); }
+.contact-channel-icon { width:48px; height:48px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; }
+.contact-channel-title { font-family:'Syne',sans-serif; font-weight:700; font-size:.95rem; }
+.contact-channel-sub { font-size:.8rem; color:var(--muted); margin-top:2px; }
+
+@media(max-width:900px) {
+  .contact-grid { grid-template-columns:1fr; gap:40px; }
+  .contact-section { padding:80px 24px; }
+}
+
 .toast {
   position: fixed; bottom: 28px; right: 28px; z-index: 999;
   background: var(--card2); border: 1px solid var(--border2);
@@ -1090,6 +1143,7 @@ footer {
     <a href="#pricing">Pricing</a>
     <a href="/docs">Docs</a>
     <a href="/faq">FAQ</a>
+    <a href="#contact">Contact</a>
   </div>
   <div style="display:flex;align-items:center;gap:10px">
     <a href="/dashboard" style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,rgba(139,92,246,.15),rgba(212,168,67,.08));border:1px solid rgba(139,92,246,.4);border-radius:8px;padding:7px 14px;text-decoration:none;transition:all .25s;position:relative;overflow:hidden" onmouseover="this.style.borderColor='rgba(139,92,246,.7)';this.style.background='linear-gradient(135deg,rgba(139,92,246,.25),rgba(212,168,67,.12))'" onmouseout="this.style.borderColor='rgba(139,92,246,.4)';this.style.background='linear-gradient(135deg,rgba(139,92,246,.15),rgba(212,168,67,.08))'">
@@ -1751,6 +1805,65 @@ footer {
 </div>
 </section>
 
+<!-- ═══ CONTACT ═══ -->
+<section class="contact-section" id="contact">
+<div style="max-width:1100px;margin:0 auto">
+  <div style="text-align:center;margin-bottom:56px">
+    <span class="section-tag fade-up">// contact</span>
+    <h2 class="section-title fade-up">Need help? <em>We're here.</em></h2>
+    <p class="section-sub fade-up" style="margin:0 auto">Choose how you prefer to reach us — we reply fast.</p>
+  </div>
+  <div class="contact-grid">
+    <!-- Form -->
+    <div class="contact-form-card fade-up">
+      <div style="font-family:'DM Mono',monospace;font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:20px">// Send us a message</div>
+      <label class="sm-label">Your question or issue</label>
+      <textarea id="contact-message" class="sm-input sm-textarea" placeholder="Describe your question..." style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border2);border-radius:10px;padding:11px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.88rem;outline:none;margin-bottom:16px;transition:border-color .2s;min-height:100px;resize:vertical" onfocus="this.style.borderColor='rgba(212,168,67,.5)'" onblur="this.style.borderColor='var(--border2)'"></textarea>
+      <label class="sm-label">Your email</label>
+      <input id="contact-email" type="email" placeholder="your@email.com" style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border2);border-radius:10px;padding:11px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.88rem;outline:none;margin-bottom:20px;transition:border-color .2s" onfocus="this.style.borderColor='rgba(212,168,67,.5)'" onblur="this.style.borderColor='var(--border2)'">
+      <button onclick="sendContactForm()" id="contact-send-btn" style="width:100%;background:var(--gold);color:#05040a;border:none;border-radius:10px;padding:13px;font-weight:700;font-size:.95rem;cursor:pointer;font-family:'Syne',sans-serif;transition:all .2s" onmouseover="this.style.background='var(--gold2)'" onmouseout="this.style.background='var(--gold)'">Send message →</button>
+      <div id="contact-success" style="display:none;text-align:center;padding:16px 0;color:var(--teal);font-size:.9rem;font-weight:600">✅ Message sent! We will reply within a few hours.</div>
+    </div>
+    <!-- Channels -->
+    <div class="fade-up" style="transition-delay:.1s">
+      <div style="font-family:'DM Mono',monospace;font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:20px">// Or reach us directly</div>
+      <div class="contact-channels">
+        <a href="https://t.me/FundShot_bot" target="_blank" class="contact-channel" style="border-color:rgba(42,171,238,.2)">
+          <div class="contact-channel-icon" style="background:rgba(42,171,238,.1)">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="#2AABEE"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.024 9.531c-.148.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.024 14.06l-2.966-.924c-.645-.204-.657-.645.136-.953l11.57-4.461c.537-.194 1.008.131.798.526z"/></svg>
+          </div>
+          <div>
+            <div class="contact-channel-title">Telegram Bot</div>
+            <div class="contact-channel-sub">Send /support your message — instant reply</div>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted2)" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+        <a href="mailto:support@fundshot.app" class="contact-channel" style="border-color:rgba(212,168,67,.15)">
+          <div class="contact-channel-icon" style="background:rgba(212,168,67,.08)">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d4a843" stroke-width="1.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          </div>
+          <div>
+            <div class="contact-channel-title">Email</div>
+            <div class="contact-channel-sub">support@fundshot.app · reply within a few hours</div>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted2)" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+        <a href="https://fundshot.app/faq" class="contact-channel" style="border-color:rgba(0,201,167,.15)">
+          <div class="contact-channel-icon" style="background:rgba(0,201,167,.08)">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00c9a7" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+          <div>
+            <div class="contact-channel-title">FAQ</div>
+            <div class="contact-channel-sub">Browse 25+ common questions — instant answers</div>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted2)" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
 <!-- ═══ FOOTER ═══ -->
 <footer>
   <div class="footer-logo">⚡ FundShot</div>
@@ -1764,6 +1877,33 @@ footer {
 </footer>
 
 <!-- Toast -->
+<!-- Support Modal Popup -->
+<div id="support-modal-overlay" onclick="if(event.target===this)closeSupportModal()">
+  <div id="support-modal">
+    <button class="sm-close" onclick="closeSupportModal()">✕</button>
+    <div id="sm-form-content">
+      <div class="sm-title">💬 Contact Support</div>
+      <div class="sm-sub">We reply within a few hours. No account needed.</div>
+      <label class="sm-label">Your question or issue</label>
+      <textarea id="sm-message" class="sm-input sm-textarea" placeholder="Describe your question or issue..."></textarea>
+      <label class="sm-label">Your email (for our reply)</label>
+      <input id="sm-email" class="sm-input" type="email" placeholder="your@email.com">
+      <div class="sm-actions">
+        <button class="sm-send" onclick="sendSupportModal()">Send message →</button>
+        <a href="https://t.me/FundShot_bot" target="_blank" class="sm-tg">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.024 9.531c-.148.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.024 14.06l-2.966-.924c-.645-.204-.657-.645.136-.953l11.57-4.461c.537-.194 1.008.131.798.526z"/></svg>
+          Telegram
+        </a>
+      </div>
+    </div>
+    <div class="sm-success" id="sm-success">
+      <div class="sm-success-icon">✅</div>
+      <div class="sm-success-title">Message sent!</div>
+      <div class="sm-success-sub">We will reply to your email within a few hours.</div>
+    </div>
+  </div>
+</div>
+
 <!-- Floating Support Chat -->
 <button id="chat-bubble" onclick="toggleChat()" aria-label="Open support chat">
   <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.832-1.438A9.954 9.954 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2z"/></svg>
@@ -1789,13 +1929,6 @@ footer {
     <button class="cw-quick-btn" onclick="cwAsk('What are the best settings for a beginner?')">⚙️ Best settings</button>
     <button class="cw-quick-btn" onclick="cwAsk('How much does it cost?')">💰 Pricing</button>
     <button class="cw-quick-btn" onclick="cwAsk('Which exchange should I use?')">🏦 Exchanges</button>
-  </div>
-
-  <!-- Email form — mostra quando utente vuole supporto umano -->
-  <div class="cw-email-form" id="cw-email-form">
-    <div style="font-size:.75rem;color:#a78bfa;font-family:'DM Mono',monospace;margin-bottom:6px;letter-spacing:.05em">Leave your email and we'll reply within a few hours</div>
-    <input id="cw-email-input" class="cw-email-input" type="email" placeholder="your@email.com">
-    <button class="cw-email-send" onclick="cwSendEmail()">Send message →</button>
   </div>
 
   <div class="cw-input-row">
@@ -2212,13 +2345,79 @@ async function cwSend() {
   if (match) {
     cwAddMsg('bot', match);
   } else {
-    cwAddMsg('bot', "I don't have a specific answer for that. Leave your email and our team will reply within a few hours — no registration needed.");
+    cwAddMsg('bot', "I could not find a specific answer. Our support team can help:");
     setTimeout(() => {
-      document.getElementById('cw-email-form').classList.add('visible');
-      document.getElementById('cw-email-input').focus();
+      const msgs = document.getElementById('cw-msgs');
+      const btns = document.createElement('div');
+      btns.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;padding:0 0 4px 36px;animation:msg-in .25s ease';
+      btns.innerHTML =
+        '<button onclick="openSupportModal()" style="display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;background:rgba(212,168,67,.12);border:1px solid rgba(212,168,67,.3);color:#f0c96a;font-size:.78rem;font-weight:700;cursor:pointer;font-family:Syne,sans-serif;transition:all .2s">📧 Send email</button>' +
+        '<a href="https://t.me/FundShot_bot" target="_blank" style="display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;background:rgba(42,171,238,.1);border:1px solid rgba(42,171,238,.3);color:#2AABEE;font-size:.78rem;font-weight:700;text-decoration:none;font-family:Syne,sans-serif">✈️ Telegram bot</a>';
+      msgs.appendChild(btns);
+      msgs.scrollTop = msgs.scrollHeight;
     }, 400);
   }
   _chatTyping = false;
+}
+
+function openSupportModal(prefill) {
+  document.getElementById('support-modal-overlay').classList.add('open');
+  if (prefill) document.getElementById('sm-message').value = prefill;
+  setTimeout(() => document.getElementById('sm-message').focus(), 300);
+}
+
+function closeSupportModal() {
+  document.getElementById('support-modal-overlay').classList.remove('open');
+  setTimeout(() => {
+    document.getElementById('sm-form-content').style.display = 'block';
+    document.getElementById('sm-success').style.display = 'none';
+    document.getElementById('sm-message').value = '';
+    document.getElementById('sm-email').value = '';
+  }, 300);
+}
+
+async function sendSupportModal() {
+  const msg   = document.getElementById('sm-message').value.trim();
+  const email = document.getElementById('sm-email').value.trim();
+  if (!msg) { document.getElementById('sm-message').style.borderColor = 'rgba(255,77,109,.5)'; return; }
+  if (!email || !email.includes('@')) { document.getElementById('sm-email').style.borderColor = 'rgba(255,77,109,.5)'; return; }
+  const btn = document.querySelector('.sm-send');
+  if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
+  try {
+    await fetch('https://api.fundshot.app/api/support', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ message: msg, user: email, email: email, chat_id: null, plan: 'visitor', source: 'landing_modal' })
+    });
+  } catch(e) {}
+  document.getElementById('sm-form-content').style.display = 'none';
+  document.getElementById('sm-success').style.display = 'block';
+  if (btn) { btn.disabled = false; btn.textContent = 'Send message →'; }
+  setTimeout(closeSupportModal, 3000);
+}
+
+async function sendContactForm() {
+  const msg   = document.getElementById('contact-message').value.trim();
+  const email = document.getElementById('contact-email').value.trim();
+  if (!msg || !email || !email.includes('@')) {
+    if (!msg) document.getElementById('contact-message').style.borderColor = 'rgba(255,77,109,.5)';
+    if (!email || !email.includes('@')) document.getElementById('contact-email').style.borderColor = 'rgba(255,77,109,.5)';
+    return;
+  }
+  const btn = document.getElementById('contact-send-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
+  try {
+    await fetch('https://api.fundshot.app/api/support', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ message: msg, user: email, email: email, chat_id: null, plan: 'visitor', source: 'contact_section' })
+    });
+  } catch(e) {}
+  document.getElementById('contact-message').value = '';
+  document.getElementById('contact-email').value = '';
+  document.getElementById('contact-success').style.display = 'block';
+  if (btn) { btn.disabled = false; btn.textContent = 'Send message →'; }
+  setTimeout(() => document.getElementById('contact-success').style.display = 'none', 5000);
 }
 
 async function cwSendEmail() {
