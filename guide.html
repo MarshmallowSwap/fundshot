@@ -237,23 +237,6 @@ const steps = {
   web: ['Login','Exchange','API Keys','First Alert','Auto-Trade','Guardian','Done ✓']
 };
 
-function setPath(p) {
-  path = p; step = 0;
-  // Highlight selected card
-  document.getElementById('card-tg').classList.toggle('featured', p === 'tg');
-  document.getElementById('card-tg').style.borderColor = p === 'tg' ? 'rgba(42,171,238,.5)' : '';
-  document.getElementById('card-web').classList.toggle('featured', p === 'web');
-  document.getElementById('card-web').style.borderColor = p === 'web' ? 'rgba(212,168,67,.5)' : '';
-  // Update title
-  document.getElementById('guide-title').textContent = p === 'tg' ? '✈️ Telegram path' : '🌐 Website path';
-  // Show steps section and scroll to it
-  document.querySelector('.steps-section').style.display = 'block';
-  setTimeout(() => {
-    document.querySelector('.steps-section').scrollIntoView({behavior:'smooth', block:'start'});
-  }, 80);
-  render();
-}
-
 const content = {
   tg: [
     // 0
@@ -562,6 +545,20 @@ SL before TP1: -5.0% from entry</span>
     </div>`
   ]
 };
+
+function setPath(p) {
+  path = p; step = 0;
+  document.getElementById('card-tg').classList.toggle('featured', p === 'tg');
+  document.getElementById('card-tg').style.borderColor = p === 'tg' ? 'rgba(42,171,238,.5)' : '';
+  document.getElementById('card-web').classList.toggle('featured', p === 'web');
+  document.getElementById('card-web').style.borderColor = p === 'web' ? 'rgba(212,168,67,.5)' : '';
+  document.getElementById('guide-title').textContent = p === 'tg' ? '✈️ Telegram path' : '🌐 Website path';
+  document.querySelector('.steps-section').style.display = 'block';
+  setTimeout(() => {
+    document.querySelector('.steps-section').scrollIntoView({behavior:'smooth', block:'start'});
+  }, 80);
+  render();
+}
 
 function render() {
   const st = steps[path];
