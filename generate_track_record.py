@@ -294,6 +294,27 @@ async def main():
         "equity_curve":    equity,
     }
 
+    # Serializza i trade individuali ordinati per data
+    trades_list = []
+    for t in sorted(all_trades, key=lambda x: x.entry_ts):
+        trades_list.append({
+            "symbol":      t.symbol,
+            "direction":   t.direction,
+            "level":       t.level,
+            "entry_ts":    t.entry_ts,
+            "exit_ts":     t.exit_ts,
+            "entry_date":  datetime.fromtimestamp(t.entry_ts/1000, tz=timezone.utc).strftime("%Y-%m-%d %H:%M"),
+            "exit_date":   datetime.fromtimestamp(t.exit_ts/1000, tz=timezone.utc).strftime("%Y-%m-%d %H:%M") if t.exit_ts else "",
+            "entry_rate":  round(t.entry_rate, 4),
+            "cycles":      t.cycles_count,
+            "exit_reason": t.exit_reason,
+            "duration_h":  round(t.duration_h, 1),
+            "net_pnl_pct": round(t.net_pnl_pct, 4),
+            "net_pnl_usdt": round(t.net_pnl * SIZE_USDT * LEVERAGE, 2),
+            "is_win":      t.is_win,
+        })
+    record["trades"] = trades_list
+
     with open(OUTPUT, "w") as f:
         json.dump(record, f, indent=2)
 
