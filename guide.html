@@ -199,41 +199,25 @@ footer a:hover{color:var(--gold)}
 <div class="path-section">
   <div class="path-label">choose how to start</div>
   <div class="path-cards">
-    <div class="path-card featured" onclick="setPath('tg')">
+    <div class="path-card featured" id="card-tg" onclick="setPath('tg')">
       <div class="path-icon pi-tg">✈️</div>
       <h3>Via Telegram Bot</h3>
       <p>Open the bot, type /start, connect your exchange. Done in 3 minutes.</p>
       <span class="path-badge badge-fast">fastest</span>
     </div>
-    <div class="path-card" onclick="setPath('web')">
+    <div class="path-card" id="card-web" onclick="setPath('web')">
       <div class="path-icon pi-web">🌐</div>
       <h3>Via Website</h3>
       <p>Login at fundshot.app with Telegram OAuth and configure from the dashboard.</p>
       <span class="path-badge badge-full">full dashboard</span>
     </div>
   </div>
-
-  <!-- Register CTA -->
-  <div class="register-block">
-    <h3>Ready to start now?</h3>
-    <p>Free plan forever. No credit card. 10 alerts/day from day one.</p>
-    <a href="https://t.me/FundShot_bot" target="_blank" class="btn-register">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.024 9.531c-.148.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.024 14.06l-2.966-.924c-.645-.204-.657-.645.136-.953l11.57-4.461c.537-.194 1.008.131.798.526z"/></svg>
-      Open @FundShot_bot on Telegram
-    </a>
-    <div class="or-divider">or follow the guide below</div>
-    <p style="font-size:.8rem;color:var(--text3)">Step-by-step walkthrough — takes 5 minutes</p>
-  </div>
 </div>
 
 <!-- STEPS -->
 <div class="steps-section">
   <div class="steps-header">
-    <h2>Step-by-step guide</h2>
-    <div class="path-toggle">
-      <button class="pt-btn active" id="btn-tg" onclick="setPath('tg')">✈️ Telegram</button>
-      <button class="pt-btn" id="btn-web" onclick="setPath('web')">🌐 Website</button>
-    </div>
+    <h2 id="guide-title">Step-by-step guide</h2>
   </div>
 
   <!-- Progress -->
@@ -252,6 +236,23 @@ const steps = {
   tg: ['Start','Exchange','API Keys','First Alert','Auto-Trade','Guardian','Done ✓'],
   web: ['Login','Exchange','API Keys','First Alert','Auto-Trade','Guardian','Done ✓']
 };
+
+function setPath(p) {
+  path = p; step = 0;
+  // Highlight selected card
+  document.getElementById('card-tg').classList.toggle('featured', p === 'tg');
+  document.getElementById('card-tg').style.borderColor = p === 'tg' ? 'rgba(42,171,238,.5)' : '';
+  document.getElementById('card-web').classList.toggle('featured', p === 'web');
+  document.getElementById('card-web').style.borderColor = p === 'web' ? 'rgba(212,168,67,.5)' : '';
+  // Update title
+  document.getElementById('guide-title').textContent = p === 'tg' ? '✈️ Telegram path' : '🌐 Website path';
+  // Show steps section and scroll to it
+  document.querySelector('.steps-section').style.display = 'block';
+  setTimeout(() => {
+    document.querySelector('.steps-section').scrollIntoView({behavior:'smooth', block:'start'});
+  }, 80);
+  render();
+}
 
 const content = {
   tg: [
@@ -473,13 +474,6 @@ SL before TP1: -5.0% from entry</span>
   ]
 };
 
-function setPath(p) {
-  path = p; step = 0;
-  document.getElementById('btn-tg').classList.toggle('active', p === 'tg');
-  document.getElementById('btn-web').classList.toggle('active', p === 'web');
-  render();
-}
-
 function render() {
   const st = steps[path];
   const prog = document.getElementById('progress');
@@ -510,7 +504,8 @@ function render() {
 function next() { if (step < content[path].length - 1) { step++; render(); window.scrollTo({top:400,behavior:'smooth'}); } }
 function prev() { if (step > 0) { step--; render(); window.scrollTo({top:400,behavior:'smooth'}); } }
 
-render();
+// Steps section hidden until a path is chosen
+document.querySelector('.steps-section').style.display = 'none';
 </script>
 </body>
 </html>
