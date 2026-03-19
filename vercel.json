@@ -60,6 +60,10 @@
     {
       "src": "faq.html",
       "use": "@vercel/static"
+    },
+    {
+      "src": "guide.html",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -122,6 +126,10 @@
     {
       "src": "/faq",
       "dest": "/faq.html"
+    },
+    {
+      "src": "/guide",
+      "dest": "/guide.html"
     },
     {
       "src": "/(.*)",

@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Get Started — FundShot</title>
+<meta name="description" content="Start with FundShot in 5 minutes. Connect your exchange, get funding rate alerts, and let the bot trade automatically.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#080809;--surface:#0f0f12;--card:#13131a;--card2:#17171f;
+  --border:#1c1c28;--border2:#242435;
+  --gold:#d4a843;--gold2:#f0c96a;--teal:#00c8a0;--teal2:#00a880;
+  --blue:#3d8bff;--red:#ff5252;--green:#44cc88;
+  --text:#e4e4f0;--text2:#7878a0;--text3:#44445a;
+  --muted:#55556a;--muted2:#33334a;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:16px 32px;display:flex;align-items:center;justify-content:space-between;background:rgba(8,8,9,.85);backdrop-filter:blur(16px);border-bottom:1px solid var(--border)}
+.nav-logo{font-size:1.1rem;font-weight:800;color:var(--gold);letter-spacing:-.01em;text-decoration:none}
+.nav-right{display:flex;align-items:center;gap:10px}
+.nav-btn{padding:7px 16px;border-radius:8px;font-family:'Syne',sans-serif;font-size:.82rem;font-weight:700;text-decoration:none;transition:all .2s;cursor:pointer;border:none}
+.btn-tg{background:rgba(42,171,238,.12);border:1px solid rgba(42,171,238,.35);color:#2AABEE;display:inline-flex;align-items:center;gap:6px}
+.btn-tg:hover{background:rgba(42,171,238,.22)}
+.btn-gold{background:var(--gold);color:#05040a}
+.btn-gold:hover{background:var(--gold2)}
+.btn-ghost{background:transparent;border:1px solid var(--border2);color:var(--text2)}
+.btn-ghost:hover{border-color:var(--gold);color:var(--gold)}
+
+/* HERO */
+.hero{padding:120px 24px 60px;text-align:center;position:relative}
+.hero::before{content:'';position:absolute;top:-40px;left:50%;transform:translateX(-50%);width:600px;height:400px;background:radial-gradient(ellipse,rgba(212,168,67,.1) 0%,transparent 65%);pointer-events:none}
+.hero-tag{display:inline-flex;align-items:center;gap:8px;font-family:'DM Mono',monospace;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);border:1px solid rgba(212,168,67,.25);padding:5px 14px;border-radius:20px;margin-bottom:20px;background:rgba(212,168,67,.06)}
+.hero h1{font-size:clamp(2rem,5vw,3rem);font-weight:800;letter-spacing:-.04em;line-height:1.05;margin-bottom:14px}
+.hero h1 em{font-family:'Instrument Serif',serif;font-style:italic;color:var(--gold2)}
+.hero p{color:var(--text2);font-size:.95rem;max-width:480px;margin:0 auto 32px;line-height:1.6;font-family:'DM Mono',monospace}
+
+/* TWO PATH CARDS */
+.path-section{max-width:680px;margin:0 auto;padding:0 24px 60px}
+.path-label{font-family:'DM Mono',monospace;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);text-align:center;margin-bottom:20px}
+.path-cards{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:40px}
+@media(max-width:520px){.path-cards{grid-template-columns:1fr}}
+.path-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px;cursor:pointer;transition:all .2s;text-decoration:none;color:var(--text);display:flex;flex-direction:column;gap:10px}
+.path-card:hover{border-color:var(--border2);transform:translateY(-2px)}
+.path-card.featured{border-color:rgba(42,171,238,.35);background:rgba(42,171,238,.04)}
+.path-card.featured:hover{border-color:rgba(42,171,238,.6)}
+.path-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem}
+.pi-tg{background:rgba(42,171,238,.12)}
+.pi-web{background:rgba(212,168,67,.1)}
+.path-card h3{font-size:.95rem;font-weight:700}
+.path-card p{color:var(--text2);font-size:.82rem;line-height:1.5}
+.path-badge{font-family:'DM Mono',monospace;font-size:.65rem;padding:3px 8px;border-radius:4px;display:inline-block;margin-top:4px}
+.badge-fast{background:rgba(0,200,160,.1);color:var(--teal);border:1px solid rgba(0,200,160,.2)}
+.badge-full{background:rgba(212,168,67,.08);color:var(--gold);border:1px solid rgba(212,168,67,.18)}
+
+/* STEPS */
+.steps-section{max-width:680px;margin:0 auto;padding:0 24px 80px}
+.steps-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:12px}
+.steps-header h2{font-size:1.3rem;font-weight:700;letter-spacing:-.02em}
+.path-toggle{display:flex;gap:6px}
+.pt-btn{font-family:'DM Mono',monospace;font-size:.72rem;padding:5px 12px;border-radius:6px;border:1px solid var(--border2);background:var(--card);color:var(--text3);cursor:pointer;transition:all .15s}
+.pt-btn.active{border-color:var(--gold);color:var(--gold);background:rgba(212,168,67,.07)}
+
+/* Progress bar */
+.progress{display:flex;align-items:center;margin-bottom:32px}
+.step-dot{display:flex;flex-direction:column;align-items:center;flex:1;cursor:pointer}
+.step-circle{width:34px;height:34px;border-radius:50%;border:2px solid var(--border2);background:var(--card);display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:.78rem;color:var(--text3);transition:all .3s;position:relative;z-index:2}
+.step-dot.done .step-circle{border-color:var(--gold);background:rgba(212,168,67,.2);color:var(--gold)}
+.step-dot.active .step-circle{border-color:var(--gold);background:var(--gold);color:#05040a}
+.step-lbl{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text3);margin-top:5px;text-align:center;white-space:nowrap}
+.step-dot.active .step-lbl{color:var(--gold)}
+.step-line{flex:1;height:2px;background:var(--border);position:relative;top:-15px;z-index:1}
+.step-line.done{background:rgba(212,168,67,.4)}
+
+/* Step content */
+.step-content{animation:fadeUp .3s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+.step-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:14px}
+.step-num{font-family:'DM Mono',monospace;font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.step-num::after{content:'';flex:1;height:1px;background:linear-gradient(to right,rgba(212,168,67,.3),transparent);max-width:160px}
+.step-card h3{font-size:1.3rem;font-weight:700;letter-spacing:-.02em;margin-bottom:8px}
+.step-card p{color:var(--text2);font-size:.88rem;line-height:1.6}
+.step-card .code{font-family:'DM Mono',monospace;font-size:.8rem;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-top:10px;color:var(--gold2);line-height:1.6;display:block}
+
+/* Phone mockup */
+.phone-wrap{display:flex;justify-content:center;margin:16px 0}
+.phone{width:260px;background:#17212b;border-radius:20px;border:1px solid #1e2a36;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.ph{background:#213040;padding:10px 14px;display:flex;align-items:center;gap:8px}
+.ph-av{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--gold),#a07010);display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0}
+.ph-name{font-size:.82rem;font-weight:700;color:#fff}
+.ph-sub{font-size:.65rem;color:#7a9bb5;font-family:'DM Mono',monospace}
+.ph-body{padding:10px 10px 14px;display:flex;flex-direction:column;gap:6px;min-height:200px}
+.tg-m{max-width:86%;padding:8px 12px;border-radius:12px;font-size:.76rem;line-height:1.5}
+.tg-m.bot{background:#213040;color:#c8d8e8;border-bottom-left-radius:4px;align-self:flex-start}
+.tg-m.usr{background:#2b5278;color:#e0f0ff;border-bottom-right-radius:4px;align-self:flex-end}
+.tg-m .ts{font-family:'DM Mono',monospace;font-size:.56rem;color:#5a7a9a;margin-top:3px;text-align:right}
+.tg-btn-row{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.tg-btn{background:#2b5278;border:none;border-radius:6px;color:#7ab8e0;font-family:'DM Mono',monospace;font-size:.65rem;padding:5px 9px;cursor:default}
+.tg-btn.sel{background:#1e4060;color:var(--gold);border:1px solid rgba(212,168,67,.3)}
+
+/* Alert card */
+.alert-card{background:#0d1520;border:1px solid #1a2840;border-radius:10px;padding:12px 14px;font-family:'DM Mono',monospace;font-size:.76rem;line-height:1.75;color:#9ab8d0;margin:12px 0}
+.alert-card .al{color:var(--gold2);font-weight:500}
+.alert-card .gr{color:var(--green)}
+.alert-card .re{color:var(--red)}
+.alert-card .sep{color:#1e3040}
+
+/* Callout */
+.callout{border-radius:10px;padding:11px 14px;font-size:.83rem;line-height:1.55;margin:12px 0;display:flex;gap:10px;align-items:flex-start}
+.callout.info{background:rgba(61,139,255,.06);border:1px solid rgba(61,139,255,.16);color:#88aacc}
+.callout.tip{background:rgba(212,168,67,.06);border:1px solid rgba(212,168,67,.16);color:#c8a850}
+.callout.ok{background:rgba(68,204,136,.06);border:1px solid rgba(68,204,136,.16);color:#55bb88}
+.callout-icon{font-size:.95rem;flex-shrink:0;margin-top:1px}
+
+/* MM cards */
+.mm-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+.mm-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px}
+.mm-lbl{font-family:'DM Mono',monospace;font-size:.62rem;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px}
+.mm-val{font-size:1.3rem;font-weight:700;color:var(--gold2);letter-spacing:-.02em}
+.mm-desc{font-size:.75rem;color:var(--text2);margin-top:3px;line-height:1.4}
+
+/* Guardian */
+.gbar{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin:12px 0}
+.gbar-title{font-size:.88rem;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.grow{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border)}
+.grow:last-child{border-bottom:none}
+.grow-lbl{font-size:.82rem;color:var(--text2)}
+.grow-val{font-family:'DM Mono',monospace;font-size:.76rem;color:var(--green)}
+.sbadge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-family:'DM Mono',monospace;font-size:.68rem}
+.s-safe{background:rgba(68,204,136,.1);color:var(--green);border:1px solid rgba(68,204,136,.2)}
+
+/* Nav arrows */
+.nav-row{display:flex;justify-content:space-between;align-items:center;padding-top:28px;margin-top:12px;border-top:1px solid var(--border)}
+.nav-btn{display:flex;align-items:center;gap:7px;padding:10px 18px;border-radius:8px;border:1px solid var(--border2);background:var(--card);color:var(--text2);font-family:'DM Mono',monospace;font-size:.78rem;cursor:pointer;transition:all .2s}
+.nav-btn:hover{border-color:var(--gold);color:var(--gold)}
+.nav-btn.primary{background:var(--gold);color:#05040a;border-color:var(--gold);font-weight:600}
+.nav-btn.primary:hover{background:var(--gold2)}
+.nav-btn:disabled{opacity:.3;cursor:default;pointer-events:none}
+
+/* Complete */
+.complete-wrap{text-align:center;padding:16px 0}
+.complete-icon{width:68px;height:68px;border-radius:50%;background:rgba(212,168,67,.1);border:2px solid rgba(212,168,67,.3);display:flex;align-items:center;justify-content:center;font-size:1.8rem;margin:0 auto 18px;animation:pulse 2s ease infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(212,168,67,.2)}50%{box-shadow:0 0 0 14px rgba(212,168,67,0)}}
+.complete-wrap h2{font-size:1.6rem;font-weight:800;letter-spacing:-.03em;margin-bottom:8px}
+.complete-wrap p{color:var(--text2);font-size:.9rem;max-width:380px;margin:0 auto 24px;line-height:1.6}
+.plan-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:520px;margin:0 auto 20px}
+.plan-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.plan-card.feat{border-color:var(--gold);background:rgba(212,168,67,.04)}
+.plan-name{font-size:.85rem;font-weight:700;margin-bottom:4px}
+.plan-price{font-family:'DM Mono',monospace;font-size:1rem;color:var(--gold2);margin-bottom:8px}
+.plan-feat{font-size:.72rem;color:var(--text2);line-height:1.5}
+.final-links{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:380px;margin:0 auto 20px}
+.final-link{background:var(--card);border:1px solid var(--border2);border-radius:10px;padding:14px;text-decoration:none;color:var(--text);display:flex;flex-direction:column;align-items:center;gap:5px;transition:all .2s;font-size:.8rem;font-weight:600}
+.final-link:hover{border-color:var(--gold);color:var(--gold)}
+.fi{font-size:1.3rem}
+
+/* CTA Register block */
+.register-block{background:var(--card);border:1px solid rgba(42,171,238,.25);border-radius:14px;padding:24px;text-align:center;margin-bottom:14px}
+.register-block h3{font-size:1.1rem;font-weight:700;margin-bottom:6px}
+.register-block p{color:var(--text2);font-size:.85rem;margin-bottom:18px;line-height:1.5}
+.btn-register{display:inline-flex;align-items:center;gap:10px;background:#2AABEE;color:#fff;padding:13px 28px;border-radius:10px;font-weight:700;font-size:.92rem;text-decoration:none;transition:all .2s}
+.btn-register:hover{background:#1a9bde;transform:translateY(-1px)}
+.or-divider{color:var(--text3);font-family:'DM Mono',monospace;font-size:.72rem;margin:14px 0;display:flex;align-items:center;gap:10px}
+.or-divider::before,.or-divider::after{content:'';flex:1;height:1px;background:var(--border)}
+
+footer{text-align:center;padding:40px 24px;color:var(--text3);font-family:'DM Mono',monospace;font-size:.78rem;border-top:1px solid var(--border)}
+footer a{color:var(--text3);text-decoration:none}
+footer a:hover{color:var(--gold)}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-logo" onclick="window.location.href='/?v='+Date.now();return false">⚡ FundShot</a>
+  <div class="nav-right">
+    <a href="/faq" class="nav-btn btn-ghost" style="font-size:.8rem">FAQ</a>
+    <a href="/docs" class="nav-btn btn-ghost" style="font-size:.8rem">Docs</a>
+    <a href="https://t.me/FundShot_bot" target="_blank" class="nav-btn btn-register" style="padding:7px 16px;font-size:.82rem">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.024 9.531c-.148.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.024 14.06l-2.966-.924c-.645-.204-.657-.645.136-.953l11.57-4.461c.537-.194 1.008.131.798.526z"/></svg>
+      Start free
+    </a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-tag">⚡ Quick Start Guide</div>
+  <h1>Get started with<br><em>FundShot</em></h1>
+  <p>From zero to your first funding rate alert in under 5 minutes. Choose your path.</p>
+</div>
+
+<!-- PATH CARDS -->
+<div class="path-section">
+  <div class="path-label">choose how to start</div>
+  <div class="path-cards">
+    <div class="path-card featured" onclick="setPath('tg')">
+      <div class="path-icon pi-tg">✈️</div>
+      <h3>Via Telegram Bot</h3>
+      <p>Open the bot, type /start, connect your exchange. Done in 3 minutes.</p>
+      <span class="path-badge badge-fast">fastest</span>
+    </div>
+    <div class="path-card" onclick="setPath('web')">
+      <div class="path-icon pi-web">🌐</div>
+      <h3>Via Website</h3>
+      <p>Login at fundshot.app with Telegram OAuth and configure from the dashboard.</p>
+      <span class="path-badge badge-full">full dashboard</span>
+    </div>
+  </div>
+
+  <!-- Register CTA -->
+  <div class="register-block">
+    <h3>Ready to start now?</h3>
+    <p>Free plan forever. No credit card. 10 alerts/day from day one.</p>
+    <a href="https://t.me/FundShot_bot" target="_blank" class="btn-register">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.024 9.531c-.148.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.024 14.06l-2.966-.924c-.645-.204-.657-.645.136-.953l11.57-4.461c.537-.194 1.008.131.798.526z"/></svg>
+      Open @FundShot_bot on Telegram
+    </a>
+    <div class="or-divider">or follow the guide below</div>
+    <p style="font-size:.8rem;color:var(--text3)">Step-by-step walkthrough — takes 5 minutes</p>
+  </div>
+</div>
+
+<!-- STEPS -->
+<div class="steps-section">
+  <div class="steps-header">
+    <h2>Step-by-step guide</h2>
+    <div class="path-toggle">
+      <button class="pt-btn active" id="btn-tg" onclick="setPath('tg')">✈️ Telegram</button>
+      <button class="pt-btn" id="btn-web" onclick="setPath('web')">🌐 Website</button>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress" id="progress"></div>
+
+  <!-- Step content -->
+  <div id="step-content"></div>
+</div>
+
+<footer>FundShot © 2026 — <a href="mailto:support@fundshot.app">support@fundshot.app</a> · <a href="/faq">FAQ</a> · <a href="/docs">Docs</a></footer>
+
+<script>
+let path = 'tg', step = 0;
+
+const steps = {
+  tg: ['Start','Exchange','API Keys','First Alert','Auto-Trade','Guardian','Done ✓'],
+  web: ['Login','Exchange','API Keys','First Alert','Auto-Trade','Guardian','Done ✓']
+};
+
+const content = {
+  tg: [
+    // 0
+    `<div class="step-card">
+      <div class="step-num">Step 01 · Telegram Bot</div>
+      <h3>Open FundShot on Telegram</h3>
+      <p>Search <strong>@FundShot_bot</strong> on Telegram or tap the link below. No account, no password, no email needed.</p>
+      <span class="code">t.me/FundShot_bot</span>
+      <div class="callout tip" style="margin-top:12px"><span class="callout-icon">💡</span><span>Have a referral link? Open <code>t.me/FundShot_bot?start=ref_XXXXX</code> to get 5% off permanently.</span></div>
+    </div>
+    <div class="phone-wrap"><div class="phone">
+      <div class="ph"><div class="ph-av">⚡</div><div><div class="ph-name">FundShot Bot</div><div class="ph-sub">@FundShot_bot · bot</div></div></div>
+      <div class="ph-body">
+        <div class="tg-m usr">/start<div class="ts">09:41</div></div>
+        <div class="tg-m bot">⚡ <strong>Welcome to FundShot!</strong><br><br>Monitor 500+ pairs 24/7.<br><br>🆓 Free · ⚡ Pro $20/mo · 👑 Elite $45/mo<br><br>Which exchange?
+          <div class="tg-btn-row"><button class="tg-btn sel">🟡 Bybit</button><button class="tg-btn">🟠 Binance</button><button class="tg-btn">🟣 Hyperliquid</button></div>
+          <div class="ts">09:41</div>
+        </div>
+      </div>
+    </div></div>`,
+    // 1
+    `<div class="step-card">
+      <div class="step-num">Step 02 · Exchange</div>
+      <h3>Choose your exchange</h3>
+      <p>Select where you trade. Start with Bybit Demo to test without real capital.</p>
+      <div class="callout info" style="margin-top:12px"><span class="callout-icon">ℹ️</span><span><strong>Free + Pro:</strong> 1 exchange. <strong>Elite:</strong> all exchanges simultaneously.</span></div>
+      <div class="callout tip"><span class="callout-icon">💡</span><span>Bybit Demo uses real market data with paper capital — identical execution to live.</span></div>
+    </div>
+    <div class="phone-wrap"><div class="phone">
+      <div class="ph"><div class="ph-av">⚡</div><div><div class="ph-name">FundShot Bot</div><div class="ph-sub">@FundShot_bot</div></div></div>
+      <div class="ph-body">
+        <div class="tg-m usr">🟡 Bybit<div class="ts">09:41</div></div>
+        <div class="tg-m bot">🟡 <strong>Bybit</strong> selected.<br><br>Which mode?<div class="tg-btn-row"><button class="tg-btn sel">🎮 Demo</button><button class="tg-btn">🔴 Live</button></div><div class="ts">09:41</div></div>
+        <div class="tg-m usr">🎮 Demo<div class="ts">09:42</div></div>
+        <div class="tg-m bot">🎮 Demo selected.<br>Now send your API key ↓<div class="ts">09:42</div></div>
+      </div>
+    </div></div>`,
+    // 2
+    `<div class="step-card">
+      <div class="step-num">Step 03 · API Keys</div>
+      <h3>Connect your exchange</h3>
+      <p>Create an API key on Bybit with <strong>Read + Trade</strong> permissions only. Never enable withdrawal.</p>
+      <span class="code">Bybit → Account → API Management<br>✅ Read  ✅ Trade<br>❌ Withdrawal — NEVER enable</span>
+      <div class="callout ok" style="margin-top:12px"><span class="callout-icon">🔒</span><span>Keys are encrypted AES-256-GCM before storage. Never visible in logs. Worst case: a bad trade. Funds cannot leave the exchange.</span></div>
+    </div>
+    <div class="phone-wrap"><div class="phone">
+      <div class="ph"><div class="ph-av">⚡</div><div><div class="ph-name">FundShot Bot</div><div class="ph-sub">@FundShot_bot</div></div></div>
+      <div class="ph-body">
+        <div class="tg-m bot">Send your <strong>API Key</strong>:<div class="ts">09:42</div></div>
+        <div class="tg-m usr">qyORhXUdfmJL••••<div class="ts">09:43</div></div>
+        <div class="tg-m bot">✅ Key received.<br>Now send the <strong>Secret</strong>:<div class="ts">09:43</div></div>
+        <div class="tg-m usr">0XlP8v3VpRzh••••<div class="ts">09:43</div></div>
+        <div class="tg-m bot">✅ <strong>Bybit Demo connected!</strong><br>Balance: <span style="color:#f0c96a">500.00 USDT</span><br>Monitoring active 🟢<div class="ts">09:43</div></div>
+      </div>
+    </div></div>`,
+    // 3
+    `<div class="step-card">
+      <div class="step-num">Step 04 · First Alert</div>
+      <h3>Your first funding rate alert</h3>
+      <p>From this moment, every funding spike on your exchange sends you an instant Telegram message. Here's what it looks like.</p>
+      <div class="callout tip"><span class="callout-icon">⏰</span><span><strong>Pro + Elite</strong> also get pre-settlement alerts 15 min before every funding reset.</span></div>
+    </div>
+    <div class="alert-card">
+<span class="al">🔴 HARD FUNDING ALERT — SHORT 📉</span>
+<span class="sep">━━━━━━━━━━━━━━━━━━</span>
+📌 SXPUSDT
+<span style="color:#88aacc">📊 Rate: +2.2434% (every 4H)</span>
+<span style="color:#888">💵 Price: $0.0655 | 24h: ▲ +12.4%</span>
+📈 OI Δ5m: <span class="gr">▲ +3.82%</span>
+<span class="sep">━━━━━━━━━━━━━━━━━━</span>
+<span class="gr">💰 SHORTs collect — rare opportunity</span>
+<span class="al">🟡 Bybit · 🎮 Demo</span>
+    </div>
+    <div class="step-card" style="margin-top:0">
+      <p style="font-size:.84rem;color:var(--text2)">Alert levels: 📊 SOFT ≥0.5% · 🚨 HIGH ≥1% · 🔥 EXTREME ≥1.5% · 🔴 HARD ≥2% · 💎 JACKPOT ≥2.5%<br><br>Alerts fire only when the level CHANGES — no spam, 3–8 actionable signals/day.</p>
+    </div>`,
+    // 4
+    `<div class="step-card">
+      <div class="step-num">Step 05 · Auto-Trader</div>
+      <h3>Configure auto-trading</h3>
+      <p>Pro and Elite users can let the bot trade automatically on every qualified signal. Configure from the dashboard or via /autotrader in the bot.</p>
+    </div>
+    <div class="mm-grid">
+      <div class="mm-card"><div class="mm-lbl">Trade Size</div><div class="mm-val">100 USDT</div><div class="mm-desc">Start small while testing.</div></div>
+      <div class="mm-card"><div class="mm-lbl">Leverage</div><div class="mm-val">10×</div><div class="mm-desc">→ $1,000 notional/trade.</div></div>
+      <div class="mm-card"><div class="mm-lbl">Stop Loss</div><div class="mm-val">5.0%</div><div class="mm-desc">Moves to breakeven after TP1.</div></div>
+      <div class="mm-card"><div class="mm-lbl">Max Positions</div><div class="mm-val">5</div><div class="mm-desc">Hard cap on open positions.</div></div>
+    </div>
+    <div class="step-card" style="margin-top:0">
+      <span class="code">TP1: close 30% at +0.70% → SL moves to breakeven
+Trailing: 0.70% buffer from peak
+Max cap: force-close at +3.0%
+SL before TP1: -5.0% from entry</span>
+    </div>
+    <div class="callout info"><span class="callout-icon">ℹ️</span><span><strong>Pro:</strong> up to 5 positions/day · 1 exchange. <strong>Elite:</strong> unlimited · all exchanges.</span></div>`,
+    // 5
+    `<div class="step-card">
+      <div class="step-num">Step 06 · Guardian</div>
+      <h3>Set up Guardian risk engine</h3>
+      <p>Guardian automatically pauses trading when risk thresholds are hit. The only risk engine of its kind in the funding rate space.</p>
+    </div>
+    <div class="gbar">
+      <div class="gbar-title">🛡️ Guardian Status <span class="sbadge s-safe">● SAFE</span></div>
+      <div class="grow"><span class="grow-lbl">Max session drawdown</span><span class="grow-val">10% → auto-halt</span></div>
+      <div class="grow"><span class="grow-lbl">Consecutive losses</span><span class="grow-val">3 in a row → 30 min cooldown</span></div>
+      <div class="grow"><span class="grow-lbl">Daily loss limit</span><span class="grow-val">$100 → pause until midnight</span></div>
+    </div>
+    <div class="callout ok"><span class="callout-icon">✅</span><span>Guardian is the feature no competitor offers. A bot without risk management is a liability.</span></div>`,
+    // 6
+    `<div class="complete-wrap">
+      <div class="complete-icon">⚡</div>
+      <h2>You're live on FundShot</h2>
+      <p>Exchange connected · Alerts active · Auto-trader ready · Guardian watching</p>
+      <div class="plan-row">
+        <div class="plan-card"><div class="plan-name">🆓 Free</div><div class="plan-price">$0</div><div class="plan-feat">10 alerts/day<br>1 exchange<br>Dashboard</div></div>
+        <div class="plan-card feat"><div class="plan-name">⚡ Pro</div><div class="plan-price">$20/mo</div><div class="plan-feat">Unlimited alerts<br>Auto-trading<br>Guardian</div></div>
+        <div class="plan-card"><div class="plan-name">👑 Elite</div><div class="plan-price">$45/mo</div><div class="plan-feat">Multi-exchange<br>Unlimited pos.<br>10% referral</div></div>
+      </div>
+      <div class="final-links">
+        <a href="https://t.me/FundShot_bot" class="final-link"><span class="fi">✈️</span>Open Bot</a>
+        <a href="/dashboard" class="final-link"><span class="fi">📊</span>Dashboard</a>
+        <a href="/docs" class="final-link"><span class="fi">📖</span>Docs</a>
+        <a href="/faq" class="final-link"><span class="fi">❓</span>FAQ</a>
+      </div>
+    </div>`
+  ],
+  web: [
+    // 0 — Login
+    `<div class="step-card">
+      <div class="step-num">Step 01 · Website Login</div>
+      <h3>Log in at fundshot.app</h3>
+      <p>Click <strong>Login</strong> in the nav bar and authorize via Telegram OAuth. No password, no form — instant.</p>
+      <div class="callout info" style="margin-top:12px"><span class="callout-icon">ℹ️</span><span>The website and the Telegram bot share the same account. Settings sync between both.</span></div>
+    </div>
+    <div class="register-block" style="margin-top:0">
+      <h3>Login with Telegram</h3>
+      <p>Click the button below — Telegram OAuth confirms your identity instantly.</p>
+      <a href="/?scroll=login" class="btn-register">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.024 9.531c-.148.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.024 14.06l-2.966-.924c-.645-.204-.657-.645.136-.953l11.57-4.461c.537-.194 1.008.131.798.526z"/></svg>
+        Continue with Telegram
+      </a>
+    </div>`,
+    // 1 — Exchange
+    `<div class="step-card">
+      <div class="step-num">Step 02 · Exchange</div>
+      <h3>Choose your exchange</h3>
+      <p>Dashboard → Settings → Exchange tab. Select Bybit, Binance or Hyperliquid.</p>
+      <div class="callout tip"><span class="callout-icon">💡</span><span>Start with <strong>Bybit Demo</strong> — real market data, paper capital. Perfect for testing the strategy before going live.</span></div>
+    </div>`,
+    // 2 — API
+    `<div class="step-card">
+      <div class="step-num">Step 03 · API Keys</div>
+      <h3>Connect your exchange</h3>
+      <p>Dashboard → Settings → paste your API key and secret. Click <strong>Save & Test Connection</strong> to verify.</p>
+      <span class="code">Bybit → Account → API Management<br>✅ Read  ✅ Trade<br>❌ Withdrawal — NEVER enable</span>
+      <div class="callout ok" style="margin-top:12px"><span class="callout-icon">🔒</span><span>AES-256-GCM encryption before storage. Each user isolated in the database. Keys never appear in logs.</span></div>
+    </div>`,
+    // 3 — Alert
+    `<div class="step-card">
+      <div class="step-num">Step 04 · First Alert</div>
+      <h3>Your first funding rate alert</h3>
+      <p>Alerts arrive via Telegram — make sure your Telegram is connected (it is if you logged in with OAuth).</p>
+    </div>
+    <div class="alert-card">
+<span class="al">🔥 EXTREME FUNDING ALERT — LONG 📈</span>
+<span class="sep">━━━━━━━━━━━━━━━━━━</span>
+📌 HUMAUSDT
+<span style="color:#88aacc">📊 Rate: -1.6176% (every 8H)</span>
+<span style="color:#888">💵 Price: $0.001724 | 24h: ▼ -4.2%</span>
+📈 OI Δ5m: <span class="gr">▲ +2.14%</span>
+<span class="sep">━━━━━━━━━━━━━━━━━━</span>
+<span class="gr">💰 LONGs collect — strong signal</span>
+⏰ Next settlement: 08:00 UTC · <span style="color:#f0c96a">14 min</span>
+<span style="color:#ff9922">🟡 Bybit · 🎮 Demo</span>
+    </div>`,
+    // 4 — AutoTrader
+    `<div class="step-card">
+      <div class="step-num">Step 05 · Auto-Trader</div>
+      <h3>Configure auto-trading</h3>
+      <p>Dashboard → Trading tab → set Money Management → toggle Auto-Trader ON. Settings sync to the bot instantly.</p>
+    </div>
+    <div class="mm-grid">
+      <div class="mm-card"><div class="mm-lbl">Trade Size</div><div class="mm-val">100 USDT</div><div class="mm-desc">Start small.</div></div>
+      <div class="mm-card"><div class="mm-lbl">Leverage</div><div class="mm-val">10×</div><div class="mm-desc">→ $1,000 notional.</div></div>
+      <div class="mm-card"><div class="mm-lbl">Stop Loss</div><div class="mm-val">5.0%</div><div class="mm-desc">Auto-moves to BE after TP1.</div></div>
+      <div class="mm-card"><div class="mm-lbl">Max Positions</div><div class="mm-val">5</div><div class="mm-desc">Hard cap.</div></div>
+    </div>`,
+    // 5 — Guardian
+    `<div class="step-card">
+      <div class="step-num">Step 06 · Guardian</div>
+      <h3>Set up Guardian risk engine</h3>
+      <p>Dashboard → Trading tab → Guardian card. All parameters editable. Changes sync instantly.</p>
+    </div>
+    <div class="gbar">
+      <div class="gbar-title">🛡️ Guardian Status <span class="sbadge s-safe">● SAFE</span></div>
+      <div class="grow"><span class="grow-lbl">Max session drawdown</span><span class="grow-val">10% → auto-halt</span></div>
+      <div class="grow"><span class="grow-lbl">Consecutive losses</span><span class="grow-val">3 → 30 min cooldown</span></div>
+      <div class="grow"><span class="grow-lbl">Daily loss limit</span><span class="grow-val">$100 → midnight reset</span></div>
+    </div>
+    <div class="callout ok"><span class="callout-icon">✅</span><span>Guardian is the feature no competitor offers.</span></div>`,
+    // 6 — Done
+    `<div class="complete-wrap">
+      <div class="complete-icon">⚡</div>
+      <h2>You're live on FundShot</h2>
+      <p>Exchange connected · Alerts active · Auto-trader ready · Guardian watching</p>
+      <div class="plan-row">
+        <div class="plan-card"><div class="plan-name">🆓 Free</div><div class="plan-price">$0</div><div class="plan-feat">10 alerts/day<br>1 exchange<br>Dashboard</div></div>
+        <div class="plan-card feat"><div class="plan-name">⚡ Pro</div><div class="plan-price">$20/mo</div><div class="plan-feat">Unlimited alerts<br>Auto-trading<br>Guardian</div></div>
+        <div class="plan-card"><div class="plan-name">👑 Elite</div><div class="plan-price">$45/mo</div><div class="plan-feat">Multi-exchange<br>Unlimited pos.<br>10% referral</div></div>
+      </div>
+      <div class="final-links">
+        <a href="https://t.me/FundShot_bot" class="final-link"><span class="fi">✈️</span>Open Bot</a>
+        <a href="/dashboard" class="final-link"><span class="fi">📊</span>Dashboard</a>
+        <a href="/docs" class="final-link"><span class="fi">📖</span>Docs</a>
+        <a href="/faq" class="final-link"><span class="fi">❓</span>FAQ</a>
+      </div>
+    </div>`
+  ]
+};
+
+function setPath(p) {
+  path = p; step = 0;
+  document.getElementById('btn-tg').classList.toggle('active', p === 'tg');
+  document.getElementById('btn-web').classList.toggle('active', p === 'web');
+  render();
+}
+
+function render() {
+  const st = steps[path];
+  const prog = document.getElementById('progress');
+  prog.innerHTML = '';
+  st.forEach((s, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'step-dot' + (i === step ? ' active' : i < step ? ' done' : '');
+    dot.innerHTML = `<div class="step-circle">${i < step ? '✓' : i+1}</div><div class="step-lbl">${s}</div>`;
+    dot.onclick = () => { step = i; render(); };
+    prog.appendChild(dot);
+    if (i < st.length - 1) {
+      const line = document.createElement('div');
+      line.className = 'step-line' + (i < step ? ' done' : '');
+      prog.appendChild(line);
+    }
+  });
+
+  const isFirst = step === 0, isLast = step === content[path].length - 1;
+  document.getElementById('step-content').innerHTML = `
+    ${content[path][step]}
+    <div class="nav-row">
+      <button class="nav-btn" onclick="prev()" ${isFirst ? 'disabled' : ''}>← Back</button>
+      <span style="font-family:'DM Mono',monospace;font-size:.72rem;color:var(--text3)">${step+1} / ${st.length}</span>
+      <button class="nav-btn primary" onclick="next()" ${isLast ? 'disabled' : ''}>${isLast ? 'Done ✓' : 'Next →'}</button>
+    </div>`;
+}
+
+function next() { if (step < content[path].length - 1) { step++; render(); window.scrollTo({top:400,behavior:'smooth'}); } }
+function prev() { if (step > 0) { step--; render(); window.scrollTo({top:400,behavior:'smooth'}); } }
+
+render();
+</script>
+</body>
+</html>
