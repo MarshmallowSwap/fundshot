@@ -28,7 +28,7 @@ import logging
 import os
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from zoneinfo import ZoneInfo
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -43,7 +43,12 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(
 logger = logging.getLogger(__name__)
 
 TZ_IT   = ZoneInfo("Europe/Rome")
-DAYS    = 60          # backtest 60 giorni
+
+# Punto di partenza fisso: 65 giorni fa dalla prima esecuzione
+# Da quel giorno la finestra CRESCE ogni giorno (non è rolling)
+_now_utc   = datetime.now(timezone.utc)
+START_DATE = _now_utc.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=65)
+DAYS       = int((_now_utc - START_DATE).days)   # oggi: 65, domani: 66, ecc.
 OUTPUT  = "/tmp/fs_track_record.json"
 TOP_N   = 200         # tutti i simboli USDT perpetual
 
@@ -56,9 +61,9 @@ MIN_LEVEL        = "soft"     # SOFT+ (>= 0.5%) — massimizza numero trade
 
 
 async def fetch_60d(symbol: str) -> list[dict]:
-    """Fetch funding history 60 giorni con paginazione."""
+    """Fetch funding history dalla data di lancio fino ad oggi (finestra crescente)."""
     now_ms   = int(time.time() * 1000)
-    start_ms = now_ms - DAYS * 24 * 3600 * 1000
+    start_ms = int(START_DATE.timestamp() * 1000)
     all_entries = []
     cursor = ""
     for page in range(20):  # max 20 pagine = 4000 record
@@ -160,7 +165,7 @@ def run_backtest_filtered(symbol: str, entries: list[dict]):
 
 
 async def main():
-    logger.info("Avvio generazione track record 60gg...")
+    logger.info("Avvio generazione track record (dal %s, giorno %d)...", START_DATE.date(), DAYS)
 
     symbols = await get_top_symbols()
     logger.info("Simboli selezionati: %d", len(symbols))
@@ -259,6 +264,7 @@ async def main():
         "generated_at":    datetime.now(timezone.utc).isoformat(),
         "exchange":        "Bybit",
         "days":            DAYS,
+        "start_date":      START_DATE.strftime("%Y-%m-%d"),
         "symbols_analyzed": len(symbols),
         "config": {
             "starting_capital": STARTING_CAPITAL,
