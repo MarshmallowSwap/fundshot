@@ -308,7 +308,7 @@ async def main():
             "entry_rate":  round(t.entry_rate, 4),
             "cycles":      t.cycles_count,
             "exit_reason": t.exit_reason,
-            "duration_h":  round(t.duration_h, 1),
+            "duration_h":  round(t.duration_hours, 1),
             "net_pnl_pct": round(t.net_pnl_pct, 4),
             "net_pnl_usdt": round(t.net_pnl * SIZE_USDT * LEVERAGE, 2),
             "is_win":      t.is_win,
