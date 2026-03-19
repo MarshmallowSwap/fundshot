@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "analytics": { "disabled": false },
   "builds": [
     {
       "src": "landing.html",
