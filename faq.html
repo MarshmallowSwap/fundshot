@@ -92,6 +92,69 @@ footer{border-top:1px solid var(--border);padding:28px 48px;text-align:center;fo
   .faq-wrap,.cats{padding:0 20px 60px}
   .support-cta{margin:0 20px 60px}
 }
+
+/* ── Chat widget ── */
+.cw-header{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;flex-shrink:0;background:linear-gradient(135deg,rgba(124,58,237,.2),rgba(0,201,167,.1));border-bottom:1px solid rgba(255,255,255,.08)}
+.cw-header-left{display:flex;align-items:center;gap:10px}
+.cw-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#00c9a7);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.cw-title{font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem;color:#f0ecff}
+.cw-subtitle{font-family:'DM Mono',monospace;font-size:.65rem;color:#00c9a7;margin-top:1px}
+.cw-close{background:none;border:none;color:#7a738f;cursor:pointer;font-size:18px;padding:2px 6px;border-radius:4px;transition:color .2s}
+.cw-close:hover{color:#f0ecff}
+.cw-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+.cw-msgs::-webkit-scrollbar{width:4px}
+.cw-msgs::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
+.cm{display:flex;gap:8px;animation:msg-in .25s ease}
+.cm.user{flex-direction:row-reverse}
+@keyframes msg-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.cm-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;margin-top:2px}
+.cm-avatar.bot{background:linear-gradient(135deg,rgba(124,58,237,.3),rgba(0,201,167,.2));border:1px solid rgba(124,58,237,.3)}
+.cm-avatar.user{background:rgba(212,168,67,.15);border:1px solid rgba(212,168,67,.2)}
+.cm-bubble{max-width:76%;padding:10px 14px;border-radius:14px;font-size:.83rem;line-height:1.6;color:#f0ecff}
+.cm-bubble.bot{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:4px 14px 14px 14px}
+.cm-bubble.user{background:rgba(212,168,67,.12);border:1px solid rgba(212,168,67,.2);border-radius:14px 4px 14px 14px}
+.cm-typing span{display:inline-block;width:5px;height:5px;background:#7a738f;border-radius:50%;animation:typing .8s infinite;margin:0 1px}
+.cm-typing span:nth-child(2){animation-delay:.15s}.cm-typing span:nth-child(3){animation-delay:.3s}
+@keyframes typing{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+.cw-quick{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 10px;flex-shrink:0}
+.cw-quick-btn{padding:5px 10px;border-radius:20px;font-size:.72rem;cursor:pointer;background:rgba(124,58,237,.1);border:1px solid rgba(124,58,237,.25);color:#c4b5fd;font-family:'DM Mono',monospace;transition:all .2s;white-space:nowrap}
+.cw-quick-btn:hover{background:rgba(124,58,237,.2)}
+.cw-input-row{display:flex;gap:8px;padding:12px 14px;border-top:1px solid rgba(255,255,255,.08);flex-shrink:0}
+.cw-input{flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:24px;padding:9px 14px;color:#f0ecff;font-family:'DM Sans',sans-serif;font-size:.83rem;outline:none;transition:border-color .2s}
+.cw-input:focus{border-color:rgba(124,58,237,.5)}
+.cw-input::placeholder{color:#4a4560}
+.cw-send{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#5b21b6);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
+.cw-send:hover{transform:scale(1.1)}
+.cw-send svg{width:14px;height:14px;fill:white}
+
+/* ── Support Modal ── */
+#support-modal-overlay{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
+#support-modal-overlay.open{opacity:1;pointer-events:auto}
+#support-modal{background:#0f0d18;border:1px solid rgba(212,168,67,.2);border-radius:20px;padding:36px;width:100%;max-width:460px;position:relative;overflow:hidden;transform:scale(.95) translateY(10px);transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
+#support-modal-overlay.open #support-modal{transform:scale(1) translateY(0)}
+#support-modal::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+.sm-title{font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:800;color:var(--text);margin-bottom:6px}
+.sm-sub{font-size:.85rem;color:var(--muted);margin-bottom:24px}
+.sm-label{font-family:'DM Mono',monospace;font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;display:block}
+.sm-input{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border2);border-radius:10px;padding:11px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.88rem;outline:none;margin-bottom:16px;transition:border-color .2s}
+.sm-input:focus{border-color:rgba(212,168,67,.5)}
+.sm-input::placeholder{color:var(--muted2)}
+.sm-textarea{min-height:100px;resize:vertical}
+.sm-actions{display:flex;gap:10px;margin-top:8px}
+.sm-send{flex:1;background:var(--gold);color:#05040a;border:none;border-radius:10px;padding:12px;font-weight:700;font-size:.9rem;cursor:pointer;font-family:'Syne',sans-serif;transition:all .2s}
+.sm-send:hover{background:var(--gold2)}
+.sm-tg{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 18px;border-radius:10px;background:rgba(42,171,238,.1);border:1px solid rgba(42,171,238,.3);color:#2AABEE;font-weight:700;font-size:.88rem;text-decoration:none;font-family:'Syne',sans-serif;transition:all .2s;white-space:nowrap}
+.sm-tg:hover{background:rgba(42,171,238,.2)}
+.sm-close{position:absolute;top:16px;right:16px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:4px 8px;border-radius:4px;transition:color .2s}
+.sm-close:hover{color:var(--text)}
+.sm-success{text-align:center;padding:24px 0;display:none}
+.sm-success-icon{font-size:48px;margin-bottom:12px}
+.sm-success-title{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;color:var(--teal);margin-bottom:8px}
+.sm-success-sub{font-size:.875rem;color:var(--muted)}
+
+/* FAQ Chat overlay */
+#faq-chat-overlay.open{opacity:1!important;pointer-events:auto!important}
+#faq-chat-overlay.open #faq-chat-window{transform:scale(1) translateY(0)!important}
 </style>
 </head>
 <body>
@@ -423,12 +486,68 @@ footer{border-top:1px solid var(--border);padding:28px 48px;text-align:center;fo
       <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.024 9.531c-.148.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.024 14.06l-2.966-.924c-.645-.204-.657-.645.136-.953l11.57-4.461c.537-.194 1.008.131.798.526z"/></svg>
       Ask on Telegram
     </a>
-    <a href="/dashboard" class="btn-dash">✦ AI Advisor</a>
-    <a href="mailto:support@fundshot.app" class="btn-dash" style="color:var(--teal);border-color:rgba(0,201,167,.3);background:rgba(0,201,167,.06)">📧 Email us</a>
+    <button class="btn-dash" onclick="openFaqChat()" style="cursor:pointer;border:none">✦ AI Advisor</button>
+    <button class="btn-dash" onclick="openSupportModal()" style="cursor:pointer;border:1px solid rgba(0,201,167,.3);color:var(--teal);background:rgba(0,201,167,.06)">📧 Email us</button>
   </div>
 </div>
 
 </div><!-- /faq-wrap -->
+
+<!-- Support Modal -->
+<div id="support-modal-overlay" onclick="if(event.target===this)closeSupportModal()">
+  <div id="support-modal">
+    <button class="sm-close" onclick="closeSupportModal()">✕</button>
+    <div id="sm-form-content">
+      <div class="sm-title">💬 Contact Support</div>
+      <div class="sm-sub">We reply within a few hours. No account needed.</div>
+      <label class="sm-label">Your question or issue</label>
+      <textarea id="sm-message" class="sm-input sm-textarea" placeholder="Describe your question or issue..."></textarea>
+      <label class="sm-label">Your email (for our reply)</label>
+      <input id="sm-email" class="sm-input" type="email" placeholder="your@email.com">
+      <div class="sm-actions">
+        <button class="sm-send" onclick="sendSupportModal()">Send message →</button>
+        <a href="https://t.me/FundShot_bot" target="_blank" class="sm-tg">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.024 9.531c-.148.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.024 14.06l-2.966-.924c-.645-.204-.657-.645.136-.953l11.57-4.461c.537-.194 1.008.131.798.526z"/></svg>
+          Telegram
+        </a>
+      </div>
+    </div>
+    <div class="sm-success" id="sm-success">
+      <div class="sm-success-icon">✅</div>
+      <div class="sm-success-title">Message sent!</div>
+      <div class="sm-success-sub">We will reply to your email within a few hours.</div>
+    </div>
+  </div>
+</div>
+
+<!-- FAQ Chat Overlay -->
+<div id="faq-chat-overlay" onclick="if(event.target===this)closeFaqChat()" style="position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s">
+  <div id="faq-chat-window" style="width:100%;max-width:400px;height:540px;background:#0a0812;border:1px solid rgba(255,255,255,.12);border-radius:20px;overflow:hidden;box-shadow:0 16px 64px rgba(0,0,0,.6);display:flex;flex-direction:column;transform:scale(.95) translateY(10px);transition:transform .3s cubic-bezier(.34,1.56,.64,1)">
+    <div class="cw-header">
+      <div class="cw-header-left">
+        <div class="cw-avatar">✦</div>
+        <div>
+          <div class="cw-title">FundShot AI Advisor</div>
+          <div class="cw-subtitle">● Online · typically replies instantly</div>
+        </div>
+      </div>
+      <button class="cw-close" onclick="closeFaqChat()">✕</button>
+    </div>
+    <div class="cw-msgs" id="faq-cw-msgs"></div>
+    <div class="cw-quick" id="faq-cw-quick">
+      <button class="cw-quick-btn" onclick="faqCwAsk('How do I get started?')">🚀 Get started</button>
+      <button class="cw-quick-btn" onclick="faqCwAsk('What are the best settings for a beginner?')">⚙️ Best settings</button>
+      <button class="cw-quick-btn" onclick="faqCwAsk('How much does it cost?')">💰 Pricing</button>
+      <button class="cw-quick-btn" onclick="faqCwAsk('Which exchange should I use?')">🏦 Exchanges</button>
+    </div>
+    <div class="cw-input-row">
+      <input id="faq-cw-input" class="cw-input" type="text" placeholder="Ask anything..." onkeydown="if(event.key==='Enter')faqCwSend()">
+      <button class="cw-send" onclick="faqCwSend()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
 
 <footer>FundShot © 2026 — <a href="mailto:support@fundshot.app" style="color:var(--muted)">support@fundshot.app</a></footer>
 
@@ -482,6 +601,153 @@ window.addEventListener('DOMContentLoaded', () => {
     if (item) { item.classList.add('open'); item.scrollIntoView({behavior:'smooth', block:'center'}); }
   }
 });
+
+/* ── FAQ Chat overlay ── */
+let _faqChatTyping = false;
+
+const FAQ_KB = [
+  { k: ['start', 'begin', 'how', 'free', 'register', 'sign up', 'create'],
+    r: "Starting is easy and free!\n\nJust open @FundShot_bot on Telegram and send /start. No credit card, no email needed.\n\nYou get 10 alerts/day and full dashboard access immediately." },
+  { k: ['price', 'cost', 'plan', 'paid', 'pro', 'elite', 'subscription', 'much'],
+    r: "FundShot has 3 plans:\n\n**Free:** $0 forever, 10 alerts/day\n**Pro:** $20/mo, auto-trading on 1 exchange\n**Elite:** $45/mo or $300 lifetime, multi-exchange + referral commissions\n\nAll paid plans accept USDT, BTC, ETH, SOL and more." },
+  { k: ['exchange', 'bybit', 'binance', 'hyperliquid', 'okx', 'which'],
+    r: "We support:\n\n🟡 Bybit — full auto-trading, best for beginners\n🟠 Binance — full auto-trading, great liquidity\n🟣 Hyperliquid — alerts only (auto-trading coming soon)\n🔵 OKX, dYdX, Bitget, Gate.io — coming soon\n\nBybit is recommended to start." },
+  { k: ['setting', 'config', 'leverage', 'size', 'beginner', 'setup', 'parameter'],
+    r: "Beginner setup:\n\nExchange: Bybit Demo first\nSize: 50–100 USDT/trade\nLeverage: 5–7x\nStop Loss: 5%\nMax positions: 3\nGuardian: ON always\n\nFor personalized advice open the ✦ AI Advisor inside the dashboard!" },
+  { k: ['safe', 'security', 'key', 'api', 'risk', 'withdraw'],
+    r: "Your funds are safe.\n\nAPI keys are encrypted with AES-256-GCM. We only use trading permissions, never withdrawals. You can revoke API keys from your exchange at any time." },
+  { k: ['result', 'test', 'performance', 'profit', 'work', 'win rate', '60'],
+    r: "We ran a 60-day live test on Bybit with real market conditions:\n\n$10,000 starting capital, $500/trade, 10x leverage, Guardian active.\n\n✅ Win rate: 74.6%\n✅ Total return: +120.3%\n✅ Max drawdown: -0.2%\n\nLive results always visible on the homepage." },
+  { k: ['guardian', 'protect', 'loss', 'risk', 'drawdown', 'circuit'],
+    r: "Guardian is our circuit breaker system.\n\nIt automatically pauses trading when:\n- Max drawdown reached (default 10%)\n- 3 consecutive losses → 30 min cooldown\n- Daily loss limit hit → pause until midnight\n\nAlways keep Guardian ON." },
+  { k: ['support', 'help', 'problem', 'issue', 'contact', 'human', 'email'],
+    r: "Happy to help!\n\nFor technical issues:\n- Telegram: @FundShot_bot → /support\n- Email: support@fundshot.app\n- FAQ: fundshot.app/faq\n\nWe typically respond within a few hours." },
+  { k: ['funding', 'rate', 'alert', 'signal', 'level', 'jackpot', 'hard'],
+    r: "FundShot monitors 500+ perpetual pairs 24/7 and classifies every funding rate spike:\n\n📊 SOFT ≥ 0.5%\n🚨 HIGH ≥ 1.0%\n🔥 EXTREME ≥ 1.5%\n🔴 HARD ≥ 2.0%\n💎 JACKPOT ≥ 2.5%\n\nAlerts fire only when the level CHANGES — no noise, 3–8 signals/day." },
+];
+
+function faqCwMatch(text) {
+  const t = text.toLowerCase();
+  let best = null, bestScore = 0;
+  for (const item of FAQ_KB) {
+    const score = item.k.reduce((s, kw) => s + (t.includes(kw) ? kw.length : 0), 0);
+    if (score > bestScore) { bestScore = score; best = item; }
+  }
+  return bestScore > 0 ? best.r : null;
+}
+
+function faqCwAddMsg(role, text) {
+  const msgs = document.getElementById('faq-cw-msgs');
+  const div = document.createElement('div');
+  div.className = 'cm ' + (role === 'bot' ? '' : 'user');
+  const formatted = text.replace(/\n/g, '<br>').replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  div.innerHTML = '<div class="cm-avatar ' + role + '">' + (role === 'bot' ? '✦' : '👤') + '</div>'
+    + '<div class="cm-bubble ' + role + '">' + formatted + '</div>';
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function faqCwShowTyping() {
+  const msgs = document.getElementById('faq-cw-msgs');
+  const div = document.createElement('div');
+  div.className = 'cm'; div.id = 'faq-cw-typing';
+  div.innerHTML = '<div class="cm-avatar bot">✦</div><div class="cm-bubble bot"><div class="cm-typing"><span></span><span></span><span></span></div></div>';
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function faqCwHideTyping() {
+  const el = document.getElementById('faq-cw-typing');
+  if (el) el.remove();
+}
+
+async function faqCwAsk(q) {
+  document.getElementById('faq-cw-quick').style.display = 'none';
+  document.getElementById('faq-cw-input').value = q;
+  await faqCwSend();
+}
+
+async function faqCwSend() {
+  if (_faqChatTyping) return;
+  const input = document.getElementById('faq-cw-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  faqCwAddMsg('user', text);
+  _faqChatTyping = true;
+  faqCwShowTyping();
+  await new Promise(r => setTimeout(r, 500 + Math.random() * 600));
+  faqCwHideTyping();
+  const match = faqCwMatch(text);
+  if (match) {
+    faqCwAddMsg('bot', match);
+  } else {
+    faqCwAddMsg('bot', "I couldn't find a specific answer. Our team can help:");
+    setTimeout(() => {
+      const msgs = document.getElementById('faq-cw-msgs');
+      const btns = document.createElement('div');
+      btns.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;padding:0 0 4px 36px;animation:msg-in .25s ease';
+      btns.innerHTML =
+        '<button onclick="closeFaqChat();openSupportModal()" style="display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;background:rgba(212,168,67,.12);border:1px solid rgba(212,168,67,.3);color:#f0c96a;font-size:.78rem;font-weight:700;cursor:pointer;font-family:Syne,sans-serif">📧 Send email</button>' +
+        '<a href="https://t.me/FundShot_bot" target="_blank" style="display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;background:rgba(42,171,238,.1);border:1px solid rgba(42,171,238,.3);color:#2AABEE;font-size:.78rem;font-weight:700;text-decoration:none;font-family:Syne,sans-serif">✈️ Telegram bot</a>';
+      msgs.appendChild(btns);
+      msgs.scrollTop = msgs.scrollHeight;
+    }, 400);
+  }
+  _faqChatTyping = false;
+}
+
+function openFaqChat() {
+  const overlay = document.getElementById('faq-chat-overlay');
+  overlay.classList.add('open');
+  const msgs = document.getElementById('faq-cw-msgs');
+  if (msgs && msgs.children.length === 0) {
+    setTimeout(() => {
+      faqCwAddMsg('bot', "Hi! I'm the FundShot AI Advisor. Ask me anything about settings, exchanges, pricing, or how to get started!");
+    }, 300);
+  }
+  setTimeout(() => document.getElementById('faq-cw-input')?.focus(), 400);
+}
+
+function closeFaqChat() {
+  document.getElementById('faq-chat-overlay').classList.remove('open');
+}
+
+/* ── Support Modal ── */
+function openSupportModal() {
+  document.getElementById('support-modal-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('sm-message').focus(), 300);
+}
+
+function closeSupportModal() {
+  document.getElementById('support-modal-overlay').classList.remove('open');
+  setTimeout(() => {
+    document.getElementById('sm-form-content').style.display = 'block';
+    document.getElementById('sm-success').style.display = 'none';
+    document.getElementById('sm-message').value = '';
+    document.getElementById('sm-email').value = '';
+  }, 300);
+}
+
+async function sendSupportModal() {
+  const msg   = document.getElementById('sm-message').value.trim();
+  const email = document.getElementById('sm-email').value.trim();
+  if (!msg) { document.getElementById('sm-message').style.borderColor = 'rgba(255,77,109,.5)'; return; }
+  if (!email || !email.includes('@')) { document.getElementById('sm-email').style.borderColor = 'rgba(255,77,109,.5)'; return; }
+  const btn = document.querySelector('.sm-send');
+  if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
+  try {
+    await fetch('https://api.fundshot.app/api/support', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ message: msg, user: email, email: email, chat_id: null, plan: 'visitor', source: 'faq_modal' })
+    });
+  } catch(e) {}
+  document.getElementById('sm-form-content').style.display = 'none';
+  document.getElementById('sm-success').style.display = 'block';
+  if (btn) { btn.disabled = false; btn.textContent = 'Send message →'; }
+  setTimeout(closeSupportModal, 3000);
+}
 </script>
 </body>
 </html>
