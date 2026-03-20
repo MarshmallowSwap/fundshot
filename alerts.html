@@ -122,7 +122,8 @@ footer a{color:var(--text3);text-decoration:none}footer a:hover{color:var(--gold
 
 <script>
 const API = 'https://api.fundshot.app';
-let allAlerts = [], activeFilter = 'all';
+let allAlerts = [], activeFilter = 'all', visibleCount = 20;
+const PAGE_SIZE = 20;
 
 function timeAgo(ts) {
   const d = Math.floor((Date.now()/1000) - ts);
@@ -144,6 +145,7 @@ const AC_CLASS = {soft:'ac-soft',high:'ac-high',extreme:'ac-extreme',hard:'ac-ha
 
 function setFilter(f) {
   activeFilter = f;
+  visibleCount = PAGE_SIZE;
   ['all','high','extreme','hard','jackpot'].forEach(k => {
     const el = document.getElementById('f-'+k);
     el.classList.toggle('on', k === f);
@@ -164,7 +166,9 @@ function render() {
     list.innerHTML = '<div class="empty">No signals matching this filter right now.<br>Market is relatively calm.</div>';
     return;
   }
-  list.innerHTML = filtered.map(a => {
+  const visible = filtered.slice(0, visibleCount);
+  const hasMore = filtered.length > visibleCount;
+  list.innerHTML = visible.map(a => {
     const dir = a.rate_pct > 0 ? 'SHORT' : 'LONG';
     return `<div class="alert-card ${AC_CLASS[a.level]||'ac-extreme'}">
       <div class="ac-left">
@@ -190,7 +194,17 @@ function render() {
         <span class="ac-ago">${timeAgo(a.ts)}</span>
       </div>
     </div>`;
-  }).join('');
+  }).join('') + (hasMore ? `
+    <div style="text-align:center;padding:20px">
+      <button onclick="loadMore()" style="background:var(--card);border:1px solid var(--border2);color:var(--text2);font-family:'DM Mono',monospace;font-size:.78rem;padding:10px 24px;border-radius:8px;cursor:pointer;transition:all .2s" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text2)'">
+        Load ${filtered.length - visibleCount} more alerts ↓
+      </button>
+    </div>` : '');
+}
+
+function loadMore() {
+  visibleCount += PAGE_SIZE;
+  render();
 }
 
 async function load() {
