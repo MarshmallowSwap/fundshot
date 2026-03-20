@@ -180,7 +180,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
             "• 10 alerts/day (SOFT → JACKPOT)\n"
             "• Live dashboard at fundshot.app\n"
             "• AI Advisor for trading setup\n\n"
-            "📖 *Quick start guide:* [fundshot.app/guide](https://fundshot.app/guide)\n\n"
+            "📖 *Quick start guide:* [fundshot.app/guide](https://fundshot.app/guide)\n"
+            "🌐 *Website:* [fundshot.app](https://fundshot.app)\n\n"
             "_Let's connect your first exchange 👇_",
             parse_mode="Markdown",
             disable_web_page_preview=True,

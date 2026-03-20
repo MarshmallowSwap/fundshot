@@ -355,9 +355,11 @@ async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "🎰 JACKPOT ≥ ±3% | 🔴 HARD ≥ ±2%\n"
         "🔥 EXTREME ≥ ±1.5% | 🚨 HIGH ≥ ±1%\n"
         "📊 SOFT ≥ ±0.1% | ⏰ Pre-settlement ⚡\n\n"
-        "_⚡ = Pro/Elite only_"
+        "_⚡ = Pro/Elite only_\n\n"
+        "━━━━━━━━━━━━━━━━━━━━━\n"
+        "🌐 [fundshot.app](https://fundshot.app) · 📈 [Track Record](https://fundshot.app/track-record) · 📖 [Docs](https://fundshot.app/docs)"
     )
-    await update.message.reply_text(text, parse_mode="Markdown")
+    await update.message.reply_text(text, parse_mode="Markdown", disable_web_page_preview=True)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
