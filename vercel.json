@@ -120,6 +120,10 @@
     {
       "src": "alerts.html",
       "use": "@vercel/static"
+    },
+    {
+      "src": "og-image.jpg",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -246,6 +250,10 @@
     {
       "src": "/status",
       "dest": "/status.html"
+    },
+    {
+      "src": "/og-image.jpg",
+      "dest": "/og-image.jpg"
     },
     {
       "src": "/(.*)",
