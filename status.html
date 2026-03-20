@@ -181,12 +181,17 @@ async function loadStatus() {
     document.getElementById('overall-text').textContent = '✓ All Systems Operational';
 
     // Uptime
-    const h = d.uptime_hours;
-    document.getElementById('m-uptime').textContent = h >= 24 ? Math.floor(h/24) + 'd ' + (h%24).toFixed(0) + 'h' : h + 'h';
+    const h = parseFloat(d.uptime_hours) || 0;
+    document.getElementById('m-uptime').textContent = h >= 24
+      ? Math.floor(h/24) + 'd ' + Math.floor(h%24) + 'h'
+      : h.toFixed(1) + 'h';
 
     // Last alert
     const la = d.last_alert_min_ago;
-    document.getElementById('m-last-alert').textContent = la === null ? '—' : la < 60 ? la + 'm ago' : Math.floor(la/60) + 'h ago';
+    document.getElementById('m-last-alert').textContent =
+      (la === null || la === undefined || isNaN(la)) ? 'No data yet'
+      : la < 60 ? Math.floor(la) + 'm ago'
+      : Math.floor(la/60) + 'h ago';
 
     document.getElementById('last-updated').textContent = 'Last checked: ' + new Date().toLocaleTimeString();
     document.getElementById('updated-at').textContent = 'Auto-refreshes every 60 seconds · ' + new Date().toISOString().slice(0,16).replace('T',' ') + ' UTC';
