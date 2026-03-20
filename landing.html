@@ -1293,6 +1293,18 @@ footer {
   0%,100% { box-shadow: 0 0 0 0 rgba(0,200,160,.3); }
   50% { box-shadow: 0 0 0 6px rgba(0,200,160,0); }
 }
+.bot-status-pill.down {
+  background: rgba(255,82,82,.1);
+  border-color: rgba(255,82,82,.5);
+  color: var(--red);
+  animation: statusPulseBtnRed 1s ease-in-out infinite;
+}
+.bot-status-pill.down:hover { background: rgba(255,82,82,.2); border-color: rgba(255,82,82,.8); }
+.bot-status-pill.down .bsp-dot { background: var(--red); }
+@keyframes statusPulseBtnRed {
+  0%,100% { box-shadow: 0 0 0 0 rgba(255,82,82,.4); }
+  50% { box-shadow: 0 0 0 8px rgba(255,82,82,0); }
+}
 .bsp-dot {
   width: 7px; height: 7px;
   border-radius: 50%;
@@ -2936,6 +2948,31 @@ setTimeout(() => {
   const unread = document.getElementById('chat-unread');
   if (unread && !_chatOpen) unread.style.display = 'flex';
 }, 8000);
+
+// ── Bot Status Check ──────────────────────────────────────────────────────
+async function checkBotStatus() {
+  const pill = document.querySelector('.bot-status-pill');
+  if (!pill) return;
+  try {
+    const ctrl = new AbortController();
+    const timeout = setTimeout(() => ctrl.abort(), 5000); // 5s timeout
+    const r = await fetch('https://api.fundshot.app/api/status', { signal: ctrl.signal });
+    clearTimeout(timeout);
+    const d = await r.json();
+    if (d.ok && d.status === 'operational') {
+      pill.classList.remove('down');
+      pill.querySelector('.bsp-dot') && (pill.querySelector('.bsp-dot').style.background = '');
+      pill.childNodes[pill.childNodes.length-1].textContent = ' BOT STATUS';
+    } else {
+      throw new Error('not operational');
+    }
+  } catch(e) {
+    pill.classList.add('down');
+    pill.childNodes[pill.childNodes.length-1] && (pill.childNodes[pill.childNodes.length-1].textContent = ' BOT DOWN');
+  }
+}
+checkBotStatus();
+setInterval(checkBotStatus, 60000);
 
 // ── Mobile nav ──
 function toggleMobileNav() {
