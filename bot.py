@@ -388,6 +388,7 @@ async def _process_exchange_tickers(
                     await send_alert(bot, alert_text, target_chat_id=cid, symbol=symbol, rate=rate_pct, **ex_kwargs)
             bot_data["alerts_sent"] = bot_data.get("alerts_sent", 0) + 1
             _save_alert_history(symbol, level, rate_pct, exchange, alert_text)
+            al.save_alert_state()  # persiste stato per evitare duplicati dopo restart
             # Channel pubblico: solo HARD/JACKPOT (>=2%) con CTA abbonamento
             if level in ("high", "extreme", "hard", "critico", "jackpot") and os.getenv("CHANNEL_ID", CHANNEL_ID):
                 logger.info("Invio channel: %s %s level=%s", exchange, symbol, level)
@@ -470,6 +471,7 @@ async def _process_exchange_tickers(
                     logger.info("Channel alert: %s %s %s", _ch_level, exchange, symbol)
                     # Save to alert history for public feed
                     _save_alert_history(symbol, _ch_level, rate_pct, exchange, _msg_c2)
+                    al.save_alert_state()  # persiste stato
                 except Exception as _ce2:
                     logger.warning("channel alert FAILED: %s", _ce2)
 
@@ -1566,6 +1568,10 @@ async def liquidation_callback(msg: str):
 async def post_init(app):
     global _bot_ref, _bybit_trader, _funding_trader
     _bot_ref = app.bot
+
+    # Carica lo stato degli alert per evitare duplicati dopo restart
+    al.load_alert_state()
+    logger.info("Alert state caricato da file (anti-duplicate on restart)")
 
     app.bot_data["uptime_start"]  = datetime.now(TZ_IT)
     app.bot_data["alerts_sent"]   = 0

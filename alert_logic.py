@@ -815,6 +815,46 @@ def process_pump_dump(
 _prev_level_map:       dict[str, str]   = {}
 _prev_rate_map:        dict[str, float]  = {}
 _level_change_cooldown: dict[str, float] = {}
+
+# ── State persistence — survive bot restarts ──────────────────────────────────
+_STATE_FILE = "/tmp/fs_alert_state.json"
+
+def save_alert_state() -> None:
+    """Salva lo stato degli alert su file per sopravvivere ai restart."""
+    import json as _j, time as _t
+    try:
+        data = {
+            "saved_at":            _t.time(),
+            "prev_level_map":      _prev_level_map,
+            "prev_rate_map":       _prev_rate_map,
+            "level_change_cd":     _level_change_cooldown,
+            "last_alert_time":     {k: dict(v) for k, v in _last_alert_time.items()},
+        }
+        open(_STATE_FILE, "w").write(_j.dumps(data))
+    except Exception:
+        pass
+
+def load_alert_state() -> None:
+    """Carica lo stato degli alert dal file al boot — evita alert duplicati dopo restart."""
+    import json as _j, os as _o, time as _t
+    global _prev_level_map, _prev_rate_map, _level_change_cooldown
+    if not _o.path.exists(_STATE_FILE):
+        return
+    try:
+        raw = open(_STATE_FILE).read().strip()
+        if not raw:
+            return
+        data = _j.loads(raw)
+        # Ignora stato vecchio di più di 10 minuti — può essere stale
+        if _t.time() - data.get("saved_at", 0) > 600:
+            return
+        _prev_level_map.update(data.get("prev_level_map", {}))
+        _prev_rate_map.update(data.get("prev_rate_map", {}))
+        _level_change_cooldown.update(data.get("level_change_cd", {}))
+        for sym, levels in data.get("last_alert_time", {}).items():
+            _last_alert_time.setdefault(sym, {}).update(levels)
+    except Exception:
+        pass
 _LEVEL_CHANGE_CD_SEC = 300   # 5 minuti
 
 
