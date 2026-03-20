@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Open Interest in Crypto: How to Use It as a Trading Signal — FundShot</title>
+<meta name="description" content="Open Interest explained: what it is, how it confirms funding rate signals, and how combining OI with funding rates gives you a decisive edge in perpetual futures trading.">
+<meta name="robots" content="index, follow">
+<meta name="author" content="FundShot">
+<link rel="canonical" href="https://fundshot.app/learn/open-interest">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="FundShot">
+<meta property="og:url" content="https://fundshot.app/learn/open-interest">
+<meta property="og:title" content="Open Interest in Crypto: The Missing Piece in Funding Rate Trading">
+<meta property="og:description" content="OI + Funding Rate = the most powerful signal combination in crypto perpetuals. Here's how it works.">
+<meta property="og:image" content="https://fundshot.app/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@FundShot_app">
+<meta name="twitter:title" content="Open Interest in Crypto: How to Use It as a Trading Signal">
+<meta name="twitter:description" content="OI + Funding Rate = the most powerful signal combo in crypto. Here's the full breakdown.">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Open Interest in Crypto: How to Use It as a Trading Signal",
+  "description": "Open Interest explained and how combining it with funding rates gives you a decisive trading edge.",
+  "author": {"@type": "Organization", "name": "FundShot"},
+  "publisher": {"@type": "Organization", "name": "FundShot", "url": "https://fundshot.app"},
+  "datePublished": "2026-03-20",
+  "dateModified": "2026-03-20",
+  "mainEntityOfPage": "https://fundshot.app/learn/open-interest"
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#080809;--surface:#0f0f12;--card:#13131a;--border:#1c1c28;--border2:#242435;--gold:#d4a843;--gold2:#f0c96a;--teal:#00c8a0;--red:#ff5252;--green:#44cc88;--text:#e4e4f0;--text2:#7878a0;--text3:#44445a;--muted:#55556a}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;line-height:1.6}
+nav{position:sticky;top:0;z-index:100;padding:14px 32px;display:flex;align-items:center;justify-content:space-between;background:rgba(8,8,9,.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--border)}
+.nav-logo{font-size:1.05rem;font-weight:800;color:var(--gold);text-decoration:none}
+.nav-links{display:flex;gap:20px;align-items:center}
+.nav-links a{font-family:'DM Mono',monospace;font-size:.75rem;color:var(--text2);text-decoration:none;transition:color .2s}
+.nav-links a:hover,.nav-links a.active{color:var(--gold)}
+.nav-cta{background:var(--gold);color:#05040a;padding:7px 16px;border-radius:7px;font-weight:700;font-size:.8rem;text-decoration:none}
+.nav-cta:hover{background:var(--gold2)}
+/* Learn layout */
+.learn-layout{display:grid;grid-template-columns:240px 1fr;gap:48px;max-width:1100px;margin:0 auto;padding:48px 24px 100px;align-items:start}
+.learn-sidebar{position:sticky;top:80px;background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.sidebar-header{padding:14px 16px;background:var(--surface);border-bottom:1px solid var(--border);font-family:'DM Mono',monospace;font-size:.65rem;letter-spacing:.14em;text-transform:uppercase;color:var(--text3)}
+.sidebar-items{padding:8px 0}
+.sidebar-item{display:flex;flex-direction:column;gap:2px;padding:10px 16px;text-decoration:none;border-left:2px solid transparent;transition:all .15s}
+.sidebar-item:hover{background:rgba(212,168,67,.04);border-left-color:rgba(212,168,67,.3)}
+.sidebar-item.active{background:rgba(212,168,67,.06);border-left-color:var(--gold)}
+.si-title{font-size:.82rem;font-weight:600;color:var(--text2);line-height:1.3}
+.sidebar-item.active .si-title{color:var(--gold2)}
+.sidebar-item:hover .si-title{color:var(--text)}
+.si-meta{font-family:'DM Mono',monospace;font-size:.62rem;color:var(--text3)}
+.sidebar-divider{height:1px;background:var(--border);margin:4px 0}
+.sidebar-cta{margin:12px;background:rgba(212,168,67,.08);border:1px solid rgba(212,168,67,.2);border-radius:9px;padding:12px;text-decoration:none;display:block}
+.sidebar-cta-label{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px}
+.sidebar-cta-text{font-size:.8rem;font-weight:600;color:var(--text2);line-height:1.4}
+.sidebar-cta:hover .sidebar-cta-text{color:var(--gold2)}
+/* Article */
+.article-wrap{max-width:760px;padding:0}
+.article-eyebrow{font-family:'DM Mono',monospace;font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--teal);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.article-eyebrow::before{content:'';display:inline-block;width:24px;height:1px;background:var(--teal)}
+.article-title{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;letter-spacing:-.04em;line-height:1.1;margin-bottom:16px}
+.article-title em{font-family:'Instrument Serif',serif;font-style:italic;color:var(--teal);font-weight:400}
+.article-meta{display:flex;gap:20px;flex-wrap:wrap;font-family:'DM Mono',monospace;font-size:.72rem;color:var(--text3);margin-bottom:48px;padding-bottom:32px;border-bottom:1px solid var(--border)}
+.toc{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--teal);border-radius:0 12px 12px 0;padding:20px 24px;margin-bottom:48px}
+.toc-title{font-family:'DM Mono',monospace;font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);margin-bottom:12px}
+.toc ol{padding-left:16px;display:flex;flex-direction:column;gap:6px}
+.toc li{font-size:.88rem;color:var(--text2)}
+.toc a{color:var(--text2);text-decoration:none;transition:color .15s}
+.toc a:hover{color:var(--teal)}
+.prose h2{font-size:1.5rem;font-weight:800;letter-spacing:-.03em;margin:52px 0 16px;scroll-margin-top:80px}
+.prose h3{font-size:1.1rem;font-weight:700;margin:28px 0 10px}
+.prose p{font-size:.95rem;color:var(--text2);line-height:1.8;margin-bottom:18px}
+.prose strong{color:var(--text);font-weight:600}
+.prose em{font-style:italic;color:var(--teal)}
+.callout{border-radius:10px;padding:16px 18px;margin:24px 0;display:flex;gap:12px;font-size:.88rem;line-height:1.6}
+.callout-icon{font-size:1.1rem;flex-shrink:0}
+.c-tip{background:rgba(0,200,160,.06);border:1px solid rgba(0,200,160,.2);color:rgba(0,200,160,.9)}
+.c-warn{background:rgba(212,168,67,.06);border:1px solid rgba(212,168,67,.2);color:rgba(212,168,67,.9)}
+.c-key{background:rgba(212,168,67,.08);border:1px solid rgba(212,168,67,.3);color:var(--text)}
+.c-info{background:rgba(61,139,255,.06);border:1px solid rgba(61,139,255,.2);color:rgba(130,170,220,.9)}
+.formula{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px;font-family:'DM Mono',monospace;font-size:.82rem;color:var(--gold2);margin:18px 0;line-height:1.7}
+/* Scenario table */
+.scenario-table{width:100%;border-collapse:collapse;margin:20px 0;font-size:.86rem}
+.scenario-table th{font-family:'DM Mono',monospace;font-size:.63rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);padding:10px 14px;border-bottom:1px solid var(--border);background:var(--surface);text-align:left}
+.scenario-table td{padding:12px 14px;border-bottom:1px solid rgba(28,28,40,.6);vertical-align:top}
+.scenario-table tr:last-child td{border-bottom:none}
+.scenario-table tr:hover td{background:rgba(0,200,160,.02)}
+.signal-strong{color:var(--green);font-weight:700;font-size:.82rem}
+.signal-weak{color:var(--red);font-size:.82rem}
+.signal-neutral{color:var(--text3);font-size:.82rem}
+/* Alert mockup */
+.alert-mock{background:#0d1520;border:1px solid #1a2840;border-radius:12px;padding:16px 18px;font-family:'DM Mono',monospace;font-size:.78rem;line-height:1.9;color:#9ab8d0;margin:20px 0}
+.al{color:var(--gold2);font-weight:500}
+.gr{color:var(--green)}
+.sep{color:#1e3040;display:block;margin:2px 0}
+/* CTA */
+.cta-box{background:linear-gradient(135deg,rgba(0,200,160,.06),rgba(212,168,67,.04));border:1px solid rgba(0,200,160,.25);border-radius:16px;padding:28px;text-align:center;margin:48px 0}
+.cta-box h3{font-size:1.3rem;font-weight:800;margin-bottom:8px}
+.cta-box p{color:var(--text2);font-size:.88rem;margin-bottom:20px;line-height:1.6}
+.cta-btn{display:inline-flex;align-items:center;gap:10px;background:var(--teal);color:#05040a;padding:12px 28px;border-radius:9px;font-weight:700;font-size:.9rem;text-decoration:none;transition:all .2s}
+.cta-btn:hover{background:#00e8b8;transform:translateY(-1px)}
+.related{border-top:1px solid var(--border);padding-top:40px;margin-top:60px}
+.related-title{font-family:'DM Mono',monospace;font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--text3);margin-bottom:16px}
+.related-links{display:flex;flex-direction:column;gap:10px}
+.related-link{display:flex;align-items:center;gap:12px;padding:14px;background:var(--card);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);transition:all .2s;font-size:.88rem;font-weight:600}
+.related-link:hover{border-color:var(--teal);color:var(--teal)}
+.progress-bar{position:fixed;top:0;left:0;height:2px;background:linear-gradient(90deg,var(--teal),var(--gold));z-index:200;width:0%;transition:width .1s linear}
+@media(max-width:900px){.learn-layout{grid-template-columns:1fr;gap:0;padding:32px 16px 80px}.learn-sidebar{position:static;margin-bottom:32px}.article-title{font-size:1.7rem}.prose h2{font-size:1.25rem;margin:36px 0 10px}}
+footer{text-align:center;padding:40px 24px;color:var(--text3);font-family:'DM Mono',monospace;font-size:.76rem;border-top:1px solid var(--border)}
+footer a{color:var(--text3);text-decoration:none}footer a:hover{color:var(--teal)}
+</style>
+</head>
+<body>
+<div class="progress-bar" id="progress"></div>
+<nav>
+  <a href="/" class="nav-logo" onclick="window.location.href='/?v='+Date.now();return false">⚡ FundShot</a>
+  <div class="nav-links">
+    <a href="/learn" class="active">Learn</a>
+    <a href="/docs">Docs</a>
+    <a href="/faq">FAQ</a>
+    <a href="/guide">Get Started</a>
+  </div>
+  <a href="https://t.me/FundShot_bot" class="nav-cta" target="_blank">Start free →</a>
+</nav>
+
+<div class="learn-layout">
+<aside class="learn-sidebar">
+  <div class="sidebar-header">// Learn · FundShot</div>
+  <div class="sidebar-items">
+    <a href="/learn/funding-rates" class="sidebar-item">
+      <span class="si-title">What Are Funding Rates?</span>
+      <span class="si-meta">8 min · Fundamentals</span>
+    </a>
+    <a href="/learn/open-interest" class="sidebar-item active">
+      <span class="si-title">Open Interest as a Trading Signal</span>
+      <span class="si-meta">7 min · Analysis</span>
+    </a>
+    <a href="/learn/mean-reversion" class="sidebar-item">
+      <span class="si-title">Mean Reversion in Crypto</span>
+      <span class="si-meta">6 min · Strategy</span>
+    </a>
+    <div class="sidebar-divider"></div>
+    <a href="/learn" class="sidebar-item">
+      <span class="si-title">← All articles</span>
+      <span class="si-meta">Learn hub</span>
+    </a>
+  </div>
+  <a href="https://t.me/FundShot_bot" class="sidebar-cta" target="_blank">
+    <div class="sidebar-cta-label">⚡ Try FundShot</div>
+    <div class="sidebar-cta-text">Free funding rate alerts — no credit card</div>
+  </a>
+</aside>
+
+<div class="article-wrap">
+  <div class="article-eyebrow">Learn · Analysis</div>
+  <h1 class="article-title">Open Interest:<br>The <em>Confirmation Signal</em><br>for Funding Rates</h1>
+  <div class="article-meta">
+    <span>📅 March 2026</span>
+    <span>⏱ 7 min read</span>
+    <span>📊 Bybit · Binance · Hyperliquid</span>
+  </div>
+
+  <div class="toc">
+    <div class="toc-title">Table of Contents</div>
+    <ol>
+      <li><a href="#what-oi">What is Open Interest?</a></li>
+      <li><a href="#oi-vs-volume">OI vs Volume: key difference</a></li>
+      <li><a href="#oi-signals">What OI changes tell you</a></li>
+      <li><a href="#oi-funding">OI + Funding Rate: the combined signal</a></li>
+      <li><a href="#matrix">The 4-scenario matrix</a></li>
+      <li><a href="#real-example">Real example from FundShot</a></li>
+      <li><a href="#automate">How FundShot uses OI</a></li>
+    </ol>
+  </div>
+
+  <div class="prose">
+
+    <h2 id="what-oi">What is Open Interest?</h2>
+    <p>Open Interest (OI) is the total number of outstanding, unsettled perpetual futures contracts at any given moment. Each contract represents a position that has been opened but not yet closed.</p>
+    <p>When a trader opens a new long and another opens a new short, OI increases by one. When both close, OI decreases by one. When one closes and another takes their side, OI stays flat.</p>
+
+    <div class="formula">OI increases  → new money entering the market (new positions being opened)
+OI decreases  → money leaving the market (positions being closed)
+OI flat       → existing traders transferring positions between themselves</div>
+
+    <div class="callout c-info">
+      <span class="callout-icon">ℹ️</span>
+      <span>OI is measured in USD notional value (e.g. "$45M OI") or in number of contracts. FundShot tracks the 5-minute percentage change in OI — far more useful than the absolute value.</span>
+    </div>
+
+    <h2 id="oi-vs-volume">OI vs Volume: the key difference</h2>
+    <p>Traders often confuse OI with volume. They are fundamentally different:</p>
+
+    <table class="scenario-table">
+      <thead><tr><th>Metric</th><th>What it measures</th><th>Resets</th><th>What it tells you</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>Volume</strong></td>
+          <td>Total contracts traded in a period</td>
+          <td>Daily (or hourly)</td>
+          <td>Activity level — how much trading happened</td>
+        </tr>
+        <tr>
+          <td><strong>Open Interest</strong></td>
+          <td>Total contracts currently open</td>
+          <td>Never (cumulative)</td>
+          <td>Commitment level — how many positions are live</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>High volume with flat OI means existing traders are churning positions — noise. <strong>Rising OI means new participants are taking sides</strong> — signal.</p>
+
+    <h2 id="oi-signals">What OI changes tell you</h2>
+
+    <h3>Rising OI</h3>
+    <p>New positions are being opened. Capital is entering the market. Combined with price direction, this confirms momentum — or warns of an overcrowded trade.</p>
+
+    <h3>Falling OI</h3>
+    <p>Positions are being closed. This typically happens during de-risking, liquidations, or after a large move. Falling OI after a spike often signals exhaustion.</p>
+
+    <h3>Spike in OI (5-minute change)</h3>
+    <p>A sudden +3-5% OI change in 5 minutes means a large number of new positions were just opened. This is the most actionable reading — it shows that smart or large-scale money just placed a directional bet. <strong>This is what FundShot monitors in real time.</strong></p>
+
+    <div class="callout c-warn">
+      <span class="callout-icon">⚠️</span>
+      <span>OI alone is not directional — it doesn't tell you if the new money is long or short. That's where funding rates come in.</span>
+    </div>
+
+    <h2 id="oi-funding">OI + Funding Rate: the combined signal</h2>
+    <p>The real edge comes from combining OI with funding rates. Each metric answers a different question:</p>
+
+    <div class="formula">Funding Rate → answers: Which side is crowded? (longs or shorts)
+Open Interest → answers: Is the crowding growing or shrinking?
+
+Combined     → answers: Is this a high-conviction entry or a fading move?</div>
+
+    <p>A high funding rate alone tells you the market is imbalanced. But if OI is falling at the same time, it means traders are already closing — the imbalance is correcting on its own. The signal has lower urgency.</p>
+    <p>When <strong>OI is rising</strong> alongside an extreme funding rate, it means new money is doubling down on the already-crowded side. The imbalance is <em>getting worse</em>. This is the highest-conviction moment to take the opposite trade.</p>
+
+    <h2 id="matrix">The 4-scenario matrix</h2>
+    <p>Here are the four combinations you will encounter and what each one means for trading:</p>
+
+    <table class="scenario-table">
+      <thead><tr><th>Funding Rate</th><th>OI Change</th><th>Interpretation</th><th>Signal</th></tr></thead>
+      <tbody>
+        <tr>
+          <td style="color:var(--red)">HIGH positive</td>
+          <td style="color:var(--green)">↑ Rising</td>
+          <td>Longs overcrowded and <strong>growing</strong> — capitulation incoming</td>
+          <td><span class="signal-strong">🔥 STRONG SHORT</span></td>
+        </tr>
+        <tr>
+          <td style="color:var(--red)">HIGH positive</td>
+          <td style="color:var(--red)">↓ Falling</td>
+          <td>Longs unwinding — correction already in progress</td>
+          <td><span class="signal-neutral">⚪ MODERATE — late entry</span></td>
+        </tr>
+        <tr>
+          <td style="color:var(--teal)">HIGH negative</td>
+          <td style="color:var(--green)">↑ Rising</td>
+          <td>Shorts overcrowded and growing — short squeeze building</td>
+          <td><span class="signal-strong">🔥 STRONG LONG</span></td>
+        </tr>
+        <tr>
+          <td style="color:var(--teal)">HIGH negative</td>
+          <td style="color:var(--red)">↓ Falling</td>
+          <td>Shorts unwinding — correction in progress</td>
+          <td><span class="signal-neutral">⚪ MODERATE — late entry</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout c-key">
+      <span class="callout-icon">💡</span>
+      <span><strong>Rule of thumb:</strong> The best entries are when funding is at extreme levels AND OI is still rising — meaning new money is still entering the wrong side. The worst entries are when funding is extreme but OI is already collapsing.</span>
+    </div>
+
+    <h2 id="real-example">Real example from FundShot</h2>
+    <p>Here is what a real HARD alert with OI confirmation looks like in FundShot:</p>
+
+    <div class="alert-mock">
+<span class="al">🔴 HARD FUNDING ALERT — SHORT 📉</span>
+<span class="sep">━━━━━━━━━━━━━━━━━━━━━━</span>
+📌 SXPUSDT
+<span style="color:#88aacc">📊 Rate: <strong>+2.2434%</strong> (every 8H)</span>
+<span style="color:#888">💵 Price: $0.0655 | 24h: ▲ +12.4%</span>
+📈 OI Δ5m: <span class="gr">▲ <strong>+3.82%</strong></span>
+<span class="sep">━━━━━━━━━━━━━━━━━━━━━━</span>
+<span class="gr">💰 SHORTs collect — rare opportunity</span>
+    </div>
+
+    <p>The OI Δ5m of <strong>+3.82%</strong> means that in the last 5 minutes, $3.82% more capital entered as new longs — exactly the scenario you want. Funding is extreme (+2.24%) and new money is still piling in on the wrong side. The signal is at its highest conviction.</p>
+    <p>Compare this to an alert where OI Δ5m shows <strong>-2.1%</strong> — positions are already closing. The trade is later in the cycle and carries more risk.</p>
+
+    <h2 id="automate">How FundShot uses OI</h2>
+    <p>FundShot monitors the 5-minute OI change on every perpetual pair alongside the funding rate. Every alert includes the OI Δ5m so you can instantly assess signal quality:</p>
+
+    <ul style="padding-left:20px;display:flex;flex-direction:column;gap:8px;font-size:.93rem;color:var(--text2);line-height:1.7;margin:16px 0 24px">
+      <li><strong style="color:var(--green)">OI Δ5m strongly positive</strong> → new money entering — strong signal</li>
+      <li><strong style="color:var(--text)">OI Δ5m near zero</strong> → market neutral — normal signal quality</li>
+      <li><strong style="color:var(--red)">OI Δ5m negative</strong> → unwinding already — late entry, reduce size</li>
+    </ul>
+
+    <p>On the auto-trader (Pro/Elite), FundShot uses OI as an additional filter — it only opens positions when OI is flat or rising, skipping signals where OI is already collapsing. This single filter improved the backtest win rate by approximately 4-6 percentage points.</p>
+
+    <div class="cta-box">
+      <h3>See OI data live on every alert</h3>
+      <p>Every FundShot alert includes the 5-minute OI change so you can instantly assess signal quality. Free plan includes 10 alerts/day.</p>
+      <a href="https://t.me/FundShot_bot" class="cta-btn" target="_blank">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.024 9.531c-.148.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.024 14.06l-2.966-.924c-.645-.204-.657-.645.136-.953l11.57-4.461c.537-.194 1.008.131.798.526z"/></svg>
+        Open @FundShot_bot — Free
+      </a>
+    </div>
+
+  </div>
+
+  <div class="related">
+    <div class="related-title">Continue reading</div>
+    <div class="related-links">
+      <a href="/learn/funding-rates" class="related-link">📊 What Are Funding Rates? — Complete guide</a>
+      <a href="/learn/mean-reversion" class="related-link">🔄 Mean Reversion in Crypto — Why prices always come back</a>
+      <a href="/track-record" class="related-link">📈 65-Day Track Record — Full live results</a>
+    </div>
+  </div>
+</div>
+</div>
+
+<footer>FundShot © 2026 — <a href="mailto:support@fundshot.app">support@fundshot.app</a> · <a href="/learn">Learn</a> · <a href="/docs">Docs</a> · <a href="/faq">FAQ</a> · Not financial advice</footer>
+<script>window.addEventListener('scroll',()=>{const e=document.documentElement;document.getElementById('progress').style.width=(e.scrollTop/(e.scrollHeight-e.clientHeight)*100)+'%'});</script>
+</body>
+</html>

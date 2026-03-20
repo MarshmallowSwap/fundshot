@@ -80,6 +80,18 @@
     {
       "src": "learn.html",
       "use": "@vercel/static"
+    },
+    {
+      "src": "learn-index.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "learn-oi.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "learn-mr.html",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -166,6 +178,18 @@
     {
       "src": "/learn",
       "dest": "/learn.html"
+    },
+    {
+      "src": "/learn",
+      "dest": "/learn-index.html"
+    },
+    {
+      "src": "/learn/open-interest",
+      "dest": "/learn-oi.html"
+    },
+    {
+      "src": "/learn/mean-reversion",
+      "dest": "/learn-mr.html"
     },
     {
       "src": "/(.*)",
