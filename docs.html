@@ -163,7 +163,8 @@ footer{border-top:1px solid var(--border);padding:32px 48px;text-align:center;fo
       <div class="sidebar-title">Reference</div>
       <a href="#exchanges">Exchanges</a>
       <a href="#plans">Plans & Pricing</a>
-      <a href="#api">API Endpoints</a>
+      <a href="#referral">Referral Program</a>
+        <a href="#api">API Endpoints</a>
       <a href="#ai-advisor">AI Advisor</a>
       <a href="#security">Security</a>
     </div>
@@ -399,6 +400,42 @@ footer{border-top:1px solid var(--border);padding:32px 48px;text-align:center;fo
     </div>
 
     <!-- API -->
+
+    <h2 id="referral">Referral Program</h2>
+    <p>Every FundShot user — including Free plan — gets a personal referral link. You earn <strong>10% commission</strong> on every payment made by users you refer, including renewals, for life.</p>
+
+    <h3>How to get your link</h3>
+    <p>Send <code>/referral</code> in the bot to see your personal link, stats and earnings. You can also find your link in the Referral tab of the web dashboard at <a href="https://fundshot.app" style="color:var(--gold)">fundshot.app</a>.</p>
+
+    <h3>Commission structure</h3>
+    <table>
+      <thead><tr><th>Event</th><th>Commission</th></tr></thead>
+      <tbody>
+        <tr><td>Referral upgrades to Pro ($20/mo)</td><td>$2.00 USDT</td></tr>
+        <tr><td>Referral upgrades to Elite ($45/mo)</td><td>$4.50 USDT</td></tr>
+        <tr><td>Referral buys Lifetime ($300)</td><td>$30.00 USDT</td></tr>
+        <tr><td>Monthly renewal (recurring)</td><td>10% of each renewal forever</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Payouts</h3>
+    <p>Payouts are processed automatically on the <strong>1st of every month</strong> for all users with a balance ≥ $5 USDT. Payment is sent directly to your USDT TRC20 wallet via NOWPayments.</p>
+    <p>To set your payout wallet, use the <code>/setwallet</code> command in the bot followed by your TRC20 address (starts with T). You can also set it from the Referral tab in the dashboard.</p>
+
+    <div class="callout tip"><span class="callout-icon">💡</span><span>If you don't have a wallet set when the payout runs, the bot will notify you and your balance will carry over to the next month.</span></div>
+
+    <h3>Influencer program</h3>
+    <p>Influencers get a special link that gives their audience <strong>5% off forever</strong> on any paid plan. If you have a crypto audience and want to become a FundShot influencer, contact us at <a href="mailto:support@fundshot.app" style="color:var(--gold)">support@fundshot.app</a>.</p>
+
+    <h3>Commands</h3>
+    <table>
+      <thead><tr><th>Command</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>/referral</code></td><td>Show your referral link, stats and earnings</td></tr>
+        <tr><td><code>/setwallet YOUR_TRC20</code></td><td>Set your USDT TRC20 payout wallet</td></tr>
+      </tbody>
+    </table>
+
     <h2 id="api">API Endpoints</h2>
     <p>Base URL: <code>https://api.fundshot.app</code> — authenticated endpoints require <code>Authorization: Bearer {token}</code>.</p>
     <table>
