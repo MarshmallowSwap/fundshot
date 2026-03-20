@@ -468,6 +468,8 @@ async def _process_exchange_tickers(
                     _chart_c2 = generate_chart(symbol, rate_pct, exchange=exchange)
                     await send_to_channel(bot, _msg_c2, photo_buf=_chart_c2)
                     logger.info("Channel alert: %s %s %s", _ch_level, exchange, symbol)
+                    # Save to alert history for public feed
+                    _save_alert_history(symbol, _ch_level, rate_pct, exchange, _msg_c2)
                 except Exception as _ce2:
                     logger.warning("channel alert FAILED: %s", _ce2)
 
