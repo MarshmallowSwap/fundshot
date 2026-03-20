@@ -830,14 +830,50 @@ class ProxyHandler(BaseHTTPRequestHandler):
                 import os as _os_me
                 _owner_cid = int(_os_me.getenv("CHAT_ID", "0"))
                 _is_owner  = user["chat_id"] == _owner_cid
+
+                # Leggi dati referral da DB
+                _ref_code    = None
+                _ref_balance = 0.0
+                _ref_total   = 0.0
+                _ref_count   = 0
+                _ref_wallet  = None
+                _is_inf      = False
+                try:
+                    _ref_res = _me_gc().table("users").select(
+                        "referral_code,referral_balance_usd,referral_total_earned_usd,"
+                        "referral_wallet_usdt,is_influencer"
+                    ).eq("id", u.id).single().execute()
+                    _rd = _ref_res.data or {}
+                    _ref_code    = _rd.get("referral_code")
+                    _ref_balance = float(_rd.get("referral_balance_usd") or 0)
+                    _ref_total   = float(_rd.get("referral_total_earned_usd") or 0)
+                    _ref_wallet  = _rd.get("referral_wallet_usdt")
+                    _is_inf      = bool(_rd.get("is_influencer", False))
+                    # Conta referral
+                    _cnt_res = _me_gc().table("referrals").select("id", count="exact").eq("referrer_id", u.id).execute()
+                    _ref_count = _cnt_res.count or 0
+                    # Genera codice se non esiste
+                    if not _ref_code:
+                        import secrets as _sec
+                        _ref_code = _sec.token_urlsafe(8)
+                        _me_gc().table("users").update({"referral_code": _ref_code}).eq("id", u.id).execute()
+                except Exception as _re:
+                    pass
+
                 self._json({
-                    "ok":               True,
-                    "chat_id":          user["chat_id"],
-                    "username":         user.get("username", ""),
-                    "first_name":       user.get("first_name", ""),
-                    "plan":             "elite" if _is_owner else (u.plan if u else user.get("plan", "free")),
-                    "plan_expires_at":  None if _is_owner else plan_exp,
-                    "active_exchanges": u.active_exchanges if u else [],
+                    "ok":                       True,
+                    "chat_id":                  user["chat_id"],
+                    "username":                 user.get("username", ""),
+                    "first_name":               user.get("first_name", ""),
+                    "plan":                     "elite" if _is_owner else (u.plan if u else user.get("plan", "free")),
+                    "plan_expires_at":          None if _is_owner else plan_exp,
+                    "active_exchanges":         u.active_exchanges if u else [],
+                    "referral_code":            _ref_code,
+                    "referral_balance_usd":     _ref_balance,
+                    "referral_total_earned_usd": _ref_total,
+                    "referral_count":           _ref_count,
+                    "referral_wallet_usdt":     _ref_wallet,
+                    "is_influencer":            _is_inf,
                 })
             except Exception as e:
                 self._json({"ok": False, "error": str(e)}, 500)

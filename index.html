@@ -5667,11 +5667,12 @@ async function loadReferralDash() {
     // Referral link
     const linkBox = document.getElementById('ref-link-box');
     if (linkBox && d.referral_code) {
-      const link = 'https://fundshot.app/?ref=' + d.referral_code;
+      const botUser = 'FundShot_bot';
+      const link = 'https://t.me/' + botUser + '?start=ref_' + d.referral_code;
       linkBox.textContent = link;
       linkBox.dataset.link = link;
     } else if (linkBox) {
-      linkBox.textContent = 'Available on Elite plan — upgrade to get your link';
+      linkBox.textContent = 'Loading your link...';
     }
 
     // Wallet
