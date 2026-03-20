@@ -618,7 +618,8 @@ class ProxyHandler(BaseHTTPRequestHandler):
                 import os as _opa
                 f = "/tmp/fs_alert_history.json"
                 if _opa.path.exists(f):
-                    data = json.load(open(f))
+                    raw = open(f).read().strip()
+                    data = json.loads(raw) if raw else []
                     # All levels for public feed, sorted by ts desc
                     public = [
                         {
@@ -708,7 +709,8 @@ class ProxyHandler(BaseHTTPRequestHandler):
                 import os as _os
                 f = "/tmp/fs_alert_history.json"
                 if _os.path.exists(f):
-                    data = json.load(open(f))
+                    raw = open(f).read().strip()
+                    data = json.loads(raw) if raw else []
                     self._json({"ok": True, "alerts": data[-50:][::-1]})  # ultimi 50, più recenti prima
                 else:
                     self._json({"ok": True, "alerts": []})
