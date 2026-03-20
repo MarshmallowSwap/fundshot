@@ -76,6 +76,10 @@
     {
       "src": "robots.txt",
       "use": "@vercel/static"
+    },
+    {
+      "src": "learn.html",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -154,6 +158,14 @@
     {
       "src": "/robots.txt",
       "dest": "/robots.txt"
+    },
+    {
+      "src": "/learn/funding-rates",
+      "dest": "/learn.html"
+    },
+    {
+      "src": "/learn",
+      "dest": "/learn.html"
     },
     {
       "src": "/(.*)",
