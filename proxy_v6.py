@@ -593,6 +593,22 @@ class ProxyHandler(BaseHTTPRequestHandler):
             })
             return
 
+        if p == "/api/public-stats":
+            try:
+                users = _sb_admin.table("users").select("id").execute().data or []
+                count = len(users)
+                # Round down to nearest 5 for privacy
+                display = max(1, (count // 5) * 5) if count >= 5 else count
+                self._json({
+                    "ok": True,
+                    "traders": display,
+                    "pairs_monitored": 500,
+                    "exchanges": 3,
+                })
+            except:
+                self._json({"ok": True, "traders": 0, "pairs_monitored": 500, "exchanges": 3})
+            return
+
         if p == "/api/tickers":
             cached = cache_get("tickers")
             if cached:
