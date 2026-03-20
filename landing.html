@@ -1230,6 +1230,17 @@ footer {
     section { padding: 72px 16px !important; }
     .hero-grid { grid-template-columns: 1fr !important; gap: 32px !important; }
     .live-card { min-width: 0 !important; width: 100% !important; max-width: 100% !important; }
+    /* Stats grid: 2 colonne su tablet */
+    .tr-grid { grid-template-columns: repeat(2,1fr) !important; }
+    /* Referral: colonna singola */
+    .referral-grid { grid-template-columns: 1fr !important; }
+  }
+  @media(max-width:480px) {
+    /* Stats: font più piccolo per non tagliare */
+    .tr-stat-val { font-size: 1.4rem !important; }
+    .tr-stat-lbl { font-size: .6rem !important; }
+    /* Stat cards padding ridotto */
+    .tr-stat { padding: 16px 12px !important; }
   }
   </style>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -1297,7 +1308,7 @@ footer {
           <span class="eyebrow-dot"></span>
           <span style="font-size:.85rem;letter-spacing:.14em;font-weight:800;color:#e2e8f0;text-transform:uppercase;font-family:'DM Mono',monospace">Live on</span>
         </div>
-        <div style="display:flex;gap:8px;flex-wrap:nowrap;align-items:center;width:100%">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;width:100%">
           <a href="https://t.me/FundShot_bot" style="text-decoration:none;flex-shrink:0;position:relative">
             <div style="display:flex;align-items:center;gap:8px;background:rgba(212,168,67,.1);border:1.5px solid rgba(212,168,67,.7);border-radius:12px;padding:9px 14px;height:44px;box-sizing:border-box;box-shadow:0 0 12px rgba(212,168,67,.35)">
               <img src="/bybit-logo.svg" style="height:22px;opacity:.95">
