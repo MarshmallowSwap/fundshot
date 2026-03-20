@@ -246,7 +246,7 @@ def _save_alert_history(symbol: str, level: str, rate_pct: float, exchange: str,
         "rate_pct": round(rate_pct, 4),
         "exchange": exchange,
         "ex_em":    {"bybit":"🟡","binance":"🟠","okx":"🔵","hyperliquid":"🟣"}.get(exchange.lower(),"⚡"),
-        "ts":       int(time.time()),
+        "ts":       int(_time.time()),
         "preview":  text[:120] if text else "",
     }
     _alert_history.append(entry)
@@ -447,7 +447,7 @@ async def _process_exchange_tickers(
         _ch_level = al.classify(symbol, rate_pct)
         if _ch_level in ("high", "extreme", "hard", "critico", "jackpot") and os.getenv("CHANNEL_ID", CHANNEL_ID):
             _ch_key  = exchange + ":" + symbol
-            _now_ch  = time.time()
+            _now_ch  = _time.time()
             _last_ch = _channel_alert_ts.get(_ch_key, 0)
             _cooldowns = {"high": 3600, "extreme": 1800, "hard": 900, "critico": 900, "jackpot": 900}
             _cooldown_ch = _cooldowns.get(_ch_level, 1800)
@@ -955,7 +955,7 @@ def _check_autotrader_flag() -> bool | None:
         if not os.path.exists(flag):
             return None
         data = _j.loads(open(flag).read())
-        if time.time() - data.get("ts", 0) > 300:   # flag scaduto dopo 5 min
+        if _time.time() - data.get("ts", 0) > 300:   # flag scaduto dopo 5 min
             return None
         return bool(data.get("enabled", False))
     except Exception:
