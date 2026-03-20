@@ -1263,21 +1263,17 @@ footer {
   /* Bot Status pill */
 .bot-status-pill {
   position: fixed;
-  top: 110px;
+  top: 108px;
   right: 20px;
   z-index: 90;
   display: flex;
   align-items: center;
-  gap: 7px;
-  background: rgba(0,200,160,.1);
-  border: 1px solid rgba(0,200,160,.4);
-  border-radius: 8px;
-  padding: 7px 14px;
+  gap: 10px;
+  background: rgba(0,200,160,.08);
+  border: 1px solid rgba(0,200,160,.35);
+  border-radius: 10px;
+  padding: 10px 16px;
   font-family: 'DM Mono', monospace;
-  font-size: .68rem;
-  font-weight: 700;
-  color: var(--teal);
-  letter-spacing: .08em;
   cursor: pointer;
   text-decoration: none;
   backdrop-filter: blur(12px);
@@ -1285,22 +1281,24 @@ footer {
   white-space: nowrap;
 }
 .bot-status-pill:hover {
-  background: rgba(0,200,160,.2);
-  border-color: rgba(0,200,160,.7);
-  color: #00e8b8;
+  background: rgba(0,200,160,.15);
+  border-color: rgba(0,200,160,.6);
 }
+.bsp-text { display: flex; flex-direction: column; gap: 1px; }
+.bsp-title { font-size: .72rem; font-weight: 700; color: var(--text); letter-spacing: .08em; }
+.bsp-sub   { font-size: .62rem; font-weight: 700; color: var(--teal); letter-spacing: .1em; }
 @keyframes statusPulseBtn {
   0%,100% { box-shadow: 0 0 0 0 rgba(0,200,160,.3); }
   50% { box-shadow: 0 0 0 6px rgba(0,200,160,0); }
 }
 .bot-status-pill.down {
-  background: rgba(255,82,82,.1);
-  border-color: rgba(255,82,82,.5);
-  color: var(--red);
+  background: rgba(255,82,82,.08);
+  border-color: rgba(255,82,82,.4);
   animation: statusPulseBtnRed 1s ease-in-out infinite;
 }
-.bot-status-pill.down:hover { background: rgba(255,82,82,.2); border-color: rgba(255,82,82,.8); }
+.bot-status-pill.down:hover { background: rgba(255,82,82,.15); border-color: rgba(255,82,82,.7); }
 .bot-status-pill.down .bsp-dot { background: var(--red); }
+.bot-status-pill.down .bsp-sub { color: var(--red); }
 @keyframes statusPulseBtnRed {
   0%,100% { box-shadow: 0 0 0 0 rgba(255,82,82,.4); }
   50% { box-shadow: 0 0 0 8px rgba(255,82,82,0); }
@@ -1491,7 +1489,10 @@ footer {
 <!-- Bot Status pill -->
 <a href="/status" class="bot-status-pill">
   <span class="bsp-dot"></span>
-  BOT STATUS
+  <div class="bsp-text">
+    <span class="bsp-title">BOT STATUS</span>
+    <span class="bsp-sub" id="bsp-sub">CHECKING...</span>
+  </div>
 </a>
 
 <!-- Mobile AI Advisor pill -->
@@ -2961,14 +2962,15 @@ async function checkBotStatus() {
     const d = await r.json();
     if (d.ok && d.status === 'operational') {
       pill.classList.remove('down');
-      pill.querySelector('.bsp-dot') && (pill.querySelector('.bsp-dot').style.background = '');
-      pill.childNodes[pill.childNodes.length-1].textContent = ' BOT STATUS';
+      const sub = document.getElementById('bsp-sub');
+      if (sub) sub.textContent = '● LIVE';
     } else {
       throw new Error('not operational');
     }
   } catch(e) {
     pill.classList.add('down');
-    pill.childNodes[pill.childNodes.length-1] && (pill.childNodes[pill.childNodes.length-1].textContent = ' BOT DOWN');
+    const sub = document.getElementById('bsp-sub');
+    if (sub) sub.textContent = '● DOWN';
   }
 }
 checkBotStatus();
