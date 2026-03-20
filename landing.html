@@ -1262,10 +1262,7 @@ footer {
   @media(max-width:1024px) { .nav-desktop-only { display: none !important; } }
   /* Bot Status pill */
 .bot-status-pill {
-  position: fixed;
-  top: 108px;
-  right: 20px;
-  z-index: 90;
+  position: static;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -1486,14 +1483,22 @@ footer {
   <a href="/guide" class="nm-cta" onclick="closeMobileNav()">Get Started →</a>
 </div>
 
-<!-- Bot Status pill -->
-<a href="/status" class="bot-status-pill">
-  <span class="bsp-dot"></span>
-  <div class="bsp-text">
-    <span class="bsp-title">BOT STATUS</span>
-    <span class="bsp-sub" id="bsp-sub">CHECKING...</span>
-  </div>
-</a>
+<!-- Bot Status + Social pills -->
+<div style="position:fixed;top:108px;right:20px;z-index:90;display:flex;align-items:center;gap:8px">
+  <a href="https://x.com/FundShot_app" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;width:38px;height:38px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:9px;transition:all .2s;backdrop-filter:blur(12px)" onmouseover="this.style.background='rgba(255,255,255,.14)';this.style.borderColor='rgba(255,255,255,.3)'" onmouseout="this.style.background='rgba(255,255,255,.06)';this.style.borderColor='rgba(255,255,255,.12)'">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="#e4e4f0"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.261 5.638 5.903-5.638zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+  </a>
+  <a href="https://t.me/FundShot_Public" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;width:38px;height:38px;background:rgba(42,171,238,.08);border:1px solid rgba(42,171,238,.2);border-radius:9px;transition:all .2s;backdrop-filter:blur(12px)" onmouseover="this.style.background='rgba(42,171,238,.18)';this.style.borderColor='rgba(42,171,238,.4)'" onmouseout="this.style.background='rgba(42,171,238,.08)';this.style.borderColor='rgba(42,171,238,.2)'">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="#2AABEE"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.024 9.531c-.148.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.024 14.06l-2.966-.924c-.645-.204-.657-.645.136-.953l11.57-4.461c.537-.194 1.008.131.798.526z"/></svg>
+  </a>
+  <a href="/status" class="bot-status-pill" style="position:static;top:auto;right:auto">
+    <span class="bsp-dot"></span>
+    <div class="bsp-text">
+      <span class="bsp-title">BOT STATUS</span>
+      <span class="bsp-sub" id="bsp-sub">CHECKING...</span>
+    </div>
+  </a>
+</div>
 
 <!-- Mobile AI Advisor pill -->
 <button class="mobile-ai-pill" onclick="toggleChat()" aria-label="AI Advisor">
@@ -2971,14 +2976,14 @@ async function checkBotStatus() {
     if (d.ok && d.status === 'operational') {
       pill.classList.remove('down');
       const sub = document.getElementById('bsp-sub');
-      if (sub) sub.textContent = '● LIVE';
+      if (sub) sub.textContent = 'LIVE';
     } else {
       throw new Error('not operational');
     }
   } catch(e) {
     pill.classList.add('down');
     const sub = document.getElementById('bsp-sub');
-    if (sub) sub.textContent = '● DOWN';
+    if (sub) sub.textContent = 'DOWN';
   }
 }
 checkBotStatus();
