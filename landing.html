@@ -1178,7 +1178,9 @@ footer {
   .guardian-grid { grid-template-columns: 1fr; gap: 40px; }
   .guardian-stats { gap: 20px; }
   .guardian-ui { padding: 20px 16px; }
-  .track-record-section { padding: 72px 16px; }
+  .track-record-section { padding: 48px 16px !important; }
+  .tr-grid { margin: 24px 0 20px !important; }
+  .section-sub { margin-bottom: 24px !important; }
   .tr-stats-grid { grid-template-columns: repeat(2,1fr) !important; }
   .pricing-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
   .cta-inner { padding: 40px 20px; }
@@ -1220,6 +1222,8 @@ footer {
   @media(max-width:1024px) { .nav-desktop-only { display: none !important; } }
   /* Hide top symbols table on mobile — too many columns */
   @media(max-width:768px) { .tr-table-desktop { display: none !important; } }
+  /* Referral cards: 1 col on all mobile */
+  @media(max-width:900px) { .referral-cards-grid { grid-template-columns: 1fr !important; max-width:480px !important; margin-left:auto !important; margin-right:auto !important; } }
   /* Stats grid: force 1 col on very small screens to avoid clipping */
   @media(max-width:380px) { .tr-stats-main { grid-template-columns: 1fr !important; } }
   *, *::before, *::after { box-sizing: border-box; }
@@ -1898,7 +1902,7 @@ footer {
   <h2 class="section-title fade-up">Earn while others <em>trade.</em></h2>
   <p class="section-sub fade-up">Share FundShot and earn a commission on every payment — for life. Two programs for two types of partners.</p>
 
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:56px;max-width:860px">
+  <div class="referral-cards-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:56px;max-width:860px;width:100%">
 
     <!-- Classic Referral -->
     <div class="feat fade-up" style="border-color:rgba(212,168,67,.3);background:linear-gradient(145deg,rgba(212,168,67,.06),var(--card));padding:32px">
