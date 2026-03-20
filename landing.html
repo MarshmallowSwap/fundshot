@@ -359,6 +359,12 @@ section { position: relative; z-index: 1; padding: 120px 48px; }
 }
 .number-val span { color: var(--gold2); }
 .number-lbl { font-size: .8rem; color: var(--muted); font-family: 'DM Mono', monospace; letter-spacing: .05em; }
+@media(max-width:768px) {
+  .number-card { padding: 20px 16px; border-right: none; border-bottom: 1px solid var(--border); }
+  .number-card:last-child { border-bottom: none; }
+  .number-val { font-size: 2rem; }
+  .number-lbl { font-size: .72rem; }
+}
 
 /* ── Pricing ── */
 .pricing-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-top: 48px; }
@@ -1243,12 +1249,17 @@ footer {
     /* Referral: colonna singola */
     .referral-grid { grid-template-columns: 1fr !important; }
   }
+  @media(max-width:768px) {
+    /* Stats: 2 colonne pulite */
+    .tr-stats-main, .tr-grid { grid-template-columns: 1fr 1fr !important; gap: 10px !important; margin: 16px 0 !important; }
+    .tr-stat { padding: 18px 12px !important; border-radius: 12px !important; }
+    .tr-stat-val { font-size: 1.6rem !important; }
+    .tr-stat-lbl { font-size: .65rem !important; letter-spacing: .06em !important; }
+  }
   @media(max-width:480px) {
-    /* Stats: font più piccolo per non tagliare */
     .tr-stat-val { font-size: 1.4rem !important; }
-    .tr-stat-lbl { font-size: .6rem !important; }
-    /* Stat cards padding ridotto */
-    .tr-stat { padding: 16px 12px !important; }
+    .tr-stat-lbl { font-size: .62rem !important; }
+    .tr-stat { padding: 14px 10px !important; }
   }
   </style>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -1637,21 +1648,23 @@ footer {
 <!-- ═══ TRACK RECORD ═══ -->
 <section class="track-record-section" id="track-record">
 <div class="container">
-  <div style="text-align:center;margin-bottom:16px">
-    <div class="tr-badge">
-      <div class="tr-pulse"></div>
-      LIVE DATA
-    </div>
-  </div>
   <span class="section-tag fade-up" style="text-align:center;display:block">// performance</span>
   <h2 class="section-title fade-up" style="text-align:center;margin-bottom:12px">
-    60-Day Performance Audit
+    65-Day Performance Audit
   </h2>
-  <p class="section-sub fade-up" style="text-align:center;max-width:560px;margin:0 auto 48px">
-    60 days of live trades executed on Bybit perpetuals — real signals, real entries, real exits. Every position tracked and verified against market data in real time. Updated daily.
+  <p class="section-sub fade-up" style="text-align:center;max-width:560px;margin:0 auto 24px">
+    65 days of live trades on Bybit perpetuals — real signals, real entries, real exits. Updated daily.
   </p>
 
-  <!-- Stats grid — row 1 -->
+  <!-- Live data badge -->
+  <div style="display:flex;justify-content:center;margin-bottom:24px">
+    <div class="tr-badge">
+      <div class="tr-pulse"></div>
+      LIVE DATA · BYBIT
+    </div>
+  </div>
+
+  <!-- Stats unified grid (4+2 on desktop, 2col on mobile) -->
   <div class="tr-grid tr-stats-main" id="tr-stats">
     <div class="tr-stat">
       <div class="tr-stat-val green" id="tr-wr">—</div>
