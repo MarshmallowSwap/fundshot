@@ -1064,6 +1064,23 @@ async def trading_job(context):
             logger.error("trading send error %s: %s", chat_id, e)
 
     try:
+        # ── Ricarica posizioni dall'exchange ad ogni ciclo — anti-duplicate ──
+        for _exch, _ft in list(_exchange_traders.items()):
+            if _exch == "hyperliquid":
+                continue
+            try:
+                _real = _ft.exchange.get_positions()
+                if asyncio.iscoroutine(_real):
+                    _real = await _real
+                for _rp in (_real or []):
+                    _rp_sym  = _rp.symbol if hasattr(_rp, "symbol") else _rp.get("symbol","")
+                    _rp_size = float(_rp.size if hasattr(_rp, "size") else _rp.get("size", 0))
+                    if _rp_sym and _rp_size > 0 and _rp_sym not in _ft.positions:
+                        _ft.positions[_rp_sym] = _rp  # blocca apertura duplicata
+                        logger.info("trading_job: pos reale caricata %s %s", _exch, _rp_sym)
+            except Exception as _rp_e:
+                logger.warning("trading_job: reload pos %s: %s", _exch, _rp_e)
+
         # ── Multi-tenant: usa tickers cachati dal funding_job ──────────────
         tickers = list(_funding_cache_tickers.values()) if _funding_cache_tickers else []
         if tickers and _registry.all_clients():
@@ -1912,7 +1929,7 @@ def main():
         app.job_queue.run_repeating(
             trading_job,
             interval=FUNDING_INTERVAL,
-            first=20,
+            first=60,  # 60s delay — dà tempo al post_init di ricaricare posizioni
             name="trading_monitor",
         )
         logger.info("🤖 Job auto-trading schedulato ogni %ds (first=20s)", FUNDING_INTERVAL)
