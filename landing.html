@@ -1036,6 +1036,16 @@ footer {
   transition: all .3s cubic-bezier(.34,1.56,.64,1);
 }
 #chat-window.open { transform: scale(1) translateY(0); opacity: 1; pointer-events: auto; }
+@media(max-width:768px) {
+  #chat-window {
+    bottom: auto; right: auto;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -40%) scale(.9);
+    width: calc(100vw - 32px); max-width: 400px;
+    height: 70vh; max-height: 560px;
+  }
+  #chat-window.open { transform: translate(-50%, -50%) scale(1); }
+}
 
 .cw-header {
   display: flex; align-items: center; justify-content: space-between;
@@ -1230,7 +1240,7 @@ footer {
   .mobile-ai-pill {
     display: none;
     position: fixed;
-    top: 58px;
+    top: 74px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 90;
