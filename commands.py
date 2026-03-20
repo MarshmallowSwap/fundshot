@@ -284,6 +284,25 @@ async def deletekeys_callback(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# /website
+# ══════════════════════════════════════════════════════════════════════════════
+
+async def cmd_website(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "🌐 *FundShot — Official Links*\n"
+        "━━━━━━━━━━━━━━━━━━━━━\n\n"
+        "🏠 [fundshot.app](https://fundshot.app) — Homepage\n"
+        "📈 [Track Record](https://fundshot.app/track-record) — 65-day live results\n"
+        "📖 [Documentation](https://fundshot.app/docs) — Full reference\n"
+        "❓ [FAQ](https://fundshot.app/faq) — Common questions\n"
+        "⚡ [Get Started](https://fundshot.app/guide) — Setup guide\n"
+        "🔴 [Live Alerts](https://fundshot.app/alerts) — Public alert feed\n"
+        "🟢 [System Status](https://fundshot.app/status) — Bot uptime\n\n"
+        "📧 support@fundshot.app",
+        parse_mode="Markdown",
+        disable_web_page_preview=True,
+    )
+
 # /help
 # ══════════════════════════════════════════════════════════════════════════════
 
@@ -2379,6 +2398,7 @@ def register(app):
 
     # ── Sistema ───────────────────────────────────────────────────────────────
     app.add_handler(CommandHandler("help",       help_cmd))
+    app.add_handler(CommandHandler("website",    cmd_website))
     app.add_handler(CommandHandler("status",     status_cmd))
     app.add_handler(CommandHandler("test",       test_cmd))
     app.add_handler(CommandHandler("deletekeys", deletekeys_cmd))
