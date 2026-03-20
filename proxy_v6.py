@@ -619,7 +619,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
                 f = "/tmp/fs_alert_history.json"
                 if _opa.path.exists(f):
                     data = json.load(open(f))
-                    # Only HARD and JACKPOT for public feed
+                    # All levels for public feed, sorted by ts desc
                     public = [
                         {
                             "symbol":   a["symbol"],
@@ -630,12 +630,12 @@ class ProxyHandler(BaseHTTPRequestHandler):
                             "ts":       a["ts"],
                         }
                         for a in data
-                        if a.get("level") in ("hard", "critico", "jackpot", "extreme")
+                        if a.get("symbol") and a.get("level")
                     ]
-                    public = sorted(public, key=lambda x: x["ts"], reverse=True)[:20]
-                    self._json({"ok": True, "alerts": public})
+                    public = sorted(public, key=lambda x: x["ts"], reverse=True)[:30]
+                    self._json({"ok": True, "alerts": public, "total": len(data)})
                 else:
-                    self._json({"ok": True, "alerts": []})
+                    self._json({"ok": True, "alerts": [], "total": 0})
             except Exception as e:
                 self._json({"ok": True, "alerts": [], "error": str(e)})
             return

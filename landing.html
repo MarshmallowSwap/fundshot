@@ -1393,6 +1393,7 @@ footer {
   </a>
   <div class="nav-links">
     <a href="/learn">Learn</a>
+    <a href="/alerts">Live Alerts</a>
     <a href="#how">How it works</a>
     <a href="#features">Features</a>
     <a href="#pricing">Pricing</a>
@@ -2431,6 +2432,11 @@ window.onTelegramAuth = async function(user) {
     }));
     localStorage.setItem('_auto_redirect', '0'); // primo login: non fare redirect
     data._firstLogin = true;
+    // Show web welcome banner for new users
+    setTimeout(() => {
+      const wb = document.getElementById('welcome-banner');
+      if (wb) { wb.style.display = 'flex'; }
+    }, 800);
     showUserPanel(data);
     toast('Welcome, ' + (data.first_name || data.username) + '! ⚡', '✅', 4000);
   } catch(e) { toast('Network error — please retry', '❌'); }
@@ -2923,5 +2929,29 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 </script>
+
+<!-- ═══ WELCOME BANNER (first login only) ═══ -->
+<div id="welcome-banner" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#0f0d18;border:1px solid rgba(212,168,67,.3);border-radius:20px;padding:36px;max-width:440px;width:100%;position:relative;text-align:center">
+    <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(212,168,67,.6),transparent);border-radius:20px 20px 0 0"></div>
+    <div style="font-size:2.5rem;margin-bottom:16px">⚡</div>
+    <h2 style="font-size:1.4rem;font-weight:800;letter-spacing:-.03em;margin-bottom:10px">Welcome to FundShot!</h2>
+    <p style="color:var(--muted);font-size:.88rem;line-height:1.65;margin-bottom:20px">
+      You're now monitoring <strong style="color:var(--text)">500+ perpetual pairs</strong> 24/7.<br><br>
+      📊 Free plan: <strong style="color:var(--text)">10 alerts/day</strong><br>
+      🔔 Alerts arrive via <strong style="color:var(--text)">Telegram</strong><br>
+      📖 Follow the <strong style="color:var(--text)">guide</strong> to configure your exchange
+    </p>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <a href="/guide" style="background:var(--gold);color:#05040a;padding:12px 24px;border-radius:9px;font-weight:700;font-size:.9rem;text-decoration:none;transition:all .2s" onmouseover="this.style.background='#f0c96a'" onmouseout="this.style.background='var(--gold)'">
+        ⚡ Follow the Setup Guide
+      </a>
+      <button onclick="document.getElementById('welcome-banner').style.display='none'" style="background:transparent;border:1px solid rgba(255,255,255,.12);color:var(--muted);padding:10px 24px;border-radius:9px;font-size:.85rem;cursor:pointer;font-family:'Syne',sans-serif;transition:border-color .2s" onmouseover="this.style.borderColor='rgba(255,255,255,.3)'" onmouseout="this.style.borderColor='rgba(255,255,255,.12)'">
+        Skip for now
+      </button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

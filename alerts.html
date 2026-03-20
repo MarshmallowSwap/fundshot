@@ -43,7 +43,7 @@ nav{padding:14px 32px;display:flex;align-items:center;justify-content:space-betw
 .alerts-list{display:flex;flex-direction:column;gap:8px}
 .alert-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 20px;display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center;transition:border-color .15s;position:relative;overflow:hidden}
 .alert-card::before{content:'';position:absolute;top:0;left:0;bottom:0;width:3px}
-.ac-hard::before{background:var(--red)}
+.ac-soft::before{background:#555580}.ac-high::before{background:#ff8877}.ac-hard::before{background:var(--red)}
 .ac-extreme::before{background:#ffaa55}
 .ac-jackpot::before,.ac-critico::before{background:var(--gold)}
 .ac-left{display:flex;flex-direction:column;gap:4px}
@@ -55,7 +55,7 @@ nav{padding:14px 32px;display:flex;align-items:center;justify-content:space-betw
 .ac-mid{display:flex;flex-direction:column;gap:6px}
 .ac-level-row{display:flex;align-items:center;gap:8px}
 .ac-lv{font-family:'DM Mono',monospace;font-size:.72rem;font-weight:700;padding:3px 9px;border-radius:4px}
-.lv-hard{background:rgba(255,60,60,.1);color:#ff5544}
+.lv-soft{background:rgba(136,136,160,.1);color:#8888a0}.lv-high{background:rgba(255,136,100,.1);color:#ff8877}.lv-hard{background:rgba(255,60,60,.1);color:#ff5544}
 .lv-extreme{background:rgba(255,165,50,.1);color:#ffaa55}
 .lv-jackpot,.lv-critico{background:rgba(212,168,67,.12);color:var(--gold2)}
 .ac-rate{font-family:'DM Mono',monospace;font-size:1rem;font-weight:700}
@@ -97,6 +97,7 @@ footer a{color:var(--text3);text-decoration:none}footer a:hover{color:var(--gold
 
   <div class="filters">
     <button class="flt on" id="f-all" onclick="setFilter('all')">All</button>
+    <button class="flt" id="f-high" onclick="setFilter('high')">🚨 High</button>
     <button class="flt flt-extreme" id="f-extreme" onclick="setFilter('extreme')">🔥 Extreme</button>
     <button class="flt flt-hard" id="f-hard" onclick="setFilter('hard')">🔴 Hard</button>
     <button class="flt flt-jackpot" id="f-jackpot" onclick="setFilter('jackpot')">💎 Jackpot</button>
@@ -137,13 +138,13 @@ function fmtDate(ts) {
   return new Date(ts*1000).toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
 }
 
-const LV_MAP = {hard:'🔴 HARD',extreme:'🔥 EXTREME',critico:'💎 JACKPOT',jackpot:'💎 JACKPOT'};
-const LV_CLASS = {hard:'lv-hard',extreme:'lv-extreme',critico:'lv-jackpot',jackpot:'lv-jackpot'};
-const AC_CLASS = {hard:'ac-hard',extreme:'ac-extreme',critico:'ac-critico',jackpot:'ac-jackpot'};
+const LV_MAP = {soft:'📊 SOFT',high:'🚨 HIGH',extreme:'🔥 EXTREME',hard:'🔴 HARD',critico:'💎 JACKPOT',jackpot:'💎 JACKPOT'};
+const LV_CLASS = {soft:'lv-soft',high:'lv-high',extreme:'lv-extreme',hard:'lv-hard',critico:'lv-jackpot',jackpot:'lv-jackpot'};
+const AC_CLASS = {soft:'ac-soft',high:'ac-high',extreme:'ac-extreme',hard:'ac-hard',critico:'ac-critico',jackpot:'ac-jackpot'};
 
 function setFilter(f) {
   activeFilter = f;
-  ['all','extreme','hard','jackpot'].forEach(k => {
+  ['all','high','extreme','hard','jackpot'].forEach(k => {
     const el = document.getElementById('f-'+k);
     el.classList.toggle('on', k === f);
   });
@@ -154,6 +155,7 @@ function render() {
   const filtered = allAlerts.filter(a => {
     if (activeFilter === 'all') return true;
     if (activeFilter === 'jackpot') return a.level === 'critico' || a.level === 'jackpot';
+    if (activeFilter === 'high') return ['high','extreme','hard','critico','jackpot'].includes(a.level);
     return a.level === activeFilter;
   });
   document.getElementById('count').textContent = filtered.length + ' alerts';
