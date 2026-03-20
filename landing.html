@@ -1357,7 +1357,7 @@ footer {
           <!-- SOON row -->
           <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
             <span style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:5px 10px"><img src="/okx-logo.svg" style="height:14px;filter:brightness(2);opacity:.75"><span style="font-family:'DM Mono',monospace;font-size:.58rem;font-weight:700;color:#fb923c;letter-spacing:.06em">SOON</span></span>
-            <span style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:5px 10px"><img src="/dydx-logo.svg" style="height:14px;filter:brightness(2);opacity:.75"><span style="font-family:'DM Mono',monospace;font-size:.58rem;font-weight:700;color:#fb923c;letter-spacing:.06em">SOON</span></span>
+            <span style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:5px 10px"><img src="/dydx-logo.svg" style="height:18px;opacity:.9"><span style="font-family:'DM Mono',monospace;font-size:.58rem;font-weight:700;color:#fb923c;letter-spacing:.06em">SOON</span></span>
             <span style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:5px 10px"><img src="/bitget-logo.svg" style="height:12px;filter:brightness(3);opacity:.75"><span style="font-family:'DM Mono',monospace;font-size:.58rem;font-weight:700;color:#fb923c;letter-spacing:.06em">SOON</span></span>
             <span style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:5px 10px"><img src="/gate-logo.svg" style="height:14px;opacity:.75"><span style="font-family:'DM Mono',monospace;font-size:.58rem;font-weight:700;color:#fb923c;letter-spacing:.06em">SOON</span></span>
           </div>
@@ -2391,13 +2391,13 @@ async function loadTrackRecord() {
 
     const retEl = document.getElementById('tr-return');
     if (retEl) {
-      retEl.textContent = fmtPct(s.total_return_pct || 0, 1);
+      retEl.textContent = fmtPct(s.total_return_pct || 0, 2);
       retEl.className = 'tr-stat-val ' + ((s.total_return_pct||0) >= 0 ? 'green' : 'red');
     }
 
     const ddEl = document.getElementById('tr-dd');
     if (ddEl) {
-      ddEl.textContent = '-' + (s.max_dd_pct || 0).toFixed(1) + '%';
+      ddEl.textContent = '-' + (s.max_dd_pct || 0).toFixed(2) + '%';
       ddEl.className = 'tr-stat-val red';
     }
 
@@ -2413,12 +2413,12 @@ async function loadTrackRecord() {
 
     const pnlEl = document.getElementById('tr-pnl');
     if (pnlEl) {
-      pnlEl.textContent = fmtPct(s.avg_pnl_pct, 3);
+      pnlEl.textContent = fmtPct(s.avg_pnl_pct, 2);
       pnlEl.className = 'tr-stat-val ' + (s.avg_pnl_pct >= 0 ? 'green' : 'red');
     }
 
     const bestEl = document.getElementById('tr-best');
-    if (bestEl) { bestEl.textContent = fmtPct(s.best_trade_pct, 3); bestEl.className = 'tr-stat-val green'; }
+    if (bestEl) { bestEl.textContent = fmtPct(s.best_trade_pct, 2); bestEl.className = 'tr-stat-val green'; }
 
     // Table — mostra top 15 simboli
     const tbody = document.getElementById('tr-table-body');
