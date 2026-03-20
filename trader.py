@@ -836,9 +836,23 @@ class FundingTrader:
         if mins_left < CONFIG["mins_before_reset"]:
             return False, f"troppo vicino al reset ({mins_left:.0f} min)"
 
-        # 5. Posizione già aperta su questo simbolo
+        # 5. Posizione già aperta su questo simbolo (in-memory)
         if symbol in self.positions:
-            return False, "position already open"
+            return False, "position already open (in-memory)"
+
+        # 5b. CHECK DIRETTO SULL'EXCHANGE — evita doppie posizioni dopo restart
+        try:
+            real_positions = self.exchange.get_positions()
+            if asyncio.iscoroutine(real_positions):
+                real_positions = await real_positions
+            for rp in (real_positions or []):
+                rp_sym  = rp.symbol if hasattr(rp, "symbol") else rp.get("symbol", "")
+                rp_size = float(rp.size if hasattr(rp, "size") else rp.get("size", 0))
+                if rp_sym == symbol and rp_size > 0:
+                    logger.info("should_open: pos REALE su exchange %s — blocco apertura %s", self.exchange_name, symbol)
+                    return False, "position already open on exchange"
+        except Exception as _ex_chk:
+            logger.warning("should_open: exchange check error %s: %s", symbol, _ex_chk)
 
         # 1b. Cooldown post-chiusura (30 min per evitare riapertura immediata)
         REOPEN_COOLDOWN = 30 * 60  # 30 minuti

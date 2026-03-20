@@ -183,7 +183,21 @@ class FundingTrader:
         if self.mins_to_next_reset() < self.cfg["mins_before_reset"]:
             return False, "too close to reset"
         if symbol in self.positions:
-            return False, "position already open"
+            return False, "position already open (in-memory)"
+
+        # ── CHECK DIRETTO SULL'EXCHANGE — evita posizioni doppie dopo restart ──
+        try:
+            real_positions = await self.client.get_positions()
+            for rp in (real_positions or []):
+                rp_sym  = rp.symbol if hasattr(rp, "symbol") else rp.get("symbol", "")
+                rp_size = float(rp.size if hasattr(rp, "size") else rp.get("size", 0))
+                if rp_sym == symbol and rp_size > 0:
+                    # Ricarica in memoria così i prossimi check sono veloci
+                    self.positions[symbol] = rp
+                    logger.info("should_open: posizione REALE trovata su exchange per %s — blocco apertura", symbol)
+                    return False, "position already open on exchange (reloaded)"
+        except Exception as _e:
+            logger.warning("should_open: errore get_positions exchange check: %s", _e)
         cooldown = self.cfg["reopen_cooldown"]
         if symbol in self._recently_closed:
             elapsed = time.time() - self._recently_closed[symbol]
