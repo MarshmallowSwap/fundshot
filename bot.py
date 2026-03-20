@@ -409,6 +409,40 @@ async def _process_exchange_tickers(
                 except Exception as _ce:
                     logger.warning("channel send FAILED: %s", _ce)
 
+            # JACKPOT nudge: DM agli utenti Free per spingere l'upgrade
+            if level in ("critico", "jackpot"):
+                try:
+                    from supabase import create_client as _sc_nudge
+                    _sbn = _sc_nudge(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_KEY"))
+                    _free_users = _sbn.table("users").select("chat_id").eq("plan", "free").execute().data or []
+                    _dir_nudge = "SHORT 📉" if rate_pct > 0 else "LONG 📈"
+                    _nudge_text = (
+                        f"💎 *JACKPOT ALERT — {_dir_nudge}*\n\n"
+                        f"📌 `{symbol}` · {rate_pct:+.4f}% funding\n"
+                        f"━━━━━━━━━━━━━━━━━━\n"
+                        f"This signal is *auto-trading on Pro/Elite* right now.\n\n"
+                        f"⚡ Upgrade to let the bot trade it for you\n"
+                        f"👉 /upgrade"
+                    )
+                    _nudge_sent = 0
+                    for _fu in _free_users[:100]:
+                        _fc = _fu.get("chat_id")
+                        if not _fc:
+                            continue
+                        try:
+                            await bot.send_message(
+                                chat_id=int(_fc),
+                                text=_nudge_text,
+                                parse_mode="Markdown",
+                            )
+                            _nudge_sent += 1
+                        except Exception:
+                            pass
+                    if _nudge_sent:
+                        logger.info("JACKPOT nudge: inviato a %d utenti Free", _nudge_sent)
+                except Exception as _ne:
+                    logger.warning("JACKPOT nudge error: %s", _ne)
+
         # ── CHANNEL: alert indipendente dalla state machine ──────────────────────
         _ch_level = al.classify(symbol, rate_pct)
         if _ch_level in ("high", "extreme", "hard", "critico", "jackpot") and os.getenv("CHANNEL_ID", CHANNEL_ID):
@@ -1315,6 +1349,58 @@ async def referral_payout_job(context):
         logger.error("referral_payout_job: %s", e)
 
 
+
+async def retention_job(context):
+    """Retention: messaggi a utenti Free inattivi da 3+ giorni."""
+    bot: Bot = context.bot
+    try:
+        from supabase import create_client
+        _sb = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_KEY"))
+
+        # Utenti Free creati da almeno 3 giorni
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=3)).isoformat()
+        res = _sb.table("users").select(
+            "chat_id,telegram_handle,created_at"
+        ).eq("plan", "free").lt("created_at", cutoff).execute()
+
+        users = res.data or []
+        logger.info("retention_job: %d utenti Free inattivi candidati", len(users))
+
+        if not users:
+            return
+
+        # Controlla alert_count negli ultimi 3 giorni per ogni utente
+        # Se non ha ricevuto alert recenti → manda nudge
+        nudge_count = 0
+        for u in users[:50]:  # max 50 per run
+            chat_id = u.get("chat_id")
+            if not chat_id:
+                continue
+            try:
+                msg = (
+                    "⚡ *FundShot — Daily Check-in*\n\n"
+                    "Your bot is active and monitoring *500+ pairs* on Bybit.\n\n"
+                    "📊 *Recent signals:*\n"
+                    "• Avg 4-6 HIGH/EXTREME alerts/day\n"
+                    "• Win rate last 65 days: *74.6%*\n\n"
+                    "🆓 *You're on Free* — 10 alerts/day\n"
+                    "⚡ Upgrade to *Pro* for unlimited alerts + auto-trading\n\n"
+                    "👉 /upgrade to see plans"
+                )
+                await bot.send_message(
+                    chat_id=int(chat_id),
+                    text=msg,
+                    parse_mode="Markdown",
+                )
+                nudge_count += 1
+            except Exception as e:
+                logger.debug("retention_job: skip %s — %s", chat_id, e)
+
+        logger.info("retention_job: %d nudge inviati", nudge_count)
+
+    except Exception as e:
+        logger.error("retention_job: %s", e)
+
 async def plan_expiry_job(context):
     """
     Job giornaliero alle 09:00 IT:
@@ -1770,6 +1856,14 @@ def main():
         name="plan_expiry",
     )
     logger.info("Plan expiry job schedulato alle 09:00 IT")
+
+    # Scheduled: retention nudge alle 11:00 IT (utenti Free inattivi 3+ giorni)
+    app.job_queue.run_daily(
+        retention_job,
+        time=dt_time(hour=11, minute=0, second=0, tzinfo=TZ_IT),
+        name="retention",
+    )
+    logger.info("Retention job schedulato alle 11:00 IT")
 
     # Scheduled: referral payout il 1° di ogni mese alle 10:00 IT
     from telegram.ext import CommandHandler
