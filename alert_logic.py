@@ -524,14 +524,14 @@ _state: dict[str, dict] = {}
 
 # Tempo minimo (secondi) prima di re-inviare lo STESSO livello per lo stesso simbolo
 MIN_RESEND_INTERVAL: dict[str, int] = {
-    "critico":   600,   # 10 min
-    "hard":      600,   # 10 min
-    "extreme":   600,   # 10 min
-    "high":      600,   # 10 min
-    "soft":      300,   #  5 min
-    "close_tip": 300,   #  5 min
-    "warn_tip":  300,   #  5 min
-    "rientro":   300,   #  5 min
+    "critico":   1800,  # 30 min
+    "hard":      1800,  # 30 min
+    "extreme":   1800,  # 30 min
+    "high":      1800,  # 30 min
+    "soft":      900,   # 15 min
+    "close_tip": 900,   # 15 min
+    "warn_tip":  900,   # 15 min
+    "rientro":   900,   # 15 min
 }
 
 # _last_alert_time[symbol][level] = time.monotonic() dell'ultimo invio
@@ -845,8 +845,8 @@ def load_alert_state() -> None:
         if not raw:
             return
         data = _j.loads(raw)
-        # Ignora stato vecchio di più di 10 minuti — può essere stale
-        if _t.time() - data.get("saved_at", 0) > 600:
+        # Ignora stato vecchio di più di 8 ore (ciclo di funding)
+        if _t.time() - data.get("saved_at", 0) > 28800:
             return
         _prev_level_map.update(data.get("prev_level_map", {}))
         _prev_rate_map.update(data.get("prev_rate_map", {}))

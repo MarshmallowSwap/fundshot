@@ -774,6 +774,11 @@ async def funding_job(context):
         logger.error("funding_job outer: %s", e)
     finally:
         _fj_running = False
+        # Salva stato alert ogni ciclo — sopravvive ai restart
+        try:
+            al.save_alert_state()
+        except Exception:
+            pass
 
 
 # ── Job OI spike (ogni 5 min) ────────────────────────────────────────────────
@@ -1572,6 +1577,15 @@ async def post_init(app):
     # Carica lo stato degli alert per evitare duplicati dopo restart
     al.load_alert_state()
     logger.info("Alert state caricato da file (anti-duplicate on restart)")
+
+    # Ricarica posizioni aperte da exchange — evita posizioni doppie dopo restart
+    # Viene fatto di nuovo in _init_exchange_traders ma lo facciamo anche qui
+    # per sicurezza assoluta prima del primo ciclo di trading
+    try:
+        await _init_exchange_traders(app.bot)
+        logger.info("Exchange traders e posizioni ricaricati al boot")
+    except Exception as _boot_e:
+        logger.warning("Boot reload exchange traders: %s", _boot_e)
 
     app.bot_data["uptime_start"]  = datetime.now(TZ_IT)
     app.bot_data["alerts_sent"]   = 0

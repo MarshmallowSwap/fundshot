@@ -192,9 +192,26 @@ class FundingTrader:
                 rp_sym  = rp.symbol if hasattr(rp, "symbol") else rp.get("symbol", "")
                 rp_size = float(rp.size if hasattr(rp, "size") else rp.get("size", 0))
                 if rp_sym == symbol and rp_size > 0:
-                    # Ricarica in memoria così i prossimi check sono veloci
-                    self.positions[symbol] = rp
-                    logger.info("should_open: posizione REALE trovata su exchange per %s — blocco apertura", symbol)
+                    # Ricostruisci TradePosition per il monitoring locale
+                    rp_side  = rp.side if hasattr(rp, "side") else rp.get("side", "Buy")
+                    rp_entry = float(rp.avg_price if hasattr(rp, "avg_price") else rp.get("avg_price", 1.0))
+                    rp_dir   = "SHORT" if rp_side in ("Sell", "SHORT") else "LONG"
+                    sl_pct   = self.cfg.get("sl_pct", 5.0)
+                    sl_price = rp_entry * (1 + sl_pct/100) if rp_dir == "SHORT" else rp_entry * (1 - sl_pct/100)
+                    self.positions[symbol] = TradePosition(
+                        symbol=symbol, side=rp_side, direction=rp_dir,
+                        entry_price=rp_entry, size_usdt=self.cfg.get("size_usdt", 100),
+                        notional=rp_entry * rp_size, level="reloaded",
+                        funding_at_open=0.0, oi_change_at_open=0.0,
+                        tp1_pct=0.7, trailing_buffer=0.7, tp_max_pct=3.0,
+                        sl_pct=sl_pct, sl_price=sl_price,
+                        tp1_price=rp_entry*(1-0.007) if rp_dir=="SHORT" else rp_entry*(1+0.007),
+                        tp1_hit=False, tp1_qty=round(rp_size*0.3,4),
+                        remaining_qty=round(rp_size*0.7,4), best_price=rp_entry,
+                        trailing_stop=rp_entry*(1+0.7/100) if rp_dir=="SHORT" else rp_entry*(1-0.7/100),
+                        bybit_order_id="reloaded",
+                    )
+                    logger.info("should_open: pos REALE su exchange %s — blocco e ricarico in memoria", symbol)
                     return False, "position already open on exchange (reloaded)"
         except Exception as _e:
             logger.warning("should_open: errore get_positions exchange check: %s", _e)
