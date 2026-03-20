@@ -112,6 +112,14 @@
     {
       "src": "apple-touch-icon.png",
       "use": "@vercel/static"
+    },
+    {
+      "src": "status.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "alerts.html",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -230,6 +238,14 @@
     {
       "src": "/favicon.ico",
       "dest": "/favicon.ico"
+    },
+    {
+      "src": "/alerts",
+      "dest": "/alerts.html"
+    },
+    {
+      "src": "/status",
+      "dest": "/status.html"
     },
     {
       "src": "/(.*)",

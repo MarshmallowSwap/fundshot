@@ -169,6 +169,22 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
     user       = await get_or_create_user(chat_id, handle)
     configured = user.active_exchanges if user else []
+    is_new     = not configured and not getattr(user, 'email', None)
+
+    # Se nuovo utente: invia messaggio di benvenuto con link alla guida
+    if is_new:
+        await update.message.reply_text(
+            "⚡ *Welcome to FundShot!*\n\n"
+            "You're now monitoring *500+ perpetual pairs* 24/7 on Bybit, Binance and Hyperliquid.\n\n"
+            "📊 *Your Free plan includes:*\n"
+            "• 10 alerts/day (SOFT → JACKPOT)\n"
+            "• Live dashboard at fundshot.app\n"
+            "• AI Advisor for trading setup\n\n"
+            "📖 *Quick start guide:* [fundshot.app/guide](https://fundshot.app/guide)\n\n"
+            "_Let's connect your first exchange 👇_",
+            parse_mode="Markdown",
+            disable_web_page_preview=True,
+        )
 
     if configured:
         lines = []

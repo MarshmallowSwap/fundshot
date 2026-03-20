@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>System Status — FundShot</title>
+<meta name="description" content="FundShot real-time system status. Bot uptime, alert delivery, auto-trader and Guardian status.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://fundshot.app/status">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#080809;--surface:#0f0f12;--card:#13131a;--border:#1c1c28;--gold:#d4a843;--gold2:#f0c96a;--teal:#00c8a0;--red:#ff5252;--green:#44cc88;--text:#e4e4f0;--text2:#7878a0;--text3:#44445a}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh}
+nav{padding:14px 32px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+.nav-logo{font-size:1.05rem;font-weight:800;color:var(--gold);text-decoration:none}
+.nav-links a{font-family:'DM Mono',monospace;font-size:.75rem;color:var(--text2);text-decoration:none;margin-left:20px;transition:color .2s}
+.nav-links a:hover{color:var(--gold)}
+.wrap{max-width:720px;margin:0 auto;padding:48px 24px 80px}
+/* Hero */
+.status-hero{text-align:center;margin-bottom:48px}
+.overall-badge{display:inline-flex;align-items:center;gap:10px;padding:10px 24px;border-radius:30px;font-family:'DM Mono',monospace;font-size:.85rem;font-weight:700;letter-spacing:.06em;margin-bottom:20px;transition:all .3s}
+.badge-ok{background:rgba(0,200,160,.1);border:1px solid rgba(0,200,160,.3);color:var(--teal)}
+.badge-warn{background:rgba(212,168,67,.1);border:1px solid rgba(212,168,67,.3);color:var(--gold)}
+.badge-down{background:rgba(255,82,82,.1);border:1px solid rgba(255,82,82,.3);color:var(--red)}
+.pulse{width:8px;height:8px;border-radius:50%;animation:pulse 1.5s ease-in-out infinite}
+.pulse-green{background:var(--teal)}
+.pulse-gold{background:var(--gold)}
+.pulse-red{background:var(--red)}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
+.status-hero h1{font-size:2rem;font-weight:800;letter-spacing:-.03em;margin-bottom:8px}
+.status-hero p{color:var(--text2);font-family:'DM Mono',monospace;font-size:.78rem}
+/* Components */
+.section-title{font-family:'DM Mono',monospace;font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--text3);margin-bottom:12px;margin-top:36px}
+.components{display:flex;flex-direction:column;gap:8px}
+.component{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between}
+.comp-left{display:flex;align-items:center;gap:12px}
+.comp-icon{font-size:1.1rem}
+.comp-name{font-weight:600;font-size:.9rem}
+.comp-desc{font-family:'DM Mono',monospace;font-size:.68rem;color:var(--text3);margin-top:2px}
+.comp-status{font-family:'DM Mono',monospace;font-size:.72rem;font-weight:700;display:flex;align-items:center;gap:6px}
+.s-ok{color:var(--teal)}.s-warn{color:var(--gold)}.s-down{color:var(--red)}
+/* Metrics */
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:8px}
+.metric{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center}
+.metric-val{font-size:1.5rem;font-weight:800;letter-spacing:-.03em;color:var(--gold2);margin-bottom:4px;font-family:'DM Mono',monospace}
+.metric-val.green{color:var(--teal)}
+.metric-lbl{font-family:'DM Mono',monospace;font-size:.62rem;color:var(--text3);letter-spacing:.08em;text-transform:uppercase}
+/* Alert feed */
+.alert-feed{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.alert-row{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.ar-left{display:flex;align-items:center;gap:10px}
+.ar-sym{font-weight:700;font-size:.88rem}
+.ar-lv{font-family:'DM Mono',monospace;font-size:.65rem;padding:2px 7px;border-radius:4px}
+.lv-hard{background:rgba(255,60,60,.1);color:#ff5544}
+.lv-extreme{background:rgba(255,165,50,.1);color:#ffaa55}
+.lv-jackpot{background:rgba(212,168,67,.15);color:var(--gold2)}
+.lv-critico{background:rgba(212,168,67,.15);color:var(--gold2)}
+.ar-rate{font-family:'DM Mono',monospace;font-size:.78rem;font-weight:600}
+.ar-rate.pos{color:var(--red)}.ar-rate.neg{color:var(--teal)}
+.ar-time{font-family:'DM Mono',monospace;font-size:.65rem;color:var(--text3)}
+.ar-ex{font-size:.85rem}
+.loading{text-align:center;padding:32px;font-family:'DM Mono',monospace;font-size:.8rem;color:var(--text3)}
+.updated{font-family:'DM Mono',monospace;font-size:.68rem;color:var(--text3);text-align:center;margin-top:20px}
+@media(max-width:600px){nav{padding:12px 16px}.nav-links{display:none}.wrap{padding:32px 16px 60px}.metrics{grid-template-columns:1fr 1fr}}
+footer{text-align:center;padding:32px;color:var(--text3);font-family:'DM Mono',monospace;font-size:.75rem;border-top:1px solid var(--border)}
+footer a{color:var(--text3);text-decoration:none}footer a:hover{color:var(--gold)}
+</style>
+</head>
+<body>
+<nav>
+  <a href="/" class="nav-logo" onclick="window.location.href='/?v='+Date.now();return false">⚡ FundShot</a>
+  <div class="nav-links">
+    <a href="/learn">Learn</a>
+    <a href="/docs">Docs</a>
+    <a href="/faq">FAQ</a>
+    <a href="/guide">Get Started</a>
+  </div>
+</nav>
+
+<div class="wrap">
+  <!-- Overall status -->
+  <div class="status-hero">
+    <div class="overall-badge badge-ok" id="overall-badge">
+      <span class="pulse pulse-green" id="overall-pulse"></span>
+      <span id="overall-text">Checking status...</span>
+    </div>
+    <h1>System Status</h1>
+    <p id="last-updated">Loading...</p>
+  </div>
+
+  <!-- Metrics -->
+  <div class="section-title">// Live Metrics</div>
+  <div class="metrics">
+    <div class="metric"><div class="metric-val green" id="m-uptime">—</div><div class="metric-lbl">Uptime</div></div>
+    <div class="metric"><div class="metric-val" id="m-pairs">500+</div><div class="metric-lbl">Pairs Monitored</div></div>
+    <div class="metric"><div class="metric-val" id="m-last-alert">—</div><div class="metric-lbl">Last Alert</div></div>
+  </div>
+
+  <!-- Components -->
+  <div class="section-title">// Components</div>
+  <div class="components">
+    <div class="component">
+      <div class="comp-left">
+        <span class="comp-icon">📡</span>
+        <div><div class="comp-name">Funding Rate Monitor</div><div class="comp-desc">Scanning 500+ USDT perpetuals every 2 min</div></div>
+      </div>
+      <div class="comp-status s-ok" id="c-monitor"><span class="pulse pulse-green"></span> Operational</div>
+    </div>
+    <div class="component">
+      <div class="comp-left">
+        <span class="comp-icon">🔔</span>
+        <div><div class="comp-name">Alert Delivery</div><div class="comp-desc">Telegram notifications · Bybit · Binance · Hyperliquid</div></div>
+      </div>
+      <div class="comp-status s-ok" id="c-alerts"><span class="pulse pulse-green"></span> Operational</div>
+    </div>
+    <div class="component">
+      <div class="comp-left">
+        <span class="comp-icon">🤖</span>
+        <div><div class="comp-name">Auto-Trader</div><div class="comp-desc">Pro & Elite · automatic position execution</div></div>
+      </div>
+      <div class="comp-status s-ok" id="c-trader"><span class="pulse pulse-green"></span> Operational</div>
+    </div>
+    <div class="component">
+      <div class="comp-left">
+        <span class="comp-icon">🛡️</span>
+        <div><div class="comp-name">Guardian Risk Engine</div><div class="comp-desc">Drawdown limits · consecutive loss protection</div></div>
+      </div>
+      <div class="comp-status s-ok" id="c-guardian"><span class="pulse pulse-green"></span> Operational</div>
+    </div>
+    <div class="component">
+      <div class="comp-left">
+        <span class="comp-icon">🌐</span>
+        <div><div class="comp-name">API & Dashboard</div><div class="comp-desc">fundshot.app · api.fundshot.app</div></div>
+      </div>
+      <div class="comp-status s-ok" id="c-api"><span class="pulse pulse-green"></span> Operational</div>
+    </div>
+  </div>
+
+  <!-- Recent alerts feed -->
+  <div class="section-title">// Recent High-Priority Alerts</div>
+  <div class="alert-feed" id="alert-feed">
+    <div class="loading">Loading recent alerts<span id="dots">...</span></div>
+  </div>
+
+  <div class="updated" id="updated-at"></div>
+</div>
+
+<footer>FundShot © 2026 — <a href="mailto:support@fundshot.app">support@fundshot.app</a> · <a href="/">Home</a> · <a href="/docs">Docs</a></footer>
+
+<script>
+const API = 'https://api.fundshot.app';
+
+function timeAgo(ts) {
+  const d = Math.floor((Date.now()/1000) - ts);
+  if (d < 60) return d + 's ago';
+  if (d < 3600) return Math.floor(d/60) + 'm ago';
+  if (d < 86400) return Math.floor(d/3600) + 'h ago';
+  return Math.floor(d/86400) + 'd ago';
+}
+
+function levelClass(l) {
+  return {hard:'lv-hard',extreme:'lv-extreme',critico:'lv-jackpot',jackpot:'lv-jackpot'}[l] || 'lv-extreme';
+}
+function levelLabel(l) {
+  return {hard:'🔴 HARD',extreme:'🔥 EXTREME',critico:'💎 JACKPOT',jackpot:'💎 JACKPOT'}[l] || l.toUpperCase();
+}
+
+async function loadStatus() {
+  try {
+    const r = await fetch(API + '/api/status');
+    const d = await r.json();
+    if (!d.ok) throw new Error('API error');
+
+    // Overall badge
+    const badge = document.getElementById('overall-badge');
+    badge.className = 'overall-badge badge-ok';
+    document.getElementById('overall-pulse').className = 'pulse pulse-green';
+    document.getElementById('overall-text').textContent = '✓ All Systems Operational';
+
+    // Uptime
+    const h = d.uptime_hours;
+    document.getElementById('m-uptime').textContent = h >= 24 ? Math.floor(h/24) + 'd ' + (h%24).toFixed(0) + 'h' : h + 'h';
+
+    // Last alert
+    const la = d.last_alert_min_ago;
+    document.getElementById('m-last-alert').textContent = la === null ? '—' : la < 60 ? la + 'm ago' : Math.floor(la/60) + 'h ago';
+
+    document.getElementById('last-updated').textContent = 'Last checked: ' + new Date().toLocaleTimeString();
+    document.getElementById('updated-at').textContent = 'Auto-refreshes every 60 seconds · ' + new Date().toISOString().slice(0,16).replace('T',' ') + ' UTC';
+
+    // API component
+    document.getElementById('c-api').innerHTML = '<span class="pulse pulse-green"></span> Operational';
+
+  } catch(e) {
+    document.getElementById('overall-badge').className = 'overall-badge badge-warn';
+    document.getElementById('overall-pulse').className = 'pulse pulse-gold';
+    document.getElementById('overall-text').textContent = '⚠ Checking...';
+    document.getElementById('c-api').innerHTML = '<span class="comp-status s-warn">⚠ Degraded</span>';
+  }
+}
+
+async function loadAlerts() {
+  try {
+    const r = await fetch(API + '/api/public-alerts');
+    const d = await r.json();
+    const feed = document.getElementById('alert-feed');
+
+    if (!d.alerts || d.alerts.length === 0) {
+      feed.innerHTML = '<div class="loading" style="color:var(--text3)">No recent HARD/EXTREME/JACKPOT alerts — market is calm.</div>';
+      return;
+    }
+
+    feed.innerHTML = d.alerts.slice(0, 10).map(a => `
+      <div class="alert-row">
+        <div class="ar-left">
+          <span class="ar-ex">${a.ex_em}</span>
+          <span class="ar-sym">${a.symbol.replace('USDT','')}</span>
+          <span class="ar-lv ${levelClass(a.level)}">${levelLabel(a.level)}</span>
+          <span class="ar-rate ${a.rate_pct > 0 ? 'pos' : 'neg'}">${a.rate_pct > 0 ? '+' : ''}${a.rate_pct.toFixed(4)}%</span>
+        </div>
+        <span class="ar-time">${timeAgo(a.ts)}</span>
+      </div>
+    `).join('');
+  } catch(e) {
+    document.getElementById('alert-feed').innerHTML = '<div class="loading">Unable to load alerts.</div>';
+  }
+}
+
+// Animate dots
+let dotCount = 0;
+setInterval(() => {
+  const el = document.getElementById('dots');
+  if (el) el.textContent = '.'.repeat((dotCount++ % 3) + 1);
+}, 500);
+
+loadStatus();
+loadAlerts();
+setInterval(() => { loadStatus(); loadAlerts(); }, 60000);
+</script>
+</body>
+</html>

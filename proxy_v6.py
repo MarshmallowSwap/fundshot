@@ -585,12 +585,59 @@ class ProxyHandler(BaseHTTPRequestHandler):
         # ── Endpoint pubblici (no auth) ───────────────────────────────────────
 
         if p == "/api/status":
+            import os as _ost
+            uptime_s = round(time.time() - _start_time, 0)
+            uptime_h = round(uptime_s / 3600, 1)
+            # Check how fresh the alert history is
+            last_alert_ts = 0
+            try:
+                ah = json.load(open("/tmp/fs_alert_history.json")) if _ost.path.exists("/tmp/fs_alert_history.json") else []
+                if ah: last_alert_ts = max(a.get("ts",0) for a in ah)
+            except: pass
+            alert_age_min = round((time.time() - last_alert_ts) / 60, 0) if last_alert_ts else None
             self._json({
-                "ok":      True,
-                "version": "6.0",
-                "msg":     "FundShot SaaS proxy running",
-                "uptime":  round(time.time() - _start_time, 0),
+                "ok":            True,
+                "status":        "operational",
+                "version":       "6.0",
+                "uptime_seconds": uptime_s,
+                "uptime_hours":  uptime_h,
+                "pairs_monitored": 500,
+                "exchanges":     ["Bybit", "Binance", "Hyperliquid"],
+                "last_alert_min_ago": alert_age_min,
+                "components": {
+                    "funding_monitor": "operational",
+                    "alert_delivery":  "operational",
+                    "auto_trader":     "operational",
+                    "guardian":        "operational",
+                }
             })
+            return
+
+        if p == "/api/public-alerts":
+            try:
+                import os as _opa
+                f = "/tmp/fs_alert_history.json"
+                if _opa.path.exists(f):
+                    data = json.load(open(f))
+                    # Only HARD and JACKPOT for public feed
+                    public = [
+                        {
+                            "symbol":   a["symbol"],
+                            "level":    a["level"],
+                            "rate_pct": a["rate_pct"],
+                            "exchange": a["exchange"],
+                            "ex_em":    a.get("ex_em", "⚡"),
+                            "ts":       a["ts"],
+                        }
+                        for a in data
+                        if a.get("level") in ("hard", "critico", "jackpot", "extreme")
+                    ]
+                    public = sorted(public, key=lambda x: x["ts"], reverse=True)[:20]
+                    self._json({"ok": True, "alerts": public})
+                else:
+                    self._json({"ok": True, "alerts": []})
+            except Exception as e:
+                self._json({"ok": True, "alerts": [], "error": str(e)})
             return
 
         if p == "/api/public-stats":

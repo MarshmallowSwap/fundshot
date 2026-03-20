@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live Funding Rate Alerts — FundShot</title>
+<meta name="description" content="Live feed of extreme funding rate alerts from FundShot. Real-time HARD, EXTREME and JACKPOT signals on Bybit, Binance and Hyperliquid perpetuals.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://fundshot.app/alerts">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<meta property="og:title" content="Live Funding Rate Alerts — FundShot">
+<meta property="og:description" content="Real-time HARD, EXTREME and JACKPOT funding rate signals on 500+ crypto perpetuals.">
+<meta property="og:image" content="https://fundshot.app/og-image.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#080809;--surface:#0f0f12;--card:#13131a;--border:#1c1c28;--gold:#d4a843;--gold2:#f0c96a;--teal:#00c8a0;--red:#ff5252;--green:#44cc88;--text:#e4e4f0;--text2:#7878a0;--text3:#44445a}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh}
+nav{padding:14px 32px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);position:sticky;top:0;background:rgba(8,8,9,.92);backdrop-filter:blur(16px);z-index:100}
+.nav-logo{font-size:1.05rem;font-weight:800;color:var(--gold);text-decoration:none}
+.nav-links a{font-family:'DM Mono',monospace;font-size:.75rem;color:var(--text2);text-decoration:none;margin-left:20px;transition:color .2s}
+.nav-links a:hover{color:var(--gold)}
+.nav-cta{background:var(--gold);color:#05040a;padding:7px 16px;border-radius:7px;font-weight:700;font-size:.8rem;text-decoration:none;margin-left:20px}
+.wrap{max-width:800px;margin:0 auto;padding:48px 24px 80px}
+/* Hero */
+.hero{text-align:center;margin-bottom:40px}
+.live-dot{display:inline-flex;align-items:center;gap:8px;font-family:'DM Mono',monospace;font-size:.72rem;color:var(--teal);letter-spacing:.1em;margin-bottom:14px;background:rgba(0,200,160,.08);border:1px solid rgba(0,200,160,.2);padding:5px 14px;border-radius:20px}
+.ld{width:7px;height:7px;border-radius:50%;background:var(--teal);animation:pulse 1.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.7)}}
+.hero h1{font-size:clamp(1.8rem,4vw,2.6rem);font-weight:800;letter-spacing:-.04em;margin-bottom:8px}
+.hero p{color:var(--text2);font-family:'DM Mono',monospace;font-size:.8rem;max-width:440px;margin:0 auto;line-height:1.6}
+/* Level filter */
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;align-items:center}
+.flt{font-family:'DM Mono',monospace;font-size:.7rem;padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--card);color:var(--text3);cursor:pointer;transition:all .15s;letter-spacing:.04em}
+.flt:hover{border-color:var(--gold);color:var(--gold)}
+.flt.on{border-color:var(--gold);color:var(--gold);background:rgba(212,168,67,.08)}
+.flt-extreme.on{border-color:#ffaa55;color:#ffaa55;background:rgba(255,165,50,.08)}
+.flt-hard.on{border-color:#ff5544;color:#ff5544;background:rgba(255,60,60,.08)}
+.flt-jackpot.on{border-color:var(--gold2);color:var(--gold2);background:rgba(212,168,67,.1)}
+.count{font-family:'DM Mono',monospace;font-size:.72rem;color:var(--text3);margin-left:auto}
+/* Alert cards */
+.alerts-list{display:flex;flex-direction:column;gap:8px}
+.alert-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 20px;display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center;transition:border-color .15s;position:relative;overflow:hidden}
+.alert-card::before{content:'';position:absolute;top:0;left:0;bottom:0;width:3px}
+.ac-hard::before{background:var(--red)}
+.ac-extreme::before{background:#ffaa55}
+.ac-jackpot::before,.ac-critico::before{background:var(--gold)}
+.ac-left{display:flex;flex-direction:column;gap:4px}
+.ac-ex{font-size:1.1rem}
+.ac-sym{font-size:1.1rem;font-weight:800;letter-spacing:-.02em}
+.ac-dir{font-family:'DM Mono',monospace;font-size:.68rem;font-weight:700;padding:2px 7px;border-radius:4px}
+.dir-short{background:rgba(255,82,82,.1);color:var(--red)}
+.dir-long{background:rgba(0,200,160,.1);color:var(--teal)}
+.ac-mid{display:flex;flex-direction:column;gap:6px}
+.ac-level-row{display:flex;align-items:center;gap:8px}
+.ac-lv{font-family:'DM Mono',monospace;font-size:.72rem;font-weight:700;padding:3px 9px;border-radius:4px}
+.lv-hard{background:rgba(255,60,60,.1);color:#ff5544}
+.lv-extreme{background:rgba(255,165,50,.1);color:#ffaa55}
+.lv-jackpot,.lv-critico{background:rgba(212,168,67,.12);color:var(--gold2)}
+.ac-rate{font-family:'DM Mono',monospace;font-size:1rem;font-weight:700}
+.ac-rate.pos{color:var(--red)}.ac-rate.neg{color:var(--teal)}
+.ac-meta{font-family:'DM Mono',monospace;font-size:.68rem;color:var(--text3);display:flex;gap:10px;flex-wrap:wrap}
+.ac-right{text-align:right;display:flex;flex-direction:column;gap:4px;align-items:flex-end}
+.ac-time{font-family:'DM Mono',monospace;font-size:.72rem;color:var(--text3)}
+.ac-ago{font-family:'DM Mono',monospace;font-size:.68rem;color:var(--text3)}
+/* CTA bottom */
+.cta-strip{background:rgba(212,168,67,.06);border:1px solid rgba(212,168,67,.2);border-radius:14px;padding:24px;text-align:center;margin-top:32px}
+.cta-strip h3{font-size:1.1rem;font-weight:700;margin-bottom:6px}
+.cta-strip p{color:var(--text2);font-size:.85rem;margin-bottom:16px}
+.cta-btn{display:inline-flex;align-items:center;gap:8px;background:var(--gold);color:#05040a;padding:11px 24px;border-radius:9px;font-weight:700;font-size:.88rem;text-decoration:none;transition:all .2s}
+.cta-btn:hover{background:var(--gold2)}
+.empty{text-align:center;padding:48px;font-family:'DM Mono',monospace;font-size:.82rem;color:var(--text3)}
+@media(max-width:600px){nav{padding:12px 16px}.nav-links{display:none}.wrap{padding:32px 14px 60px}.alert-card{grid-template-columns:1fr auto;gap:10px}.ac-left{flex-direction:row;align-items:center}.ac-ex{display:none}}
+footer{text-align:center;padding:32px;color:var(--text3);font-family:'DM Mono',monospace;font-size:.75rem;border-top:1px solid var(--border)}
+footer a{color:var(--text3);text-decoration:none}footer a:hover{color:var(--gold)}
+</style>
+</head>
+<body>
+<nav>
+  <a href="/" class="nav-logo" onclick="window.location.href='/?v='+Date.now();return false">⚡ FundShot</a>
+  <div class="nav-links">
+    <a href="/learn">Learn</a>
+    <a href="/docs">Docs</a>
+    <a href="/status">Status</a>
+    <a href="/faq">FAQ</a>
+  </div>
+  <a href="https://t.me/FundShot_bot" class="nav-cta" target="_blank">Get Alerts →</a>
+</nav>
+
+<div class="wrap">
+  <div class="hero">
+    <div class="live-dot"><span class="ld"></span> LIVE FEED</div>
+    <h1>Live Funding Rate Alerts</h1>
+    <p>Real-time EXTREME, HARD and JACKPOT signals from 500+ perpetual pairs on Bybit, Binance and Hyperliquid.</p>
+  </div>
+
+  <div class="filters">
+    <button class="flt on" id="f-all" onclick="setFilter('all')">All</button>
+    <button class="flt flt-extreme" id="f-extreme" onclick="setFilter('extreme')">🔥 Extreme</button>
+    <button class="flt flt-hard" id="f-hard" onclick="setFilter('hard')">🔴 Hard</button>
+    <button class="flt flt-jackpot" id="f-jackpot" onclick="setFilter('jackpot')">💎 Jackpot</button>
+    <span class="count" id="count"></span>
+  </div>
+
+  <div class="alerts-list" id="alerts-list">
+    <div class="empty">Loading live alerts...</div>
+  </div>
+
+  <div class="cta-strip">
+    <h3>Get alerts on Telegram — free</h3>
+    <p>10 alerts/day on Free. Unlimited on Pro. Auto-trading on Pro & Elite.</p>
+    <a href="https://t.me/FundShot_bot" class="cta-btn" target="_blank">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.024 9.531c-.148.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.024 14.06l-2.966-.924c-.645-.204-.657-.645.136-.953l11.57-4.461c.537-.194 1.008.131.798.526z"/></svg>
+      Open @FundShot_bot
+    </a>
+  </div>
+</div>
+
+<footer>FundShot © 2026 — <a href="/">Home</a> · <a href="/status">Status</a> · <a href="/docs">Docs</a> · Signals are not financial advice</footer>
+
+<script>
+const API = 'https://api.fundshot.app';
+let allAlerts = [], activeFilter = 'all';
+
+function timeAgo(ts) {
+  const d = Math.floor((Date.now()/1000) - ts);
+  if (d < 60) return d + 's ago';
+  if (d < 3600) return Math.floor(d/60) + 'm ago';
+  if (d < 86400) return Math.floor(d/3600) + 'h ago';
+  return Math.floor(d/86400) + 'd ago';
+}
+function fmtTime(ts) {
+  return new Date(ts*1000).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+}
+function fmtDate(ts) {
+  return new Date(ts*1000).toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
+}
+
+const LV_MAP = {hard:'🔴 HARD',extreme:'🔥 EXTREME',critico:'💎 JACKPOT',jackpot:'💎 JACKPOT'};
+const LV_CLASS = {hard:'lv-hard',extreme:'lv-extreme',critico:'lv-jackpot',jackpot:'lv-jackpot'};
+const AC_CLASS = {hard:'ac-hard',extreme:'ac-extreme',critico:'ac-critico',jackpot:'ac-jackpot'};
+
+function setFilter(f) {
+  activeFilter = f;
+  ['all','extreme','hard','jackpot'].forEach(k => {
+    const el = document.getElementById('f-'+k);
+    el.classList.toggle('on', k === f);
+  });
+  render();
+}
+
+function render() {
+  const filtered = allAlerts.filter(a => {
+    if (activeFilter === 'all') return true;
+    if (activeFilter === 'jackpot') return a.level === 'critico' || a.level === 'jackpot';
+    return a.level === activeFilter;
+  });
+  document.getElementById('count').textContent = filtered.length + ' alerts';
+  const list = document.getElementById('alerts-list');
+  if (!filtered.length) {
+    list.innerHTML = '<div class="empty">No signals matching this filter right now.<br>Market is relatively calm.</div>';
+    return;
+  }
+  list.innerHTML = filtered.map(a => {
+    const dir = a.rate_pct > 0 ? 'SHORT' : 'LONG';
+    return `<div class="alert-card ${AC_CLASS[a.level]||'ac-extreme'}">
+      <div class="ac-left">
+        <span class="ac-ex">${a.ex_em}</span>
+        <div>
+          <div class="ac-sym">${a.symbol.replace('USDT','')}<small style="font-size:.65rem;color:var(--text3);font-weight:400;margin-left:4px">USDT</small></div>
+          <span class="ac-dir dir-${dir.toLowerCase()}">${dir}</span>
+        </div>
+      </div>
+      <div class="ac-mid">
+        <div class="ac-level-row">
+          <span class="ac-lv ${LV_CLASS[a.level]||'lv-extreme'}">${LV_MAP[a.level]||a.level.toUpperCase()}</span>
+          <span class="ac-rate ${a.rate_pct>0?'pos':'neg'}">${a.rate_pct>0?'+':''}${a.rate_pct.toFixed(4)}%</span>
+        </div>
+        <div class="ac-meta">
+          <span>${a.exchange.charAt(0).toUpperCase()+a.exchange.slice(1)}</span>
+          <span>per settlement</span>
+        </div>
+      </div>
+      <div class="ac-right">
+        <span class="ac-time">${fmtTime(a.ts)}</span>
+        <span class="ac-ago">${fmtDate(a.ts)}</span>
+        <span class="ac-ago">${timeAgo(a.ts)}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function load() {
+  try {
+    const r = await fetch(API + '/api/public-alerts');
+    const d = await r.json();
+    allAlerts = d.alerts || [];
+    render();
+  } catch(e) {
+    document.getElementById('alerts-list').innerHTML = '<div class="empty">Unable to load alerts. Try again in a moment.</div>';
+  }
+}
+
+load();
+setInterval(load, 30000); // refresh ogni 30s
+</script>
+</body>
+</html>
