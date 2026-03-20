@@ -1356,11 +1356,10 @@ footer {
           </div>
           <!-- SOON row -->
           <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
-            <span style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--muted2);letter-spacing:.08em;text-transform:uppercase">Coming:</span>
-            <span style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:4px 8px"><img src="/okx-logo.svg" style="height:14px;filter:brightness(2);opacity:.7"></span>
-            <span style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:4px 8px"><img src="/dydx-logo.svg" style="height:36px;filter:brightness(2);opacity:.7"></span>
-            <span style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:4px 8px"><img src="/bitget-logo.svg" style="height:12px;filter:brightness(3);opacity:.7"></span>
-            <span style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:4px 8px"><img src="/gate-logo.svg" style="height:14px;opacity:.7"></span>
+            <span style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:5px 10px"><img src="/okx-logo.svg" style="height:14px;filter:brightness(2);opacity:.75"><span style="font-family:'DM Mono',monospace;font-size:.58rem;font-weight:700;color:#fb923c;letter-spacing:.06em">SOON</span></span>
+            <span style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:5px 10px"><img src="/dydx-logo.svg" style="height:14px;filter:brightness(2);opacity:.75"><span style="font-family:'DM Mono',monospace;font-size:.58rem;font-weight:700;color:#fb923c;letter-spacing:.06em">SOON</span></span>
+            <span style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:5px 10px"><img src="/bitget-logo.svg" style="height:12px;filter:brightness(3);opacity:.75"><span style="font-family:'DM Mono',monospace;font-size:.58rem;font-weight:700;color:#fb923c;letter-spacing:.06em">SOON</span></span>
+            <span style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:5px 10px"><img src="/gate-logo.svg" style="height:14px;opacity:.75"><span style="font-family:'DM Mono',monospace;font-size:.58rem;font-weight:700;color:#fb923c;letter-spacing:.06em">SOON</span></span>
           </div>
         </div>
       </div>
@@ -2385,7 +2384,7 @@ async function loadTrackRecord() {
     // Row 1 stats
     const wr = s.win_rate_pct;
     const wrEl = document.getElementById('tr-wr');
-    if (wrEl) { wrEl.textContent = wr.toFixed(1) + '%'; wrEl.className = 'tr-stat-val ' + (wr >= 60 ? 'green' : wr >= 45 ? '' : 'red'); }
+    if (wrEl) { wrEl.textContent = wr.toFixed(2) + '%'; wrEl.className = 'tr-stat-val ' + (wr >= 60 ? 'green' : wr >= 45 ? '' : 'red'); }
 
     const trEl = document.getElementById('tr-trades');
     if (trEl) trEl.textContent = s.total_trades;
@@ -2470,14 +2469,14 @@ async function loadMiniBar() {
     };
 
     const wr = s.win_rate_pct || 0;
-    set('tm-wr',      wr.toFixed(1) + '%',   wr >= 60 ? 'green' : '');
+    set('tm-wr',      wr.toFixed(2) + '%',   wr >= 60 ? 'green' : '');
     set('tm-trades',  s.total_trades || '—', '');
     const ret = s.total_return_pct || 0;
-    set('tm-return',  (ret >= 0 ? '+' : '') + ret.toFixed(1) + '%', ret >= 0 ? 'green' : 'red');
+    set('tm-return',  (ret >= 0 ? '+' : '') + ret.toFixed(2) + '%', ret >= 0 ? 'green' : 'red');
     const fin = s.final_capital || 0;
     set('tm-capital', '$' + Math.round(fin).toLocaleString('en-US'), fin >= 10000 ? 'green' : 'red');
     const dd = s.max_dd_pct || 0;
-    set('tm-dd',      '-' + dd.toFixed(1) + '%', 'red');
+    set('tm-dd',      '-' + dd.toFixed(2) + '%', 'red');
     const best = s.best_trade_pct || 0;
     set('tm-best',    '+' + best.toFixed(2) + '%', 'green');
 
