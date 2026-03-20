@@ -1260,7 +1260,48 @@ footer {
   /* ── Global mobile overflow safety ── */
   .nav-desktop-only { display: inline-flex; }
   @media(max-width:1024px) { .nav-desktop-only { display: none !important; } }
-  /* Mobile AI Advisor pill */
+  /* Bot Status pill */
+.bot-status-pill {
+  position: fixed;
+  top: 110px;
+  right: 20px;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(0,200,160,.1);
+  border: 1px solid rgba(0,200,160,.4);
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-family: 'DM Mono', monospace;
+  font-size: .68rem;
+  font-weight: 700;
+  color: var(--teal);
+  letter-spacing: .08em;
+  cursor: pointer;
+  text-decoration: none;
+  backdrop-filter: blur(12px);
+  animation: statusPulseBtn 2s ease-in-out infinite;
+  white-space: nowrap;
+}
+.bot-status-pill:hover {
+  background: rgba(0,200,160,.2);
+  border-color: rgba(0,200,160,.7);
+  color: #00e8b8;
+}
+@keyframes statusPulseBtn {
+  0%,100% { box-shadow: 0 0 0 0 rgba(0,200,160,.3); }
+  50% { box-shadow: 0 0 0 6px rgba(0,200,160,0); }
+}
+.bsp-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--teal);
+  animation: pulse 1.5s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+/* Mobile AI Advisor pill */
   .mobile-ai-pill {
     display: none;
     position: fixed;
@@ -1434,6 +1475,12 @@ footer {
   </a>
   <a href="/guide" class="nm-cta" onclick="closeMobileNav()">Get Started →</a>
 </div>
+
+<!-- Bot Status pill -->
+<a href="/status" class="bot-status-pill">
+  <span class="bsp-dot"></span>
+  BOT STATUS
+</a>
 
 <!-- Mobile AI Advisor pill -->
 <button class="mobile-ai-pill" onclick="toggleChat()" aria-label="AI Advisor">
