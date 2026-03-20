@@ -842,14 +842,11 @@ class FundingTrader:
 
         # 5b. CHECK DIRETTO SULL'EXCHANGE — evita doppie posizioni dopo restart
         try:
-            real_positions = self.exchange.get_positions()
-            if asyncio.iscoroutine(real_positions):
-                real_positions = await real_positions
-            for rp in (real_positions or []):
-                rp_sym  = rp.symbol if hasattr(rp, "symbol") else rp.get("symbol", "")
-                rp_size = float(rp.size if hasattr(rp, "size") else rp.get("size", 0))
-                if rp_sym == symbol and rp_size > 0:
-                    logger.info("should_open: pos REALE su exchange %s — blocco apertura %s", self.exchange_name, symbol)
+            rp = self.exchange.get_position(symbol)
+            if rp:
+                rp_size = float(rp.get("size", 0) if isinstance(rp, dict) else getattr(rp, "size", 0))
+                if rp_size > 0:
+                    logger.info("should_open: pos REALE su exchange %s %s — blocco", self.exchange_name, symbol)
                     return False, "position already open on exchange"
         except Exception as _ex_chk:
             logger.warning("should_open: exchange check error %s: %s", symbol, _ex_chk)

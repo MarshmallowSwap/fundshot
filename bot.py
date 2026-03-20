@@ -1069,15 +1069,19 @@ async def trading_job(context):
             if _exch == "hyperliquid":
                 continue
             try:
-                _real = _ft.exchange.get_positions()
-                if asyncio.iscoroutine(_real):
-                    _real = await _real
-                for _rp in (_real or []):
-                    _rp_sym  = _rp.symbol if hasattr(_rp, "symbol") else _rp.get("symbol","")
-                    _rp_size = float(_rp.size if hasattr(_rp, "size") else _rp.get("size", 0))
-                    if _rp_sym and _rp_size > 0 and _rp_sym not in _ft.positions:
-                        _ft.positions[_rp_sym] = _rp  # blocca apertura duplicata
-                        logger.info("trading_job: pos reale caricata %s %s", _exch, _rp_sym)
+                # Controlla ogni simbolo attivo in monitoring
+                for _sym in list(_monitoring.keys()):
+                    if _sym in _ft.positions:
+                        continue
+                    try:
+                        _rp = _ft.exchange.get_position(_sym)
+                        if _rp:
+                            _rp_size = float(_rp.get("size", 0) if isinstance(_rp, dict) else getattr(_rp, "size", 0))
+                            if _rp_size > 0:
+                                _ft.positions[_sym] = _rp
+                                logger.info("trading_job: pos reale caricata %s %s", _exch, _sym)
+                    except Exception:
+                        pass
             except Exception as _rp_e:
                 logger.warning("trading_job: reload pos %s: %s", _exch, _rp_e)
 
