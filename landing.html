@@ -1228,6 +1228,8 @@ footer {
   @media(max-width:1024px) { .nav-desktop-only { display: none !important; } }
   /* Hide top symbols table on mobile — too many columns */
   @media(max-width:768px) { .tr-table-desktop { display: none !important; } }
+  /* Hide mini bar on mobile — full stats section replaces it */
+  @media(max-width:768px) { #tr-mini-bar { display: none !important; } }
   /* Referral cards: 1 col on all mobile */
   @media(max-width:900px) { .referral-cards-grid { grid-template-columns: 1fr !important; max-width:480px !important; margin-left:auto !important; margin-right:auto !important; } }
   /* Stats grid: force 1 col on very small screens to avoid clipping */
@@ -1249,17 +1251,25 @@ footer {
     /* Referral: colonna singola */
     .referral-grid { grid-template-columns: 1fr !important; }
   }
+  /* Stats unified grid */
+  .tr-stats-all {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin: 24px 0;
+  }
   @media(max-width:768px) {
-    /* Stats: 2 colonne pulite */
+    /* Mini bar nascosta, stats full in 2 col */
+    .tr-stats-all { grid-template-columns: 1fr 1fr !important; gap: 10px !important; margin: 16px 0 !important; }
     .tr-stats-main, .tr-grid { grid-template-columns: 1fr 1fr !important; gap: 10px !important; margin: 16px 0 !important; }
-    .tr-stat { padding: 18px 12px !important; border-radius: 12px !important; }
-    .tr-stat-val { font-size: 1.6rem !important; }
-    .tr-stat-lbl { font-size: .65rem !important; letter-spacing: .06em !important; }
+    .tr-stat { padding: 16px 12px !important; border-radius: 12px !important; }
+    .tr-stat-val { font-size: 1.5rem !important; }
+    .tr-stat-lbl { font-size: .64rem !important; letter-spacing: .05em !important; }
   }
   @media(max-width:480px) {
-    .tr-stat-val { font-size: 1.4rem !important; }
-    .tr-stat-lbl { font-size: .62rem !important; }
-    .tr-stat { padding: 14px 10px !important; }
+    .tr-stat-val { font-size: 1.3rem !important; }
+    .tr-stat-lbl { font-size: .6rem !important; }
+    .tr-stat { padding: 13px 10px !important; }
   }
   </style>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -1348,7 +1358,7 @@ footer {
           <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
             <span style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--muted2);letter-spacing:.08em;text-transform:uppercase">Coming:</span>
             <span style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:4px 8px"><img src="/okx-logo.svg" style="height:14px;filter:brightness(2);opacity:.7"></span>
-            <span style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:4px 8px"><img src="/dydx-logo.svg" style="height:12px;filter:brightness(2);opacity:.7"></span>
+            <span style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:4px 8px"><img src="/dydx-logo.svg" style="height:36px;filter:brightness(2);opacity:.7"></span>
             <span style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:4px 8px"><img src="/bitget-logo.svg" style="height:12px;filter:brightness(3);opacity:.7"></span>
             <span style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:4px 8px"><img src="/gate-logo.svg" style="height:14px;opacity:.7"></span>
           </div>
@@ -1645,8 +1655,8 @@ footer {
     </div>
   </div>
 
-  <!-- Stats unified grid (4+2 on desktop, 2col on mobile) -->
-  <div class="tr-grid tr-stats-main" id="tr-stats">
+  <!-- Stats grid — 8 cards in unica griglia -->
+  <div class="tr-stats-all" id="tr-stats">
     <div class="tr-stat">
       <div class="tr-stat-val green" id="tr-wr">—</div>
       <div class="tr-stat-lbl">Win Rate</div>
@@ -1663,9 +1673,6 @@ footer {
       <div class="tr-stat-val red" id="tr-dd">—</div>
       <div class="tr-stat-lbl">Max Drawdown</div>
     </div>
-  </div>
-  <!-- Stats grid — row 2 -->
-  <div class="tr-grid" style="margin-top:-8px">
     <div class="tr-stat">
       <div class="tr-stat-val" id="tr-start-cap">$10,000</div>
       <div class="tr-stat-lbl">Starting Capital</div>
