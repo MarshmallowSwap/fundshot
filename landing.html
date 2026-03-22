@@ -2966,24 +2966,30 @@ setTimeout(() => {
 // ── Bot Status Check ──────────────────────────────────────────────────────
 async function checkBotStatus() {
   const pill = document.querySelector('.bot-status-pill');
+  const sub  = document.getElementById('bsp-sub');
   if (!pill) return;
   try {
     const ctrl = new AbortController();
-    const timeout = setTimeout(() => ctrl.abort(), 5000); // 5s timeout
+    const timeout = setTimeout(() => ctrl.abort(), 5000);
     const r = await fetch('https://api.fundshot.app/api/status', { signal: ctrl.signal });
     clearTimeout(timeout);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
     const d = await r.json();
     if (d.ok && d.status === 'operational') {
       pill.classList.remove('down');
-      const sub = document.getElementById('bsp-sub');
+      const uptime = d.uptime_hours ? d.uptime_hours + 'h uptime' : '';
+      const lastAlert = d.last_alert_min_ago !== null ? 'last alert ' + d.last_alert_min_ago + 'm ago' : '';
+      pill.title = [uptime, lastAlert].filter(Boolean).join(' · ');
       if (sub) sub.textContent = 'LIVE';
     } else {
-      throw new Error('not operational');
+      throw new Error(d.msg || 'not operational');
     }
   } catch(e) {
     pill.classList.add('down');
-    const sub = document.getElementById('bsp-sub');
+    const reason = e.name === 'AbortError' ? 'TIMEOUT' : (e.message || 'UNREACHABLE');
+    pill.title = 'Down — ' + reason;
     if (sub) sub.textContent = 'DOWN';
+    console.warn('FundShot BOT DOWN:', reason);
   }
 }
 checkBotStatus();
