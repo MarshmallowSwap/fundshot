@@ -2730,7 +2730,8 @@ async function loadMiniBar() {
     const best = s.best_trade_pct || 0;
     set('tm-best',    '+' + best.toFixed(2) + '%', 'green');
 
-    // Aggiorna giorni nel mini bar e in tutti gli span .tr-days
+    // Aggiorna giorni nel mini bar
+    const days = d.record.days || 65;
     const tmDays = document.getElementById('tm-days');
     if (tmDays) tmDays.textContent = days + 'd';
 
