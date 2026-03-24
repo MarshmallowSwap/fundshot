@@ -129,7 +129,7 @@ footer a{color:var(--text3);text-decoration:none}footer a:hover{color:var(--gold
 
 <div class="hero">
   <div class="eyebrow">// Performance Audit</div>
-  <h1>Track Record</h1>
+  <h1><span id="tr-title-days">—</span>-Day Track Record</h1>
   <p id="hero-sub">Loading data...</p>
 </div>
 
@@ -226,6 +226,8 @@ async function load() {
     // Hero subtitle
     const days = rec.days || 60;
     const startDate = rec.start_date || '';
+    const titleDays = document.getElementById('tr-title-days');
+    if (titleDays) titleDays.textContent = days;
     document.getElementById('hero-sub').textContent =
       `${days} days of live trades on Bybit perpetuals — real signals, real entries, real exits.${startDate ? ' Since ' + startDate + '.' : ''} Updated daily.`;
 

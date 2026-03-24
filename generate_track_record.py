@@ -44,11 +44,11 @@ logger = logging.getLogger(__name__)
 
 TZ_IT   = ZoneInfo("Europe/Rome")
 
-# Punto di partenza fisso: 65 giorni fa dalla prima esecuzione
-# Da quel giorno la finestra CRESCE ogni giorno (non è rolling)
+# Data di inizio FISSA — dal lancio del bot (14 gennaio 2026)
+# La finestra CRESCE ogni giorno: oggi ~69, domani ~70, ecc.
 _now_utc   = datetime.now(timezone.utc)
-START_DATE = _now_utc.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=65)
-DAYS       = int((_now_utc - START_DATE).days)   # oggi: 65, domani: 66, ecc.
+START_DATE = datetime(2026, 1, 14, 0, 0, 0, tzinfo=timezone.utc)
+DAYS       = int((_now_utc - START_DATE).days)   # cresce ogni giorno
 OUTPUT  = "/tmp/fs_track_record.json"
 TOP_N   = 200         # tutti i simboli USDT perpetual
 
