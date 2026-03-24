@@ -1628,6 +1628,10 @@ footer {
 <div class="tr-mini-bar" id="tr-mini-bar" style="display:none">
   <span class="tr-mini-tag"><span class="tr-mini-dot"></span>LIVE DATA · BYBIT</span>
   <div class="tr-mini-item">
+    <div class="tr-mini-val" id="tm-days" style="color:var(--gold2)">—</div>
+    <div class="tr-mini-lbl">Days Live</div>
+  </div>
+  <div class="tr-mini-item">
     <div class="tr-mini-val green" id="tm-wr">—</div>
     <div class="tr-mini-lbl">Win Rate</div>
   </div>
@@ -2725,6 +2729,10 @@ async function loadMiniBar() {
     set('tm-dd',      '-' + dd.toFixed(2) + '%', 'red');
     const best = s.best_trade_pct || 0;
     set('tm-best',    '+' + best.toFixed(2) + '%', 'green');
+
+    // Aggiorna giorni nel mini bar e in tutti gli span .tr-days
+    const tmDays = document.getElementById('tm-days');
+    if (tmDays) tmDays.textContent = days + 'd';
 
     // Mostra la bar
     const bar = document.getElementById('tr-mini-bar');
