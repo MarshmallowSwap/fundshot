@@ -647,11 +647,21 @@ class ProxyHandler(BaseHTTPRequestHandler):
                 count = len(users)
                 # Round down to nearest 5 for privacy
                 display = max(1, (count // 5) * 5) if count >= 5 else count
+                # Leggi i giorni reali dal track record
+                _tr_days = 65
+                try:
+                    import json as _j, os as _o
+                    _tf = "/tmp/fs_track_record.json"
+                    if _o.path.exists(_tf):
+                        _tr = _j.loads(open(_tf).read())
+                        _tr_days = _tr.get("days", 65)
+                except: pass
                 self._json({
                     "ok": True,
                     "traders": display,
                     "pairs_monitored": 500,
                     "exchanges": 3,
+                    "track_record_days": _tr_days,
                 })
             except:
                 self._json({"ok": True, "traders": 0, "pairs_monitored": 500, "exchanges": 3})

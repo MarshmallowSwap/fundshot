@@ -339,7 +339,7 @@ If rate is negative (-0.01%):
       <span><strong>The edge:</strong> When you take the opposite side of an extreme funding event — e.g. going SHORT when funding is extremely positive — you collect funding while the market rebalances in your favor. You get paid to be right.</span>
     </div>
 
-    <p>FundShot's 65-day backtested track record validates this: <strong>74.6% win rate</strong> across 123 trades, with a maximum drawdown of only -0.2%. The signals are not perfect, but the base rate is strongly positive.</p>
+    <p>FundShot's <span class="tr-days">65</span>-day backtested track record validates this: <strong>74.6% win rate</strong> across 123 trades, with a maximum drawdown of only -0.2%. The signals are not perfect, but the base rate is strongly positive.</p>
 
     <h2 id="levels">Alert levels explained</h2>
     <p>FundShot classifies funding rate events into 5 levels of severity:</p>
@@ -421,7 +421,7 @@ If rate is negative (-0.01%):
     <div class="related-title">Continue reading</div>
     <div class="related-links">
       <a href="/docs" class="related-link"><span class="rl-icon">📖</span>Full Documentation — Alert levels, Guardian, API reference</a>
-      <a href="/track-record" class="related-link"><span class="rl-icon">📈</span>65-Day Track Record — Full trade log with daily breakdown</a>
+      <a href="/track-record" class="related-link"><span class="rl-icon">📈</span><span class="tr-days">65</span>-Day Track Record — Full trade log with daily breakdown</a>
       <a href="/guide" class="related-link"><span class="rl-icon">⚡</span>Get Started — Connect your exchange in 5 minutes</a>
       <a href="/faq" class="related-link"><span class="rl-icon">❓</span>FAQ — Common questions answered</a>
     </div>
@@ -447,6 +447,19 @@ window.addEventListener('scroll', () => {
   const pct = (el.scrollTop / (el.scrollHeight - el.clientHeight)) * 100;
   document.getElementById('progress').style.width = pct + '%';
 });
+</script>
+<script>
+// Aggiorna il numero di giorni del track record dinamicamente
+(async () => {
+  try {
+    const r = await fetch('https://api.fundshot.app/api/track-record');
+    const d = await r.json();
+    const days = d?.record?.days || d?.record?.summary?.days;
+    if (days && days > 65) {
+      document.querySelectorAll('.tr-days').forEach(el => el.textContent = days);
+    }
+  } catch(e) {}
+})();
 </script>
 </body>
 </html>

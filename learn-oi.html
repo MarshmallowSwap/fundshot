@@ -333,7 +333,7 @@ Combined     → answers: Is this a high-conviction entry or a fading move?</div
     <div class="related-links">
       <a href="/learn/funding-rates" class="related-link">📊 What Are Funding Rates? — Complete guide</a>
       <a href="/learn/mean-reversion" class="related-link">🔄 Mean Reversion in Crypto — Why prices always come back</a>
-      <a href="/track-record" class="related-link">📈 65-Day Track Record — Full live results</a>
+      <a href="/track-record" class="related-link">📈 <span class="tr-days">65</span>-Day Track Record — Full live results</a>
     </div>
   </div>
 </div>
@@ -349,5 +349,18 @@ Combined     → answers: Is this a high-conviction entry or a fading move?</div
   </a>
 </div>FundShot © 2026 — <a href="mailto:support@fundshot.app">support@fundshot.app</a> · <a href="/learn">Learn</a> · <a href="/docs">Docs</a> · <a href="/status">Status</a> · <a href="/alerts">Alerts</a> · <a href="/faq">FAQ</a> · Not financial advice</footer>
 <script>window.addEventListener('scroll',()=>{const e=document.documentElement;document.getElementById('progress').style.width=(e.scrollTop/(e.scrollHeight-e.clientHeight)*100)+'%'});</script>
+<script>
+// Aggiorna il numero di giorni del track record dinamicamente
+(async () => {
+  try {
+    const r = await fetch('https://api.fundshot.app/api/track-record');
+    const d = await r.json();
+    const days = d?.record?.days || d?.record?.summary?.days;
+    if (days && days > 65) {
+      document.querySelectorAll('.tr-days').forEach(el => el.textContent = days);
+    }
+  } catch(e) {}
+})();
+</script>
 </body>
 </html>

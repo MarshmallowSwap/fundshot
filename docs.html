@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Documentation — FundShot</title>
-<meta name="description" content="FundShot documentation. Alert levels, 65-day test configuration, Guardian risk engine, exchange setup, API reference.">
+<meta name="description" content="FundShot documentation. Alert levels, <span class="tr-days">65</span>-day test configuration, Guardian risk engine, exchange setup, API reference.">
 <meta name="robots" content="index, follow">
 <meta name="author" content="FundShot">
 <link rel="canonical" href="https://fundshot.app/docs">
@@ -13,7 +13,7 @@
 <meta property="og:site_name" content="FundShot">
 <meta property="og:url" content="https://fundshot.app/docs">
 <meta property="og:title" content="FundShot Docs — Full Reference Guide">
-<meta property="og:description" content="Alert levels, Guardian engine, 65-day test config, exchange setup guides and more.">
+<meta property="og:description" content="Alert levels, Guardian engine, <span class="tr-days">65</span>-day test config, exchange setup guides and more.">
 <meta property="og:image" content="https://fundshot.app/og-image.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -22,7 +22,7 @@
 <meta name="twitter:site" content="@FundShot_app">
 <meta name="twitter:creator" content="@FundShot_app">
 <meta name="twitter:title" content="FundShot Docs — Full Reference Guide">
-<meta name="twitter:description" content="Alert levels, Guardian engine, 65-day test config, exchange setup guides and more.">
+<meta name="twitter:description" content="Alert levels, Guardian engine, <span class="tr-days">65</span>-day test config, exchange setup guides and more.">
 <meta name="twitter:image" content="https://fundshot.app/og-image.jpg">
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
@@ -546,6 +546,19 @@ window.addEventListener('scroll', () => {
     a.classList.toggle('active', a.getAttribute('href') === '#' + current);
   });
 });
+</script>
+<script>
+// Aggiorna il numero di giorni del track record dinamicamente
+(async () => {
+  try {
+    const r = await fetch('https://api.fundshot.app/api/track-record');
+    const d = await r.json();
+    const days = d?.record?.days || d?.record?.summary?.days;
+    if (days && days > 65) {
+      document.querySelectorAll('.tr-days').forEach(el => el.textContent = days);
+    }
+  } catch(e) {}
+})();
 </script>
 </body>
 </html>

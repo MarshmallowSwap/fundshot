@@ -2659,6 +2659,10 @@ async function loadTrackRecord() {
       pnlEl.className = 'tr-stat-val ' + (s.avg_pnl_pct >= 0 ? 'green' : 'red');
     }
 
+    // Aggiorna tutti i riferimenti ai giorni del track record
+    const days = rec.days || rec.summary?.days || 65;
+    document.querySelectorAll('.tr-days').forEach(el => { el.textContent = days; });
+
     const bestEl = document.getElementById('tr-best');
     if (bestEl) { bestEl.textContent = fmtPct(s.best_trade_pct, 2); bestEl.className = 'tr-stat-val green'; }
 

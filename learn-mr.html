@@ -218,7 +218,7 @@ At HARD (≥2.0%):     ~18%/day cost on longs  → extreme urgency
 At JACKPOT (≥2.5%):  ~22.5%/day              → unsustainable, correction imminent</div>
 
     <h2 id="edge">Quantifying the edge</h2>
-    <p>FundShot's 65-day track record provides a real-world quantification of this edge:</p>
+    <p>FundShot's <span class="tr-days">65</span>-day track record provides a real-world quantification of this edge:</p>
 
     <div class="stat-row">
       <div class="stat-box">
@@ -256,7 +256,7 @@ At JACKPOT (≥2.5%):  ~22.5%/day              → unsustainable, correction imm
 
     <div class="cta-box">
       <h3>Put mean reversion to work automatically</h3>
-      <p>FundShot monitors 500+ pairs and trades every qualified mean reversion setup on your behalf. 74.6% win rate over 65 days. Free to start.</p>
+      <p>FundShot monitors 500+ pairs and trades every qualified mean reversion setup on your behalf. 74.6% win rate over <span class="tr-days">65</span> days. Free to start.</p>
       <a href="https://t.me/FundShot_bot" class="cta-btn" target="_blank">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.024 9.531c-.148.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.024 14.06l-2.966-.924c-.645-.204-.657-.645.136-.953l11.57-4.461c.537-.194 1.008.131.798.526z"/></svg>
         Open @FundShot_bot — Free
@@ -270,7 +270,7 @@ At JACKPOT (≥2.5%):  ~22.5%/day              → unsustainable, correction imm
     <div class="related-links">
       <a href="/learn/funding-rates" class="related-link">📊 What Are Funding Rates? — Complete guide</a>
       <a href="/learn/open-interest" class="related-link">📈 Open Interest as a Trading Signal — OI + Funding combo</a>
-      <a href="/track-record" class="related-link">🔢 65-Day Track Record — See the numbers live</a>
+      <a href="/track-record" class="related-link">🔢 <span class="tr-days">65</span>-Day Track Record — See the numbers live</a>
     </div>
   </div>
 </div>
@@ -286,5 +286,18 @@ At JACKPOT (≥2.5%):  ~22.5%/day              → unsustainable, correction imm
   </a>
 </div>FundShot © 2026 — <a href="mailto:support@fundshot.app">support@fundshot.app</a> · <a href="/learn">Learn</a> · <a href="/docs">Docs</a> · <a href="/status">Status</a> · <a href="/alerts">Alerts</a> · <a href="/faq">FAQ</a> · Not financial advice</footer>
 <script>window.addEventListener('scroll',()=>{const e=document.documentElement;document.getElementById('progress').style.width=(e.scrollTop/(e.scrollHeight-e.clientHeight)*100)+'%'});</script>
+<script>
+// Aggiorna il numero di giorni del track record dinamicamente
+(async () => {
+  try {
+    const r = await fetch('https://api.fundshot.app/api/track-record');
+    const d = await r.json();
+    const days = d?.record?.days || d?.record?.summary?.days;
+    if (days && days > 65) {
+      document.querySelectorAll('.tr-days').forEach(el => el.textContent = days);
+    }
+  } catch(e) {}
+})();
+</script>
 </body>
 </html>
