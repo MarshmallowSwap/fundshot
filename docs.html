@@ -443,7 +443,7 @@ footer{border-top:1px solid var(--border);padding:32px 48px;text-align:center;fo
       <tbody>
         <tr><td><code>GET /api/status</code></td><td>—</td><td>Bot health, last cycle, alerts sent</td></tr>
         <tr><td><code>GET /api/funding</code></td><td>—</td><td>Live funding rates (cached 60s)</td></tr>
-        <tr><td><code>GET /api/track-record</code></td><td>—</td><td>60-day performance report</td></tr>
+        <tr><td><code>GET /api/track-record</code></td><td>—</td><td data-tr-days><span class="tr-days">69</span>-day performance report</td></tr>
         <tr><td><code>GET /api/alert-history</code></td><td>JWT</td><td>Last 50 alerts sent</td></tr>
         <tr><td><code>GET /api/user/wallet</code></td><td>JWT</td><td>Exchange wallet balance</td></tr>
         <tr><td><code>GET /api/user/positions</code></td><td>JWT</td><td>Open positions per exchange</td></tr>
@@ -520,6 +520,22 @@ async function loadDocsStats() {
     set('d-final', '$' + Math.round(fin).toLocaleString(), fin >= 10000 ? 'green' : 'red');
     const dd = s.max_dd_pct || 0;
     set('d-dd', '-' + dd.toFixed(1) + '%', 'red');
+
+    // Aggiorna giorni in tutti gli span .tr-days
+    const days = d.record.days || 65;
+    document.querySelectorAll('.tr-days').forEach(el => el.textContent = days);
+
+    // Aggiorna anche API table reference
+    const apiTrEl = document.querySelector('[data-tr-days]');
+    if (apiTrEl) apiTrEl.textContent = days + '-day performance report';
+
+    // Aggiorna avg_pnl se presente
+    const avgPnl = s.avg_pnl_pct || 0;
+    set('d-avg-pnl', (avgPnl >= 0 ? '+' : '') + avgPnl.toFixed(2) + '%', avgPnl >= 0 ? 'green' : 'red');
+
+    // Aggiorna best/worst trade se presenti
+    if (s.best_trade_pct) set('d-best', '+' + s.best_trade_pct.toFixed(2) + '%', 'green');
+    if (s.worst_trade_pct) set('d-worst', s.worst_trade_pct.toFixed(2) + '%', 'red');
   } catch(e) {}
 }
 loadDocsStats();
