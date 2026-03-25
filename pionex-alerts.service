@@ -1,0 +1,15 @@
+[Unit]
+Description=FundShot Pionex Alerts
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/fundshot
+EnvironmentFile=/root/fundshot/.env
+ExecStart=/root/fundshot/venv/bin/python3 /root/fundshot/pionex_alerts.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
